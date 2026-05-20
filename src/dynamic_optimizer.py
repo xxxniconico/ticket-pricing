@@ -225,7 +225,19 @@ class DynamicPricingOptimizer:
             base_revenue += rev_base
             base_attendance += min(q0, cap)
 
-        # 6. 收入底线：仅收入优先场（rw>0.7）保收入
+        # 6. 收入影响约束：增收/减收不足 ¥5,000 或 0.5% → 不调，维持价格稳定形象
+        rev_impact = total_revenue - base_revenue
+        if abs(rev_impact) < max(base_revenue * 0.005, 5000):
+            for zt in ZONE_TIERS:
+                tr = tier_results[zt]
+                if tr.optimal_price != tr.base_price:
+                    tr.optimal_price = tr.base_price
+                    tr.predicted_qty = tr.base_qty
+                    tr.revenue = tr.base_price * tr.base_qty
+            total_revenue = base_revenue
+            total_attendance = base_attendance
+
+        # 7. 收入底线：仅收入优先场（rw>0.7）保收入
         floor = max(base_revenue, min_revenue)
         if total_revenue < floor and rw > 0.7:
             # 回退：至少不低于底线（仅收入优先场）
