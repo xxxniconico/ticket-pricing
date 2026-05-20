@@ -1,0 +1,576 @@
+{
+  "101": {
+    "tier": "T1",
+    "floor": "一层",
+    "per_match": 28.1,
+    "avg_price": 2158.0,
+    "front_row_pct": 0.09
+  },
+  "102": {
+    "tier": "T1",
+    "floor": "一层",
+    "per_match": 39.1,
+    "avg_price": 2165.0,
+    "front_row_pct": 0.14
+  },
+  "103": {
+    "tier": "T5",
+    "floor": "一层",
+    "per_match": 64.5,
+    "avg_price": 1036.0,
+    "front_row_pct": 0.58
+  },
+  "104": {
+    "tier": "T4",
+    "floor": "一层",
+    "per_match": 30.7,
+    "avg_price": 1099.0,
+    "front_row_pct": 0.75
+  },
+  "105": {
+    "tier": "T9",
+    "floor": "一层",
+    "per_match": 43.0,
+    "avg_price": 511.0,
+    "front_row_pct": 0.36
+  },
+  "106": {
+    "tier": "T8",
+    "floor": "一层",
+    "per_match": 18.1,
+    "avg_price": 616.0,
+    "front_row_pct": 0.0
+  },
+  "107": {
+    "tier": "T8",
+    "floor": "一层",
+    "per_match": 13.2,
+    "avg_price": 594.0,
+    "front_row_pct": 0.0
+  },
+  "108": {
+    "tier": "T10",
+    "floor": "一层",
+    "per_match": 0.1,
+    "avg_price": 300.0,
+    "front_row_pct": 0.0
+  },
+  "110": {
+    "tier": "T9",
+    "floor": "一层",
+    "per_match": 7.6,
+    "avg_price": 452.0,
+    "front_row_pct": 0.0
+  },
+  "111": {
+    "tier": "T8",
+    "floor": "一层",
+    "per_match": 15.0,
+    "avg_price": 622.0,
+    "front_row_pct": 0.0
+  },
+  "112": {
+    "tier": "T9",
+    "floor": "一层",
+    "per_match": 36.5,
+    "avg_price": 541.0,
+    "front_row_pct": 0.08
+  },
+  "113": {
+    "tier": "T4",
+    "floor": "一层",
+    "per_match": 23.3,
+    "avg_price": 1141.0,
+    "front_row_pct": 0.68
+  },
+  "114": {
+    "tier": "T3",
+    "floor": "一层",
+    "per_match": 143.3,
+    "avg_price": 1283.0,
+    "front_row_pct": 0.05
+  },
+  "115": {
+    "tier": "T4",
+    "floor": "一层",
+    "per_match": 87.9,
+    "avg_price": 1105.0,
+    "front_row_pct": 0.44
+  },
+  "116": {
+    "tier": "T4",
+    "floor": "一层",
+    "per_match": 67.9,
+    "avg_price": 1082.0,
+    "front_row_pct": 0.54
+  },
+  "117": {
+    "tier": "T4",
+    "floor": "一层",
+    "per_match": 49.8,
+    "avg_price": 1140.0,
+    "front_row_pct": 0.58
+  },
+  "118": {
+    "tier": "T4",
+    "floor": "一层",
+    "per_match": 24.7,
+    "avg_price": 1142.0,
+    "front_row_pct": 0.57
+  },
+  "119": {
+    "tier": "T8",
+    "floor": "一层",
+    "per_match": 58.3,
+    "avg_price": 590.0,
+    "front_row_pct": 0.33
+  },
+  "120": {
+    "tier": "T7",
+    "floor": "一层",
+    "per_match": 31.0,
+    "avg_price": 655.0,
+    "front_row_pct": 0.0
+  },
+  "121": {
+    "tier": "T7",
+    "floor": "一层",
+    "per_match": 129.0,
+    "avg_price": 641.0,
+    "front_row_pct": 0.79
+  },
+  "122": {
+    "tier": "T7",
+    "floor": "一层",
+    "per_match": 145.5,
+    "avg_price": 665.0,
+    "front_row_pct": 0.78
+  },
+  "123": {
+    "tier": "T8",
+    "floor": "一层",
+    "per_match": 228.0,
+    "avg_price": 627.0,
+    "front_row_pct": 0.82
+  },
+  "124": {
+    "tier": "T7",
+    "floor": "一层",
+    "per_match": 230.1,
+    "avg_price": 665.0,
+    "front_row_pct": 0.49
+  },
+  "128": {
+    "tier": "T7",
+    "floor": "一层",
+    "per_match": 264.9,
+    "avg_price": 650.0,
+    "front_row_pct": 0.2
+  },
+  "129": {
+    "tier": "T3",
+    "floor": "一层",
+    "per_match": 62.8,
+    "avg_price": 1237.0,
+    "front_row_pct": 0.23
+  },
+  "130": {
+    "tier": "T3",
+    "floor": "一层",
+    "per_match": 148.6,
+    "avg_price": 1235.0,
+    "front_row_pct": 0.6
+  },
+  "207": {
+    "tier": "T2",
+    "floor": "二层",
+    "per_match": 1.0,
+    "avg_price": 1603.0,
+    "front_row_pct": 1.0
+  },
+  "208": {
+    "tier": "T7",
+    "floor": "二层",
+    "per_match": 112.2,
+    "avg_price": 641.0,
+    "front_row_pct": 1.0
+  },
+  "209": {
+    "tier": "T6",
+    "floor": "二层",
+    "per_match": 124.1,
+    "avg_price": 708.0,
+    "front_row_pct": 1.0
+  },
+  "210": {
+    "tier": "T8",
+    "floor": "二层",
+    "per_match": 178.1,
+    "avg_price": 625.0,
+    "front_row_pct": 0.1
+  },
+  "211": {
+    "tier": "T8",
+    "floor": "二层",
+    "per_match": 92.9,
+    "avg_price": 611.0,
+    "front_row_pct": 0.91
+  },
+  "212": {
+    "tier": "T8",
+    "floor": "二层",
+    "per_match": 69.2,
+    "avg_price": 584.0,
+    "front_row_pct": 0.82
+  },
+  "213": {
+    "tier": "T8",
+    "floor": "二层",
+    "per_match": 65.3,
+    "avg_price": 591.0,
+    "front_row_pct": 0.82
+  },
+  "214": {
+    "tier": "T8",
+    "floor": "二层",
+    "per_match": 78.9,
+    "avg_price": 615.0,
+    "front_row_pct": 0.9
+  },
+  "215": {
+    "tier": "T9",
+    "floor": "二层",
+    "per_match": 39.5,
+    "avg_price": 515.0,
+    "front_row_pct": 0.35
+  },
+  "216": {
+    "tier": "T8",
+    "floor": "二层",
+    "per_match": 13.2,
+    "avg_price": 608.0,
+    "front_row_pct": 1.0
+  },
+  "217": {
+    "tier": "T8",
+    "floor": "二层",
+    "per_match": 14.4,
+    "avg_price": 626.0,
+    "front_row_pct": 1.0
+  },
+  "218": {
+    "tier": "T5",
+    "floor": "二层",
+    "per_match": 0.7,
+    "avg_price": 971.0,
+    "front_row_pct": 1.0
+  },
+  "219": {
+    "tier": "T3",
+    "floor": "二层",
+    "per_match": 42.0,
+    "avg_price": 1357.0,
+    "front_row_pct": 1.0
+  },
+  "220": {
+    "tier": "T3",
+    "floor": "二层",
+    "per_match": 65.5,
+    "avg_price": 1285.0,
+    "front_row_pct": 1.0
+  },
+  "221": {
+    "tier": "T3",
+    "floor": "二层",
+    "per_match": 33.0,
+    "avg_price": 1278.0,
+    "front_row_pct": 1.0
+  },
+  "222": {
+    "tier": "T4",
+    "floor": "二层",
+    "per_match": 13.9,
+    "avg_price": 1191.0,
+    "front_row_pct": 1.0
+  },
+  "223": {
+    "tier": "T3",
+    "floor": "二层",
+    "per_match": 6.6,
+    "avg_price": 1276.0,
+    "front_row_pct": 1.0
+  },
+  "224": {
+    "tier": "T3",
+    "floor": "二层",
+    "per_match": 43.4,
+    "avg_price": 1352.0,
+    "front_row_pct": 1.0
+  },
+  "225": {
+    "tier": "T5",
+    "floor": "二层",
+    "per_match": 3.1,
+    "avg_price": 1017.0,
+    "front_row_pct": 1.0
+  },
+  "226": {
+    "tier": "T8",
+    "floor": "二层",
+    "per_match": 8.0,
+    "avg_price": 591.0,
+    "front_row_pct": 1.0
+  },
+  "227": {
+    "tier": "T7",
+    "floor": "二层",
+    "per_match": 10.1,
+    "avg_price": 658.0,
+    "front_row_pct": 1.0
+  },
+  "228": {
+    "tier": "T8",
+    "floor": "二层",
+    "per_match": 7.0,
+    "avg_price": 594.0,
+    "front_row_pct": 1.0
+  },
+  "229": {
+    "tier": "T8",
+    "floor": "二层",
+    "per_match": 6.4,
+    "avg_price": 581.0,
+    "front_row_pct": 1.0
+  },
+  "230": {
+    "tier": "T7",
+    "floor": "二层",
+    "per_match": 7.6,
+    "avg_price": 680.0,
+    "front_row_pct": 1.0
+  },
+  "231": {
+    "tier": "T8",
+    "floor": "二层",
+    "per_match": 13.2,
+    "avg_price": 584.0,
+    "front_row_pct": 1.0
+  },
+  "232": {
+    "tier": "T6",
+    "floor": "二层",
+    "per_match": 55.6,
+    "avg_price": 711.0,
+    "front_row_pct": 1.0
+  },
+  "237": {
+    "tier": "T7",
+    "floor": "二层",
+    "per_match": 75.5,
+    "avg_price": 690.0,
+    "front_row_pct": 1.0
+  },
+  "307": {
+    "tier": "T9",
+    "floor": "四层",
+    "per_match": 73.0,
+    "avg_price": 501.0,
+    "front_row_pct": 0.0
+  },
+  "308": {
+    "tier": "T9",
+    "floor": "四层",
+    "per_match": 160.5,
+    "avg_price": 484.0,
+    "front_row_pct": 0.15
+  },
+  "309": {
+    "tier": "T9",
+    "floor": "四层",
+    "per_match": 460.5,
+    "avg_price": 490.0,
+    "front_row_pct": 0.38
+  },
+  "310": {
+    "tier": "T10",
+    "floor": "四层",
+    "per_match": 638.0,
+    "avg_price": 318.0,
+    "front_row_pct": 0.0
+  },
+  "311": {
+    "tier": "T10",
+    "floor": "四层",
+    "per_match": 357.0,
+    "avg_price": 295.0,
+    "front_row_pct": 0.01
+  },
+  "312": {
+    "tier": "T10",
+    "floor": "四层",
+    "per_match": 237.7,
+    "avg_price": 262.0,
+    "front_row_pct": 0.01
+  },
+  "313": {
+    "tier": "T10",
+    "floor": "四层",
+    "per_match": 451.8,
+    "avg_price": 285.0,
+    "front_row_pct": 0.01
+  },
+  "314": {
+    "tier": "T9",
+    "floor": "四层",
+    "per_match": 163.3,
+    "avg_price": 424.0,
+    "front_row_pct": 0.01
+  },
+  "315": {
+    "tier": "T9",
+    "floor": "四层",
+    "per_match": 204.5,
+    "avg_price": 482.0,
+    "front_row_pct": 0.01
+  },
+  "316": {
+    "tier": "T9",
+    "floor": "四层",
+    "per_match": 141.0,
+    "avg_price": 435.0,
+    "front_row_pct": 0.0
+  },
+  "317": {
+    "tier": "T7",
+    "floor": "四层",
+    "per_match": 40.7,
+    "avg_price": 657.0,
+    "front_row_pct": 0.0
+  },
+  "318": {
+    "tier": "T7",
+    "floor": "四层",
+    "per_match": 92.1,
+    "avg_price": 663.0,
+    "front_row_pct": 0.0
+  },
+  "319": {
+    "tier": "T5",
+    "floor": "四层",
+    "per_match": 29.0,
+    "avg_price": 957.0,
+    "front_row_pct": 0.0
+  },
+  "320": {
+    "tier": "T5",
+    "floor": "四层",
+    "per_match": 28.3,
+    "avg_price": 951.0,
+    "front_row_pct": 0.0
+  },
+  "321": {
+    "tier": "T5",
+    "floor": "四层",
+    "per_match": 65.5,
+    "avg_price": 926.0,
+    "front_row_pct": 0.0
+  },
+  "322": {
+    "tier": "T5",
+    "floor": "四层",
+    "per_match": 67.3,
+    "avg_price": 967.0,
+    "front_row_pct": 0.0
+  },
+  "323": {
+    "tier": "T5",
+    "floor": "四层",
+    "per_match": 26.9,
+    "avg_price": 1011.0,
+    "front_row_pct": 0.0
+  },
+  "324": {
+    "tier": "T5",
+    "floor": "四层",
+    "per_match": 21.4,
+    "avg_price": 1006.0,
+    "front_row_pct": 0.0
+  },
+  "325": {
+    "tier": "T7",
+    "floor": "四层",
+    "per_match": 69.8,
+    "avg_price": 657.0,
+    "front_row_pct": 0.0
+  },
+  "326": {
+    "tier": "T7",
+    "floor": "四层",
+    "per_match": 68.9,
+    "avg_price": 658.0,
+    "front_row_pct": 0.0
+  },
+  "327": {
+    "tier": "T9",
+    "floor": "四层",
+    "per_match": 227.9,
+    "avg_price": 468.0,
+    "front_row_pct": 0.0
+  },
+  "328": {
+    "tier": "T9",
+    "floor": "四层",
+    "per_match": 197.6,
+    "avg_price": 486.0,
+    "front_row_pct": 0.0
+  },
+  "329": {
+    "tier": "T9",
+    "floor": "四层",
+    "per_match": 357.3,
+    "avg_price": 484.0,
+    "front_row_pct": 0.0
+  },
+  "330": {
+    "tier": "T10",
+    "floor": "四层",
+    "per_match": 62.2,
+    "avg_price": 249.0,
+    "front_row_pct": 0.0
+  },
+  "331": {
+    "tier": "T10",
+    "floor": "四层",
+    "per_match": 779.7,
+    "avg_price": 309.0,
+    "front_row_pct": 0.0
+  },
+  "332": {
+    "tier": "T10",
+    "floor": "四层",
+    "per_match": 437.8,
+    "avg_price": 319.0,
+    "front_row_pct": 0.0
+  },
+  "337": {
+    "tier": "T6",
+    "floor": "四层",
+    "per_match": 85.7,
+    "avg_price": 728.0,
+    "front_row_pct": 0.0
+  },
+  "338": {
+    "tier": "T6",
+    "floor": "四层",
+    "per_match": 161.3,
+    "avg_price": 733.0,
+    "front_row_pct": 0.0
+  },
+  "unknown": {
+    "tier": "T6",
+    "floor": "unknown",
+    "per_match": 1.8,
+    "avg_price": 731.0,
+    "front_row_pct": 1.0
+  }
+}

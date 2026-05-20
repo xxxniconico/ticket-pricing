@@ -1,0 +1,64 @@
+{
+  "tier": {
+    "S": 1.0386,
+    "A": 0.8016,
+    "B": 0.9737,
+    "C": 0.825
+  },
+  "history": [
+    {
+      "match_id": "2026-03-21 上海申花",
+      "tier": "S",
+      "raw_pred": 13716.0,
+      "actual": 15482,
+      "ratio": 1.1288,
+      "cal_S_before": 1.0,
+      "cal_S_after": 1.0386
+    },
+    {
+      "match_id": "2026-04-12 成都蓉城",
+      "tier": "A",
+      "raw_pred": 11400.0,
+      "actual": 8341,
+      "ratio": 0.7317,
+      "cal_A_before": 1.0,
+      "cal_A_after": 0.9195
+    },
+    {
+      "match_id": "2026-04-25 天津津门虎",
+      "tier": "B",
+      "raw_pred": 12150.0,
+      "actual": 11084,
+      "ratio": 0.9123,
+      "cal_B_before": 1.0,
+      "cal_B_after": 0.9737
+    },
+    {
+      "match_id": "2026-05-06 大连英博海发",
+      "tier": "C",
+      "raw_pred": 6900.0,
+      "actual": 3419,
+      "ratio": 0.4955,
+      "cal_C_before": 1.0,
+      "cal_C_after": 0.8487
+    },
+    {
+      "match_id": "2026-05-10 上海海港",
+      "tier": "A",
+      "raw_pred": 11400.0,
+      "actual": 6003,
+      "ratio": 0.5266,
+      "cal_A_before": 0.9195,
+      "cal_A_after": 0.8016
+    },
+    {
+      "match_id": "2026-05-15 青岛海牛",
+      "tier": "C",
+      "raw_pred": 6900.0,
+      "actual": 5312,
+      "ratio": 0.7699,
+      "cal_C_before": 0.8487,
+      "cal_C_after": 0.825
+    }
+  ]
+}

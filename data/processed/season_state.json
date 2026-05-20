@@ -1,0 +1,165 @@
+{
+  "season": "2025",
+  "completed": 7,
+  "cumulative_mae": 1781.6445714285712,
+  "tier_cal": {
+    "S": 1.0,
+    "A": 0.9257,
+    "B": 1.0481,
+    "C": 1.0247
+  },
+  "tier_base": {
+    "S": 12700,
+    "A": 11400,
+    "B": 9000,
+    "C": 6900
+  },
+  "multipliers": {
+    "derby": 1.25,
+    "lost_bottom": 0.55,
+    "saturday": 1.08,
+    "late_season": 0.65,
+    "heavy_home_loss": 0.75,
+    "guoan_top4": 1.1,
+    "guoan_bottom5": 0.9,
+    "away_winless": 0.86,
+    "returning_home": 1.05
+  },
+  "history": [
+    {
+      "round": 1,
+      "date": "2025-03-29",
+      "opponent": "成都蓉城",
+      "tier": "A",
+      "actual": 12641,
+      "predicted": 12312.0,
+      "error": 329.0,
+      "error_pct": 2.6,
+      "cumulative_mae": 329.0,
+      "cal_factors": {
+        "S": 1.0,
+        "A": 1.008,
+        "B": 1.0,
+        "C": 1.0
+      },
+      "context": {
+        "saturday": true
+      }
+    },
+    {
+      "round": 2,
+      "date": "2025-04-06",
+      "opponent": "浙江",
+      "tier": "B",
+      "actual": 8733,
+      "predicted": 9000.0,
+      "error": 267.0,
+      "error_pct": 3.1,
+      "cumulative_mae": 298.0,
+      "cal_factors": {
+        "S": 1.0,
+        "A": 1.008,
+        "B": 0.9911,
+        "C": 1.0
+      },
+      "context": {}
+    },
+    {
+      "round": 3,
+      "date": "2025-04-19",
+      "opponent": "山东泰山",
+      "tier": "A",
+      "actual": 11380,
+      "predicted": 15513.0,
+      "error": 4133.0,
+      "error_pct": 36.3,
+      "cumulative_mae": 1576.0,
+      "cal_factors": {
+        "S": 1.0,
+        "A": 0.9257,
+        "B": 0.9911,
+        "C": 1.0
+      },
+      "context": {
+        "derby": true,
+        "saturday": true
+      }
+    },
+    {
+      "round": 4,
+      "date": "2025-04-25",
+      "opponent": "河南",
+      "tier": "B",
+      "actual": 8196,
+      "predicted": 8920.0,
+      "error": 724.0,
+      "error_pct": 8.8,
+      "cumulative_mae": 1363.0,
+      "cal_factors": {
+        "S": 1.0,
+        "A": 0.9257,
+        "B": 0.9694,
+        "C": 1.0
+      },
+      "context": {}
+    },
+    {
+      "round": 5,
+      "date": "2025-05-10",
+      "opponent": "深圳新鹏城",
+      "tier": "C",
+      "actual": 10616,
+      "predicted": 7452.0,
+      "error": 3164.0,
+      "error_pct": 29.8,
+      "cumulative_mae": 1723.0,
+      "cal_factors": {
+        "S": 1.0,
+        "A": 0.9257,
+        "B": 0.9694,
+        "C": 1.1274
+      },
+      "context": {
+        "saturday": true
+      }
+    },
+    {
+      "round": 6,
+      "date": "2025-06-14",
+      "opponent": "长春亚泰",
+      "tier": "B",
+      "actual": 11606,
+      "predicted": 9423.0,
+      "error": 2183.0,
+      "error_pct": 18.8,
+      "cumulative_mae": 1800.0,
+      "cal_factors": {
+        "S": 1.0,
+        "A": 0.9257,
+        "B": 1.0481,
+        "C": 1.1274
+      },
+      "context": {
+        "saturday": true
+      }
+    },
+    {
+      "round": 7,
+      "date": "2025-06-17",
+      "opponent": "青岛西海岸",
+      "tier": "C",
+      "actual": 6108,
+      "predicted": 7779.0,
+      "error": 1671.0,
+      "error_pct": 27.4,
+      "cumulative_mae": 1782.0,
+      "cal_factors": {
+        "S": 1.0,
+        "A": 0.9257,
+        "B": 1.0481,
+        "C": 1.0247
+      },
+      "context": {}
+    }
+  ]
+}

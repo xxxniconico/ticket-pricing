@@ -1,0 +1,98 @@
+{
+  "3": {
+    "opponent": "成都蓉城",
+    "rank": 9,
+    "source": "计算",
+    "final": 3
+  },
+  "4": {
+    "opponent": "浙江俱乐部",
+    "rank": 3,
+    "source": "计算",
+    "final": 7
+  },
+  "6": {
+    "opponent": "青岛西海岸",
+    "rank": 7,
+    "source": "计算",
+    "final": 10
+  },
+  "8": {
+    "opponent": "山东泰山",
+    "rank": 5,
+    "source": "计算",
+    "final": 5
+  },
+  "9": {
+    "opponent": "河南俱乐部",
+    "rank": 13,
+    "source": "计算",
+    "final": 8
+  },
+  "11": {
+    "opponent": "深圳新鹏城",
+    "rank": 13,
+    "source": "计算",
+    "final": 12
+  },
+  "14": {
+    "opponent": "长春亚泰",
+    "rank": 16,
+    "source": "计算",
+    "final": 9
+  },
+  "15": {
+    "opponent": "梅州客家",
+    "rank": 14,
+    "source": "计算",
+    "final": 16
+  },
+  "16": {
+    "opponent": "云南玉昆",
+    "rank": 8,
+    "source": "计算",
+    "final": 13
+  },
+  "17": {
+    "opponent": "上海申花",
+    "rank": 4,
+    "source": "计算",
+    "final": 2
+  },
+  "20": {
+    "opponent": "天津津门虎",
+    "rank": 6,
+    "source": "—",
+    "final": 6
+  },
+  "22": {
+    "opponent": "武汉三镇",
+    "rank": 11,
+    "source": "—",
+    "final": 11
+  },
+  "23": {
+    "opponent": "上海海港",
+    "rank": 1,
+    "source": "—",
+    "final": 1
+  },
+  "25": {
+    "opponent": "大连英博海发",
+    "rank": 15,
+    "source": "—",
+    "final": 15
+  },
+  "28": {
+    "opponent": "青岛海牛",
+    "rank": 14,
+    "source": "—",
+    "final": 14
+  },
+  "30": {
+    "opponent": "梅州客家",
+    "rank": 16,
+    "source": "—",
+    "final": 16
+  }
+}

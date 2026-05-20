@@ -1,0 +1,23 @@
+# 原始Excel数据（不提交到git）
+data/raw/*.xlsx
+data/raw/*.xls
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# IDE
+.vscode/
+.idea/
+
+# Streamlit Cloud config (port conflicts with cloud default 8501)
+.streamlit/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Raw data (subdirectories too)
+data/raw/
