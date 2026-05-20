@@ -115,17 +115,22 @@ def load_csl_data():
     ded_config = resp2.json()
     deductions = ded_config.get("deductions_by_club", {})
 
-    matches = []
+    # 在线JSON没有round字段，按日期顺序推断（每8场一轮）
+    all_raw = []
     for lg in raw.get("leagues", []):
         if lg.get("name") != "中超联赛": continue
-        for m in lg["matches"]:
-            s = m.get("score", {})
-            ok = isinstance(s, dict) and s.get("home") is not None
-            rd = m.get("round") or m.get("round_name") or "?"
-            matches.append({"date": m["date"][:10], "round": rd,
-                           "home": m["home_club"], "away": m["away_club"],
-                           "hg": int(s["home"]) if ok else None,
-                           "ag": int(s["away"]) if ok else None, "completed": ok})
+        all_raw.extend(lg["matches"])
+    all_raw.sort(key=lambda x: x["date"])
+
+    matches = []
+    for i, m in enumerate(all_raw):
+        s = m.get("score", {})
+        ok = isinstance(s, dict) and s.get("home") is not None
+        rd_num = i // 8 + 1
+        matches.append({"date": m["date"][:10], "round": f"第{rd_num}轮",
+                       "home": m["home_club"], "away": m["away_club"],
+                       "hg": int(s["home"]) if ok else None,
+                       "ag": int(s["away"]) if ok else None, "completed": ok})
     standings = _build_standings(matches, deductions)
     guoan = []
     for m in matches:
