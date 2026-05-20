@@ -99,7 +99,13 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 CSL_JSON_URL = "https://xxxniconico.github.io/csl-dashboard-2026/dashboard_embed.json"
-DED_URL = "https://raw.githubusercontent.com/xxxniconico/csl-dashboard-2026/main/config/csl_cfa_2026_official_deductions.json"
+
+# 2026赛季CFA扣分处罚（静态数据，避免远程超时）
+DEDUCTIONS = {
+    "北京国安": 5, "上海申花": 10, "天津津门虎": 10,
+    "山东泰山": 6, "上海海港": 5, "武汉三镇": 5,
+    "浙江": 5, "河南": 6, "青岛海牛": 7,
+}
 
 @st.cache_data(ttl=3600)
 def load_csl_data():
@@ -109,10 +115,7 @@ def load_csl_data():
     data = resp.json()
     raw = data.get("raw_data", data)
 
-    resp2 = requests.get(DED_URL, timeout=10)
-    resp2.raise_for_status()
-    ded_config = resp2.json()
-    deductions = ded_config.get("deductions_by_club", {})
+    deductions = DEDUCTIONS
 
     # 在线JSON没有round字段，按日期顺序推断（每8场一轮）
     all_raw = []
@@ -408,7 +411,7 @@ def render_home_card(match):
     strategy_label = "收入优先" if rw>=0.7 else "上座优先" if rw<=0.3 else "均衡优化"
     strategy_color = "#ff6b6b" if rw>=0.7 else "#51cf66" if rw<=0.3 else "#f0c040"
     tier_roles = {"T1":"量价锚·低价抢量","T2":"量价支撑","T3":"弹性区·双向均衡",
-                  "T4":"精品区·锁价","T5":"收入锚·高价创收","T6":"收入锚·VIP"}
+                  "T4":"四层中间·弹性跟随","T5":"收入锚·高价创收","T6":"收入锚·VIP"}
 
     st.markdown(f"""<div style="display:flex;gap:12px;flex-wrap:wrap;margin:8px 0">
     <div style="flex:1;min-width:200px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:10px 14px">
@@ -446,7 +449,7 @@ def render_home_card(match):
             if rw >= 0.7: strategy = "↑ 高价创收·目标涨20%"
             elif rw >= 0.4: strategy = "↑ 温和涨价·目标涨10%"
             else: strategy = "→ 弱队不涨"
-        elif zt == "T3":
+        elif zt in ("T3", "T4"):
             if rw <= 0.3: strategy = "↓ 弹性降价·目标降15%"
             elif rw >= 0.7: strategy = "↑ 弹性涨价·目标涨15%"
             else:

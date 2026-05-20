@@ -321,11 +321,11 @@ class DynamicPricingOptimizer:
         p_opt = float(np.clip(result.x[0], p_min, p_max))
 
         # ── 分层组合策略：低价抢量、高价保收 ──
-        # T1=量价锚, T2/T3=弹性区, T4=锁, T5/T6=收入锚
+        # T1=量价锚, T2=量价支撑, T3/T4=弹性区, T5/T6=收入锚
         if not (min_mult == 1.0 and max_mult == 1.0):  # 非完全锁价
             tier_role = {
                 'T1': 'volume', 'T2': 'volume', 'T3': 'elastic',
-                'T4': 'locked', 'T5': 'revenue', 'T6': 'revenue',
+                'T4': 'elastic', 'T5': 'revenue', 'T6': 'revenue',
             }.get(zt, 'elastic')
 
             if tier_role == 'volume':
