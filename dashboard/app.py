@@ -11,7 +11,7 @@ import matplotlib, matplotlib.pyplot as plt
 matplotlib.rcParams["font.sans-serif"] = ["SimHei", "DejaVu Sans"]
 matplotlib.rcParams["axes.unicode_minus"] = False
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(__file__).resolve().parent.parent  # ticket-pricing/
 sys.path.insert(0, str(ROOT))
 
 from src.rule_engine import predict_calibrated as rule_predict
