@@ -282,13 +282,13 @@ class DynamicPricingOptimizer:
         if upper_bound_hint is not None:
             p_max = min(p_max, upper_bound_hint)
 
-        # 附加约束：不超过上一级对手的基准价
+        # 跨级约束：不超过上一级基准价的 95%（至少留 5% 级差）
         level_order = {"S_Cminus": "S_C", "S_C": "S_B", "S_B": "S_A", "S_A": "S_S", "S_S": None,
                        "S_Aminus": "S_A"}
         upper_level = level_order.get(opp_level)
         if upper_level and upper_level in self.price_matrix:
             upper_price = self.price_matrix[upper_level].get(zt, p_max)
-            p_max = min(p_max, upper_price)
+            p_max = min(p_max, upper_price / 1.05)  # 5% 级差底线
         if p_min > p_max:
             p_min = p_max - 10
 
@@ -358,24 +358,16 @@ class DynamicPricingOptimizer:
                 p_opt = max(target, p0)  # 不降
 
             elif tier_role == 'elastic':
-                # 弹性区：跟随rw线性
-                if rw <= 0.3:
-                    target = max(p0 * 0.85, p_min)
-                elif rw >= 0.7:
-                    target = min(p0 * 1.15, p_max)
-                else:
-                    ratio = 0.85 + 0.30 * (rw - 0.3) / 0.4
-                    target = p0 * ratio
-                rev_min = p0 * (0.92 ** (1.0 / max(1.0 - max(eps, 0.05), 0.01)))
-                p_opt = max(target, rev_min) if target < p0 else target
-                p_opt = max(p_min, min(p_max, p_opt))
+                # 弹性区：优化器驱动 + 软上限（上限取整以杜绝取整绕过）
+                soft_cap = 1.15 if rw >= 0.7 else (1.08 if rw >= 0.4 else 1.05)
+                p_opt = min(p_opt, round(p0 * soft_cap / 10) * 10)
 
         # 取整到10元
         p_opt = round(p_opt / 10) * 10
         p_opt = max(p_min, min(p_max, p_opt))
 
-        # 最小调整阈值：变化<5%则保持基准价（降档已绕过此检查的不受影响）
-        if abs(p_opt / p0 - 1) < 0.05 and max_mult > 1.0:
+        # 最小调整阈值：变化<3%则保持基准价
+        if abs(p_opt / p0 - 1) < 0.03 and max_mult > 1.0:
             p_opt = p0
             q_opt = min(q0, cap)
 
