@@ -21,6 +21,7 @@ from pathlib import Path
 
 import numpy as np
 from scipy.optimize import minimize
+import math
 
 from src.rule_engine import predict_calibrated as predict_attendance
 from src.classify import classify_opponent_tier as _classify_v3
@@ -377,7 +378,12 @@ class DynamicPricingOptimizer:
                     soft_cap = min(soft_cap, 1.087)
                 p_opt = min(p_opt, round(p0 * soft_cap / 10) * 10)
 
-        # 取整到10元
+        # 先夹紧边界，再取整到10元（边界也取整以杜绝夹紧后跳出）
+        p_min = math.ceil(p_min / 10) * 10
+        p_max = math.floor(p_max / 10) * 10
+        if p_min > p_max:
+            p_min = p_max
+        p_opt = max(p_min, min(p_max, p_opt))
         p_opt = round(p_opt / 10) * 10
         p_opt = max(p_min, min(p_max, p_opt))
 
@@ -385,6 +391,19 @@ class DynamicPricingOptimizer:
         if abs(p_opt / p0 - 1) < 0.03 and max_mult > 1.0:
             p_opt = p0
             q_opt = min(q0, cap)
+
+        # 档位级收入影响约束：该档收入变化 < ¥500 或 < 1% → 不调
+        if p_opt != p0:
+            q_test = q0 * (p_opt / p0) ** (-eps) if abs(eps) >= 0.001 else q0
+            q_test = min(q_test, cap)
+            q_test = max(q_test, 0)
+            if p_opt < p0:
+                q_test = max(q_test, q0)
+            rev_old = p0 * min(q0, cap)
+            rev_new = p_opt * q_test
+            if abs(rev_new - rev_old) < max(rev_old * 0.01, 500):
+                p_opt = p0
+                q_opt = min(q0, cap)
 
         # 计算最优价下的需求
         if abs(eps) < 0.001:
