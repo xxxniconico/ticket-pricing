@@ -80,7 +80,7 @@ st.markdown("""
                  padding: 3px 10px; margin: 1px 0; background: rgba(255,255,255,0.015);
                  border-radius: 4px; border-left: 2px solid rgba(255,255,255,0.08); }
     .rule-line .val { color: #f7f8f8; font-weight: 510; }
-    .rule-line .mul { color: #51cf66; } .rule-line .mul-neg { color: #ff6b6b; }
+    .rule-line .mul { color: #ff6b6b; } .rule-line .mul-neg { color: #51cf66; }
     .price-tag { display: inline-block; text-align: center; padding: 5px 2px;
                  background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06);
                  border-radius: 6px; width: 100%; }
@@ -92,9 +92,9 @@ st.markdown("""
     .season-row { font-size: 0.76rem; padding: 3px 8px; margin: 1px 0; border-radius: 3px;
                   display: flex; justify-content: space-between; font-family: 'JetBrains Mono', ui-monospace, monospace; }
     .season-row.done { background: rgba(255,255,255,0.015); }
-    .W { color: #51cf66; font-weight: 590; } .D { color: #f0c040; font-weight: 590; }
-    .L { color: #ff6b6b; font-weight: 590; } .pts { color: #c2ef4e; font-weight: 510; }
-    .rank-up { color: #51cf66; } .rank-down { color: #ff6b6b; } .muted { color: #4a4d55; }
+    .W { color: #ff6b6b; font-weight: 590; } .D { color: #f0c040; font-weight: 590; }
+    .L { color: #51cf66; font-weight: 590; } .pts { color: #c2ef4e; font-weight: 510; }
+    .rank-up { color: #ff6b6b; } .rank-down { color: #51cf66; } .muted { color: #4a4d55; }
     ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 2px; }
 </style>
 """, unsafe_allow_html=True)
@@ -285,14 +285,14 @@ def render_home_card(match):
                 if not has_win:
                     opp_r = standings.get(m["round"],{}).get(m["opponent"],8)
                     if opp_r >= 12:
-                        impact = f'<span style="color:#ff6b6b;font-size:0.65rem"> → lost_bottom (排名#{opp_r}≥12)</span>'
+                        impact = f'<span style="color:#51cf66;font-size:0.65rem"> → lost_bottom (排名#{opp_r}≥12)</span>'
                     else:
-                        impact = f'<span style="color:#ff6b6b;font-size:0.65rem"> → heavy_home_loss (净负{abs(m["hg"]-m["ag"])}球)</span>'
+                        impact = f'<span style="color:#51cf66;font-size:0.65rem"> → heavy_home_loss (净负{abs(m["hg"]-m["ag"])}球)</span>'
             elif not m["is_home"] and res!="W":
                 away_ct = sum(1 for lm in last3 if not lm["is_home"])
                 away_wins = sum(1 for lm in last3 if not lm["is_home"] and lm["ag"]>lm["hg"])
                 if away_ct>=2 and away_wins==0:
-                    impact = f'<span style="color:#ff6b6b;font-size:0.65rem"> → away_winless ({away_ct}客{away_wins}胜)</span>'
+                    impact = f'<span style="color:#51cf66;font-size:0.65rem"> → away_winless ({away_ct}客{away_wins}胜)</span>'
             rec_html += (f'<div style="font-family:JetBrains Mono,ui-monospace;font-size:0.75rem;padding:2px 8px;color:#8a8f98">'
                         f'{m["date"]} {vs} {m["opponent"]} '
                         f'<span class="{cls}">{sc} {res}</span>{impact}'
@@ -361,9 +361,9 @@ def render_home_card(match):
     for i, (name, desc, m_val, detail) in enumerate(rules_triggered):
         if i>0: running *= m_val
         is_up = m_val > 1.0; is_down = m_val < 1.0 and i > 0
-        clr = "#51cf66" if is_up else "#ff6b6b" if is_down else "#c2ef4e"
+        clr = "#ff6b6b" if is_up else "#51cf66" if is_down else "#c2ef4e"
         mul_str = f"<span style='color:{clr};font-weight:590'>×{m_val:.2f}</span>" if i>0 else ""
-        bar_color = "#51cf66" if running > base else "#ff6b6b"
+        bar_color = "#ff6b6b" if running > base else "#51cf66"
         st.markdown(f"""<div style="margin:2px 0;padding:4px 10px;background:rgba(255,255,255,0.015);border-left:2px solid {clr};border-radius:0 4px 4px 0">
         <div style="display:flex;justify-content:space-between;align-items:center">
           <span style="font-size:0.82rem;font-weight:510;color:#f7f8f8">{name} {mul_str}</span>
@@ -379,7 +379,7 @@ def render_home_card(match):
       <span style="font-size:1.1rem;font-weight:590;color:#f7f8f8">预测 {pred:,.0f} 张</span>
     </div>
     <div style="margin-top:4px;height:3px;background:rgba(255,255,255,0.06);border-radius:2px">
-      <div style="width:{bar_pct}%;height:3px;background:#c2ef4e;border-radius:2px"></div>
+      <div style="width:{bar_pct}%;height:3px;background:#ff6b6b;border-radius:2px"></div>
     </div>
     <div style="font-size:0.6rem;color:#62666d;margin-top:2px">惩罚底线 ×0.35 · 上限 20,000张</div>
     </div>""", unsafe_allow_html=True)
@@ -441,7 +441,7 @@ def render_home_card(match):
                 strategy = f"→ 线性调整·{ratio:.0%}基准"
         else: strategy = "—"
         dp_color = "#ff6b6b" if dp > 0.5 else "#51cf66" if dp < -0.5 else "#8a8f98"
-        dq_color = "#51cf66" if dq > 0 else "#ff6b6b" if dq < -0.5 else "#8a8f98"
+        dq_color = "#ff6b6b" if dq > 0 else "#51cf66" if dq < -0.5 else "#8a8f98"
         dp_str = f'<span style="color:{dp_color}">{dp:+.0f}%</span>' if abs(dp) > 1 else "—"
         dq_str = f'<span style="color:{dq_color}">{dq:+.1f}%</span>' if abs(dq) > 0.5 else "—"
         rows_html += (
@@ -459,8 +459,8 @@ def render_home_card(match):
     total_dq = (r.total_attendance/r.base_attendance-1)*100 if r.base_attendance>0 else 0
     base_rev = r.base_revenue; opt_rev = r.total_revenue
     rev_delta = opt_rev - base_rev
-    rev_color = "#51cf66" if rev_delta > 0 else "#ff6b6b"
-    att_color = "#51cf66" if total_dq > 0 else "#ff6b6b"
+    rev_color = "#ff6b6b" if rev_delta > 0 else "#51cf66"
+    att_color = "#ff6b6b" if total_dq > 0 else "#51cf66"
     rows_html += (
         f'<tr style="border-top:1px solid rgba(255,255,255,0.08);font-weight:510">'
         f'<td colspan="4" style="color:#8a8f98">合计</td><td style="color:#f7f8f8">—</td><td>—</td>'
@@ -670,7 +670,7 @@ with left:
                              f'<td>{tr.predicted_qty:,.0f}</td><td>{actual_z:,}</td>'
                              f'<td>¥{tr.revenue/10000:.2f}万</td><td>¥{actual_rev/10000:.2f}万</td></tr>')
             rev_delta = total_scenario - total_fixed
-            rev_color = "#51cf66" if rev_delta > 0 else "#ff6b6b"
+            rev_color = "#ff6b6b" if rev_delta > 0 else "#51cf66"
             rev_sign = "+" if rev_delta > 0 else ""
             rev_delta_str = f'<span style="color:{rev_color}">{rev_sign}¥{rev_delta/10000:.1f}万</span>'
             rows_html += (f'<tr style="border-top:1px solid rgba(255,255,255,0.08);font-weight:510">'
@@ -679,7 +679,7 @@ with left:
                          f'<td style="color:#f7f8f8">{total_actual_qty:,}</td>'
                          f'<td style="color:#f7f8f8">¥{total_scenario/10000:.1f}万</td>'
                          f'<td style="color:#f7f8f8">¥{total_fixed/10000:.1f}万</td></tr>')
-            st.markdown(f'<table class="history-table"><thead><tr><th>档位</th><th>基准价</th><th>优化价</th><th>预测量</th><th>实际量</th><th>预测收入</th><th>实际收入</th></tr></thead><tbody>{rows_html}</tbody></table>', unsafe_allow_html=True)
+            st.markdown(f'<table class="history-table"><thead><tr><th>档位</th><th>基准价</th><th>优化价</th><th>场景量</th><th>实际量</th><th>场景收入</th><th>实际收入</th></tr></thead><tbody>{rows_html}</tbody></table>', unsafe_allow_html=True)
             st.caption(f"实际收入 ¥{total_fixed/10000:.1f}万 | 情景收入 ¥{total_scenario/10000:.1f}万 | 增量 {rev_delta_str}（未验证）", unsafe_allow_html=True)
 
 with right:

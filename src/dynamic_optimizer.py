@@ -105,10 +105,17 @@ class DynamicPricingOptimizer:
         # Zone tier capacities (estimated from section counts)
         self.capacities = self._estimate_capacities()
 
-        # Zone tier volume shares (from 2025 B-tier data, used for initial allocation)
-        self.volume_shares = {
-            "T1": 0.337, "T2": 0.217, "T3": 0.308,
-            "T4": 0.027, "T5": 0.104, "T6": 0.008,
+        # Zone tier volume shares — 动态，基于 total_predicted 线性回归
+        # 拟合自 2024-2025 全部主场数据（R²: T1=0.91, T2=0.80, T3=0.64）
+        # T1 share 随总上座↓（穷游党主导低上座场次）
+        # T2 share 随总上座↑（买家升级）
+        self._share_coeffs = {
+            "T1": (-0.000030, 0.641),  # share = coeff[0]*total + coeff[1]
+            "T2": ( 0.000020, 0.014),
+            "T3": ( 0.000006, 0.244),
+            "T4": ( 0.000003,-0.004),
+            "T5": ( 0.000001, 0.098),
+            "T6": ( 0.000000, 0.007),
         }
 
         # Reference price for attendance-to-revenue conversion (per-tier, not global)
@@ -154,10 +161,17 @@ class DynamicPricingOptimizer:
         # 3. 获取该级别的基准价
         base_prices = self.price_matrix[opp_level]
 
-        # 4. 按历史份额分配到各zone tier（作为基准需求）
+        # 4. 动态份额分配（T1↓随总上座 T2↑随总上座，归一化）
+        raw_shares = {}
+        for zt in ZONE_TIERS:
+            a, b = self._share_coeffs[zt]
+            raw_shares[zt] = max(0.005, a * predicted_total + b)
+        total_raw = sum(raw_shares.values())
+        volume_shares = {zt: s/total_raw for zt, s in raw_shares.items()}
+
         base_demand = {}
         for zt in ZONE_TIERS:
-            base_demand[zt] = predicted_total * self.volume_shares[zt]
+            base_demand[zt] = predicted_total * volume_shares[zt]
 
         # 5. 逐档优化
         tier_results = {}
@@ -184,8 +198,14 @@ class DynamicPricingOptimizer:
                 if zt in tier_gap:
                     lower_zt = tier_gap[zt]
                     lower_price = tier_results[lower_zt].optimal_price if lower_zt in tier_results else None
+
+                # T3→T4 间距：T3 不能太接近 T4，至少留 18% 间距
+                upper_bound_hint = None
+                if zt == "T3" and "T4" in base_prices:
+                    upper_bound_hint = base_prices["T4"] / 1.18
+
                 p_opt, q_opt = self._optimize_tier(
-                    p0, q0, eps, cap, opp_level, zt, lower_price, rw, aw
+                    p0, q0, eps, cap, opp_level, zt, lower_price, rw, aw, upper_bound_hint
                 )
 
             rev = p_opt * q_opt
@@ -245,7 +265,7 @@ class DynamicPricingOptimizer:
     def _optimize_tier(
         self, p0: float, q0: float, eps: float, cap: float,
         opp_level: str, zt: str, lower_price: float | None = None,
-        rw: float = 0.6, aw: float = 0.4
+        rw: float = 0.6, aw: float = 0.4, upper_bound_hint: float | None = None
     ) -> tuple[float, float]:
         """对单个zone tier搜索最优价格（动态权重）。"""
         # Zone差异化边界
@@ -258,14 +278,19 @@ class DynamicPricingOptimizer:
         if lower_price is not None:
             p_min = max(p_min, lower_price * 1.10)
 
+        # T3→T4 间距：T3 不能太接近 T4
+        if upper_bound_hint is not None:
+            p_max = min(p_max, upper_bound_hint)
+
         # 附加约束：不超过上一级对手的基准价
-        level_order = {"C": "B", "B": "A", "A": "S", "S": None}
+        level_order = {"S_Cminus": "S_C", "S_C": "S_B", "S_B": "S_A", "S_A": "S_S", "S_S": None,
+                       "S_Aminus": "S_A"}
         upper_level = level_order.get(opp_level)
         if upper_level and upper_level in self.price_matrix:
             upper_price = self.price_matrix[upper_level].get(zt, p_max)
             p_max = min(p_max, upper_price)
         if p_min > p_max:
-            p_min = p_max - 10  # 保证至少¥10搜索空间
+            p_min = p_max - 10
 
         # 所有档位参与优化（含低弹性档位）
         def objective(p):
@@ -317,11 +342,17 @@ class DynamicPricingOptimizer:
                 p_opt = min(p_opt, p0)  # 不涨
 
             elif tier_role == 'revenue':
-                # 高价保收：弱队微涨，强队大涨
+                # 高价保收：涨幅与弹性挂钩（低弹不猛涨）
+                if eps >= 0.30:
+                    cap_up = 1.20  # 有弹性可涨20%
+                elif eps >= 0.20:
+                    cap_up = 1.15  # 中等弹性涨15%
+                else:
+                    cap_up = 1.12  # 低弹性仅涨12%
                 if rw >= 0.7:
-                    target = min(p0 * 1.20, p_max)
+                    target = min(p0 * cap_up, p_max)
                 elif rw >= 0.4:
-                    target = min(p0 * 1.10, p_max)
+                    target = min(p0 * min(cap_up - 0.05, 1.10), p_max)
                 else:
                     target = p0  # 弱队不涨
                 p_opt = max(target, p0)  # 不降
