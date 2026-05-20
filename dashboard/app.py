@@ -110,9 +110,13 @@ DEDUCTIONS = {
 @st.cache_data(ttl=3600)
 def load_csl_data():
     import requests
-    resp = requests.get(CSL_JSON_URL, timeout=20)
-    resp.raise_for_status()
-    data = resp.json()
+    try:
+        resp = requests.get(CSL_JSON_URL, timeout=60)
+        resp.raise_for_status()
+        data = resp.json()
+    except Exception:
+        st.error("无法加载比赛数据，请稍后刷新")
+        return [], {}, {}
     raw = data.get("raw_data", data)
 
     deductions = DEDUCTIONS
@@ -545,6 +549,9 @@ def _get_zone_qtys(m):
     return {}
 
 guoan_matches, standings, deductions = load_csl_data()
+if not guoan_matches:
+    st.warning("数据加载失败，请刷新页面重试")
+    st.stop()
 price_matrix = build_price_matrix()
 elasticity_matrix = build_elasticity_matrix()
 optimizer = get_optimizer()
