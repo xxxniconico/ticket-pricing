@@ -128,15 +128,24 @@ def load_csl_data():
         all_raw.extend(lg["matches"])
     all_raw.sort(key=lambda x: x["date"])
 
+    def _safe_score(val):
+        if val is None:
+            return None
+        try:
+            return int(val)
+        except (TypeError, ValueError):
+            return None
+
     matches = []
     for i, m in enumerate(all_raw):
         s = m.get("score", {})
-        ok = isinstance(s, dict) and s.get("home") is not None
+        hg = _safe_score(s.get("home")) if isinstance(s, dict) else None
+        ag = _safe_score(s.get("away")) if isinstance(s, dict) else None
+        ok = hg is not None and ag is not None
         rd_num = i // 8 + 1
         matches.append({"date": m["date"][:10], "round": f"第{rd_num}轮",
                        "home": m["home_club"], "away": m["away_club"],
-                       "hg": int(s["home"]) if ok else None,
-                       "ag": int(s["away"]) if ok else None, "completed": ok})
+                       "hg": hg, "ag": ag, "completed": ok})
     standings = _build_standings(matches, deductions)
     guoan = []
     for m in matches:
@@ -144,6 +153,13 @@ def load_csl_data():
             is_home = "国安" in m["home"]
             guoan.append({**m, "is_home": is_home, "opponent": m["away"] if is_home else m["home"]})
     return guoan, standings, deductions
+
+def _round_num(rnd: str) -> int:
+    try:
+        return int(str(rnd).replace("第", "").replace("轮", ""))
+    except ValueError:
+        return 0
+
 
 def _build_standings(matches, deductions):
     ts = defaultdict(lambda: {"p":0,"w":0,"d":0,"l":0,"gf":0,"ga":0,"pts":0})
@@ -160,7 +176,6 @@ def _build_standings(matches, deductions):
         rounds[rnd] = {t: i+1 for i,(t,*_) in enumerate(rank)}
     return rounds
 
-@st.cache_resource
 def get_optimizer():
     return DynamicPricingOptimizer(revenue_weight=0.6)
 
@@ -560,8 +575,8 @@ completed = [m for m in guoan_matches if m["completed"]]
 home_done = [m for m in completed if m["is_home"]]
 total_pts = sum(3 if (m["is_home"] and m["hg"]>m["ag"]) or (not m["is_home"] and m["ag"]>m["hg"]) else 1 if m["hg"]==m["ag"] else 0 for m in completed)
 guoan_ded = deductions.get("北京国安",0)
-latest_rnd = max((r for r in standings.keys()), key=lambda r: int(r.replace("第","").replace("轮","")), default=None)
-guoan_rank = standings.get(latest_rnd,{}).get("北京国安","?")
+latest_rnd = max(standings.keys(), key=_round_num, default=None) if standings else None
+guoan_rank = standings.get(latest_rnd, {}).get("北京国安", "?") if latest_rnd else "?"
 
 next_match = next((m for m in guoan_matches if not m["completed"]), None)
 next_home = next((m for m in guoan_matches if not m["completed"] and m["is_home"]), None)

@@ -360,6 +360,9 @@ class DynamicPricingOptimizer:
             elif tier_role == 'elastic':
                 # 弹性区：优化器驱动 + 软上限（上限取整以杜绝取整绕过）
                 soft_cap = 1.15 if rw >= 0.7 else (1.08 if rw >= 0.4 else 1.05)
+                if zt == 'T4':
+                    # 四层中间弹性跟随，涨幅温和（约8.7%），避免 rw 高时顶到 1.15
+                    soft_cap = min(soft_cap, 1.087)
                 p_opt = min(p_opt, round(p0 * soft_cap / 10) * 10)
 
         # 取整到10元
