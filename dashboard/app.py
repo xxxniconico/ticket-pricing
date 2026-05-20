@@ -23,7 +23,6 @@ st.set_page_config(page_title="国安票务", page_icon="⚽", layout="wide")
 PT_LABELS = {"S_S":"S·德比定价","S_A":"A·标准定价","S_Aminus":"A·降价","S_B":"B·标准定价","S_C":"C·标准定价","S_Cminus":"C·降价"}
 
 st.markdown("""
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;510;590&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
     .stApp { background: #0c0d0f; }
     section[data-testid="stSidebar"] { display: none; }
