@@ -99,21 +99,30 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-CSL_DATA = Path("/mnt/c/Users/xxxsu/.openclaw/workspace/csl_project_v2/data")
-DED_PATH = Path("/mnt/c/Users/xxxsu/.openclaw/workspace/csl_project_v2/config/csl_cfa_2026_official_deductions.json")
+CSL_JSON_URL = "https://xxxniconico.github.io/csl-dashboard-2026/dashboard_embed.json"
+DED_URL = "https://raw.githubusercontent.com/xxxniconico/csl-dashboard-2026/main/config/csl_cfa_2026_official_deductions.json"
 
 @st.cache_data(ttl=3600)
 def load_csl_data():
-    with open(CSL_DATA / "csl_final_production_ready.json") as f: prod = json.load(f)
-    with open(DED_PATH) as f: ded_config = json.load(f)
+    import requests
+    resp = requests.get(CSL_JSON_URL, timeout=20)
+    resp.raise_for_status()
+    data = resp.json()
+    raw = data.get("raw_data", data)
+
+    resp2 = requests.get(DED_URL, timeout=10)
+    resp2.raise_for_status()
+    ded_config = resp2.json()
     deductions = ded_config.get("deductions_by_club", {})
+
     matches = []
-    for lg in prod.get("leagues", []):
+    for lg in raw.get("leagues", []):
         if lg.get("name") != "中超联赛": continue
         for m in lg["matches"]:
             s = m.get("score", {})
             ok = isinstance(s, dict) and s.get("home") is not None
-            matches.append({"date": m["date"][:10], "round": m.get("round", "?"),
+            rd = m.get("round") or m.get("round_name") or "?"
+            matches.append({"date": m["date"][:10], "round": rd,
                            "home": m["home_club"], "away": m["away_club"],
                            "hg": int(s["home"]) if ok else None,
                            "ag": int(s["away"]) if ok else None, "completed": ok})
