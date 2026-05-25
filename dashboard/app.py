@@ -14,7 +14,7 @@ matplotlib.rcParams["axes.unicode_minus"] = False
 ROOT = Path(__file__).resolve().parent.parent  # ticket-pricing/
 sys.path.insert(0, str(ROOT))
 
-from src.rule_engine import predict_calibrated as rule_predict, TIER_BASE, MULTIPLIERS, PENALTY_FLOOR
+from src.rule_engine import predict_calibrated as rule_predict, TIER_BASE, MULTIPLIERS, PENALTY_FLOOR, get_calibration
 from src.dynamic_optimizer import DynamicPricingOptimizer
 # live_calibrate removed — no pre-sale data available
 from src.pricing_v5 import ZONE_TIERS, ZONE_SECTIONS, classify_opponent, get_pricing_tier, build_price_matrix, build_elasticity_matrix, get_zone_bounds
@@ -398,7 +398,12 @@ def render_home_card(match):
     for name, desc, m_val, detail in rules_triggered[1:]:
         final_mult *= m_val
     final_mult = max(final_mult, PENALTY_FLOOR)
-    pred = min(base * final_mult, 20000)
+    raw_pred = min(base * final_mult, 20000)
+
+    # EMA 校准（与 rule_engine.predict_calibrated 同步）
+    _cal = get_calibration()
+    _cal_factor = _cal["tier"].get(tier, 1.0)
+    pred = raw_pred * _cal_factor
 
     if len(rules_triggered)==1:
         rules_triggered.append(("—", "无触发规则", 1.0, "无特殊情境触发，直接使用基值预测"))
@@ -418,10 +423,11 @@ def render_home_card(match):
         <div style="font-size:0.65rem;color:#8a8f98;margin-top:1px;line-height:1.4">{detail}</div>
         </div>""", unsafe_allow_html=True)
 
-    bar_pct = min(running / 20000 * 100, 100)
+    bar_pct = min(pred / 20000 * 100, 100)
+    _cal_note = f" · EMA校准 ×{_cal_factor:.4f}" if abs(_cal_factor - 1.0) > 0.001 else ""
     st.markdown(f"""<div style="padding:8px 12px;margin-top:6px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:6px">
     <div style="display:flex;justify-content:space-between;align-items:center">
-      <span style="font-size:0.75rem;color:#62666d">累计乘数 <span style="color:#f7f8f8;font-weight:590">{final_mult:.3f}</span> × 基值 {base:,.0f} =</span>
+      <span style="font-size:0.75rem;color:#62666d">累计乘数 <span style="color:#f7f8f8;font-weight:590">{final_mult:.3f}</span> × 基值 {base:,.0f}{_cal_note} =</span>
       <span style="font-size:1.1rem;font-weight:590;color:#f7f8f8">预测 {pred:,.0f} 张</span>
     </div>
     <div style="margin-top:4px;height:3px;background:rgba(255,255,255,0.06);border-radius:2px">
