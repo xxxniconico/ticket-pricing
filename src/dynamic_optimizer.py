@@ -24,31 +24,6 @@ from scipy.optimize import minimize
 import math
 
 from src.rule_engine import predict_calibrated as predict_attendance
-from src.classify import classify_opponent_tier as _classify_v3
-
-# ── 2025学习基值（MAE最优，2026-05-19更新）──
-# 硬编码基值(MAE=1377) → 学习基值(MAE=1292, MAPE=17.9%)
-_LEARNED_BASES = {"S": 12734, "A": 12010, "B": 8882, "C1": 10616, "C2": 4795}
-
-def predict_learned(opponent: str, **context) -> float:
-    """使用2025学习基值的规则引擎预测（替代硬编码基值）。"""
-    tier = _classify_v3(opponent)
-    base = _LEARNED_BASES.get(tier, 9000)
-    # Same multiplier logic as rule_engine.predict()
-    mult = 1.0
-    derby = context.get('derby', False)
-    if derby and tier != 'S':
-        mult *= 1.12 if tier == 'B' else 1.25
-    if context.get('lost_bottom'): mult *= 0.55
-    elif context.get('heavy_home_loss'): mult *= 0.70
-    if context.get('away_winless'): mult *= 0.78
-    if context.get('saturday'): mult *= 1.12
-    if context.get('late_season'): mult *= 0.60
-    if context.get('season_opener'): mult *= 1.12
-    if context.get('midweek'): mult *= 0.85
-    if context.get('short_rest'): mult *= 0.82
-    mult = max(mult, 0.35)
-    return min(base * mult, 20000.0)
 from src.pricing_v5 import (
     ZONE_TIERS, ZONE_SECTIONS,
     classify_opponent, get_pricing_tier, build_price_matrix, build_elasticity_matrix,
@@ -80,6 +55,7 @@ class OptimizeResult:
     objective_value: float      # 目标函数值
     revenue_weight: float = 0.6  # 本场收入权重
     attendance_weight: float = 0.4  # 本场上座权重
+    calibration: dict | None = None  # 实时校准信息（LiveCalibrator 填充）
     tiers: dict[str, TierResult] = field(default_factory=dict)
     recommended_prices: dict[str, float] = field(default_factory=dict)
 
@@ -131,7 +107,7 @@ class DynamicPricingOptimizer:
         return {zt: int(v * 1.1) for zt, v in peak.items()}
 
     def optimize(self, opponent: str, match_date: str | None = None,
-                 min_revenue: float = 0.0, **context) -> OptimizeResult:
+                 min_revenue: float = 0.0, strategy: str = 'auto', **context) -> OptimizeResult:
         """
         为一场比赛优化6档定价。
 
@@ -139,9 +115,8 @@ class DynamicPricingOptimizer:
             opponent: 对手名称
             match_date: 比赛日期（用于情境检测）
             min_revenue: 收入底线（默认0=不设限）。低于此值时回退到基准价。
+            strategy: 'auto'(默认), 'balanced'(平衡: T1-T3降价拉量, T4-T6涨价补收入)
             **context: 传给 rule_engine.predict() 的情境参数
-              (derby, lost_bottom, heavy_home_loss, away_winless,
-               saturday, late_season, season_opener, short_rest, midweek)
         """
         # 1. 规则引擎预测总量（硬编码基值，MAE=549）
         predicted_total = predict_attendance(opponent, **context)
@@ -155,6 +130,12 @@ class DynamicPricingOptimizer:
         else:
             rw = 0.20 + 0.60 * (predicted_total - 7500) / 3500  # 线性过渡
         aw = 1.0 - rw
+
+        # 策略模式：auto时低预测场自动切换平衡策略（T1-T3降价拉量, T4-T6涨价补收入）
+        if strategy == 'balanced' or (strategy == 'auto' and rw <= 0.3):
+            strategy_mode = 'balanced'
+        else:
+            strategy_mode = 'revenue'
 
         # 2. 对手定价级别（含derby提升/A-/C-降价）
         opp_level = get_pricing_tier(opponent)
@@ -206,7 +187,7 @@ class DynamicPricingOptimizer:
                     upper_bound_hint = base_prices["T4"] / 1.18
 
                 p_opt, q_opt = self._optimize_tier(
-                    p0, q0, eps, cap, opp_level, zt, lower_price, rw, aw, upper_bound_hint
+                    p0, q0, eps, cap, opp_level, zt, lower_price, rw, aw, upper_bound_hint, strategy_mode
                 )
 
             rev = p_opt * q_opt
@@ -226,7 +207,42 @@ class DynamicPricingOptimizer:
             base_revenue += rev_base
             base_attendance += min(q0, cap)
 
-        # 6. 收入影响约束：增收/减收不足 ¥5,000 或 0.5% → 不调，维持价格稳定形象
+        # 6. 平衡策略跨档补贴检查：收入低于基准90%时，T4-T6涨价补偿
+        if strategy_mode == 'balanced' and total_revenue < base_revenue * 0.90:
+            shortfall = base_revenue * 0.90 - total_revenue
+            revenue_tiers = ['T4', 'T5', 'T6']
+            rev_sum = sum(tier_results[zt].revenue for zt in revenue_tiers)
+            if rev_sum > 0:
+                tier_eps = {zt: self.elasticity[opp_level][zt] for zt in revenue_tiers}
+                for zt in revenue_tiers:
+                    tr = tier_results[zt]
+                    if tr.is_frozen:
+                        continue
+                    share = tr.revenue / rev_sum
+                    extra_needed = shortfall * share
+                    eps_z = tier_eps[zt]
+                    for _ in range(10):
+                        if extra_needed <= 0:
+                            break
+                        p_try = round(tr.optimal_price * 1.05 / 10) * 10
+                        if p_try > tr.base_price * 1.25:
+                            p_try = round(tr.base_price * 1.25 / 10) * 10
+                        if p_try <= tr.optimal_price:
+                            break
+                        q_try = tr.base_qty * (p_try / tr.base_price) ** (-eps_z) if abs(eps_z) >= 0.001 else tr.base_qty
+                        q_try = min(q_try, self.capacities[zt])
+                        rev_try = p_try * q_try
+                        extra = rev_try - tr.revenue
+                        if extra > 0:
+                            tr.optimal_price = p_try
+                            tr.predicted_qty = q_try
+                            tr.revenue = rev_try
+                            total_revenue += extra
+                            extra_needed -= extra
+                        else:
+                            break
+
+        # 7. 收入影响约束：增收/减收不足 ¥5,000 或 0.5% → 不调，维持价格稳定形象
         rev_impact = total_revenue - base_revenue
         if abs(rev_impact) < max(base_revenue * 0.005, 5000):
             for zt in ZONE_TIERS:
@@ -278,7 +294,8 @@ class DynamicPricingOptimizer:
     def _optimize_tier(
         self, p0: float, q0: float, eps: float, cap: float,
         opp_level: str, zt: str, lower_price: float | None = None,
-        rw: float = 0.6, aw: float = 0.4, upper_bound_hint: float | None = None
+        rw: float = 0.6, aw: float = 0.4, upper_bound_hint: float | None = None,
+        strategy_mode: str = 'revenue'
     ) -> tuple[float, float]:
         """对单个zone tier搜索最优价格（动态权重）。"""
         # Zone差异化边界
@@ -333,50 +350,72 @@ class DynamicPricingOptimizer:
 
         p_opt = float(np.clip(result.x[0], p_min, p_max))
 
-        # ── 分层组合策略：低价抢量、高价保收 ──
-        # T1=量价锚, T2=量价支撑, T3/T4=弹性区, T5/T6=收入锚
+        # ── 分层组合策略 ──
+        # revenue模式: T1/T2量价锚, T3/T4弹性区, T5/T6收入锚
+        # balanced模式: T1-T3降价拉量, T4-T6涨价补收入（跨档补贴）
         if not (min_mult == 1.0 and max_mult == 1.0):  # 非完全锁价
             tier_role = {
                 'T1': 'volume', 'T2': 'volume', 'T3': 'elastic',
                 'T4': 'elastic', 'T5': 'revenue', 'T6': 'revenue',
             }.get(zt, 'elastic')
 
-            if tier_role == 'volume':
-                # 量价锚：低价抢量（弱队大降，强队微降）
-                if rw <= 0.3:
-                    target = max(p0 * 0.80, p_min)
-                elif rw <= 0.6:
-                    target = max(p0 * 0.90, p_min)
-                else:
-                    target = p0  # 强队不降
-                # 保证收入不低于93%
-                rev_min = p0 * (0.93 ** (1.0 / max(1.0 - max(eps, 0.05), 0.01)))
-                p_opt = max(target, rev_min)
-                p_opt = min(p_opt, p0)  # 不涨
+            if strategy_mode == 'balanced':
+                # 平衡策略：T1-T3激进降价抢量，T4-T6涨价补收入
+                if tier_role == 'volume':
+                    # T1,T2: 强制降到底（min_mult），不设收入底线
+                    p_opt = max(p_min, p0 * 0.80)  # 激进降价
+                    p_opt = min(p_opt, p0)          # 不涨
+                elif tier_role == 'elastic' and zt == 'T3':
+                    # T3: 弹性降价到85%
+                    p_opt = max(p_min, p0 * 0.85)
+                    p_opt = min(p_opt, p0)
+                elif tier_role == 'elastic' and zt == 'T4':
+                    # T4: 允许适度涨价补贴
+                    p_opt = min(p0 * 1.10, p_max)
+                    p_opt = max(p_opt, p0)  # 不降
+                elif tier_role == 'revenue':
+                    # T5,T6: 激进涨价补收入
+                    if eps >= 0.30:
+                        cap_up = 1.20
+                    elif eps >= 0.20:
+                        cap_up = 1.15
+                    else:
+                        cap_up = 1.12
+                    p_opt = min(p0 * cap_up, p_max)
+                    p_opt = max(p_opt, p0)  # 不降
+            else:
+                # revenue模式（默认）：低预测降量价、高预测涨收入
+                if tier_role == 'volume':
+                    if rw <= 0.3:
+                        target = max(p0 * 0.80, p_min)
+                    elif rw <= 0.6:
+                        target = max(p0 * 0.90, p_min)
+                    else:
+                        target = p0  # 强队不降
+                    rev_min = p0 * (0.93 ** (1.0 / max(1.0 - max(eps, 0.05), 0.01)))
+                    p_opt = max(target, rev_min)
+                    p_opt = min(p_opt, p0)  # 不涨
 
-            elif tier_role == 'revenue':
-                # 高价保收：涨幅与弹性挂钩（低弹不猛涨）
-                if eps >= 0.30:
-                    cap_up = 1.20  # 有弹性可涨20%
-                elif eps >= 0.20:
-                    cap_up = 1.15  # 中等弹性涨15%
-                else:
-                    cap_up = 1.12  # 低弹性仅涨12%
-                if rw >= 0.7:
-                    target = min(p0 * cap_up, p_max)
-                elif rw >= 0.4:
-                    target = min(p0 * min(cap_up - 0.05, 1.10), p_max)
-                else:
-                    target = p0  # 弱队不涨
-                p_opt = max(target, p0)  # 不降
+                elif tier_role == 'revenue':
+                    if eps >= 0.30:
+                        cap_up = 1.20
+                    elif eps >= 0.20:
+                        cap_up = 1.15
+                    else:
+                        cap_up = 1.12
+                    if rw >= 0.7:
+                        target = min(p0 * cap_up, p_max)
+                    elif rw >= 0.4:
+                        target = min(p0 * min(cap_up - 0.05, 1.10), p_max)
+                    else:
+                        target = p0  # 弱队不涨
+                    p_opt = max(target, p0)  # 不降
 
-            elif tier_role == 'elastic':
-                # 弹性区：优化器驱动 + 软上限（上限取整以杜绝取整绕过）
-                soft_cap = 1.15 if rw >= 0.7 else (1.08 if rw >= 0.4 else 1.05)
-                if zt == 'T4':
-                    # 四层中间弹性跟随，涨幅温和（约8.7%），避免 rw 高时顶到 1.15
-                    soft_cap = min(soft_cap, 1.087)
-                p_opt = min(p_opt, round(p0 * soft_cap / 10) * 10)
+                elif tier_role == 'elastic':
+                    soft_cap = 1.15 if rw >= 0.7 else (1.08 if rw >= 0.4 else 1.05)
+                    if zt == 'T4':
+                        soft_cap = min(soft_cap, 1.087)
+                    p_opt = min(p_opt, round(p0 * soft_cap / 10) * 10)
 
         # 先夹紧边界，再取整到10元（边界也取整以杜绝夹紧后跳出）
         p_min = math.ceil(p_min / 10) * 10
@@ -392,7 +431,9 @@ class DynamicPricingOptimizer:
             p_opt = p0
             q_opt = min(q0, cap)
 
-        # 档位级收入影响约束：该档收入变化 < ¥500 或 < 1% → 不调
+        # 档位级调价意义约束
+        # 涨价：该档增量收入 ≥ ¥10,000 才值得调（维持价格稳定形象）
+        # 降价：该档增量数量 ≥ 100 人才值得调（牺牲收入换量必须有实际效果）
         if p_opt != p0:
             q_test = q0 * (p_opt / p0) ** (-eps) if abs(eps) >= 0.001 else q0
             q_test = min(q_test, cap)
@@ -401,9 +442,16 @@ class DynamicPricingOptimizer:
                 q_test = max(q_test, q0)
             rev_old = p0 * min(q0, cap)
             rev_new = p_opt * q_test
-            if abs(rev_new - rev_old) < max(rev_old * 0.01, 500):
-                p_opt = p0
-                q_opt = min(q0, cap)
+            if p_opt > p0:
+                # 涨价：增量收入不足¥10,000 → 不调
+                if rev_new - rev_old < 10000:
+                    p_opt = p0
+                    q_opt = min(q0, cap)
+            elif p_opt < p0:
+                # 降价：增量数量不足100人 → 不调
+                if q_test - min(q0, cap) < 100:
+                    p_opt = p0
+                    q_opt = min(q0, cap)
 
         # 计算最优价下的需求
         if abs(eps) < 0.001:

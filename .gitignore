@@ -19,6 +19,10 @@ venv/
 .DS_Store
 Thumbs.db
 
+# Backup files
+*.bak
+*.bak2
+
 # Raw data (subdirectories too)
 data/raw/
 README.md

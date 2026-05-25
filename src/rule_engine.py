@@ -1,12 +1,17 @@
 """
-国安散票预测 — 规则引擎 V3（跨赛季泛化）
+国安散票预测 — 规则引擎 V4（4级KMeans聚类 + 数据修正）
 
-基值: 每赛季从上一季数据重算（当前: 2025基值）
-乘数: 2024→2025跨赛季网格搜索最优
-  derby=1.25, lost_bottom=0.55, heavy_home_loss=0.70,
-  away_winless=0.78, saturday=1.12, late_season=0.60, big_win_prev=0.82
+基值: KMeans K=4 聚类均值（2024-2025跨年, 仅2026在队）
+  S=15000(申花,时间加权) A=10600(成都/山东/武汉/云南/天津) B=8600 C=4900
+乘数: 4级网格搜索最优
+  derby=1.25 derby_B=1.15 lost_bottom=0.65 heavy_home_loss=0.85
+  away_winless=0.88 saturday=1.10 late_season=0.60
+  season_opener=1.15 short_rest=0.78 midweek=0.80
 惩罚底线: 0.35
-EMA α: 0.20
+EMA alpha: 0.20
+OPP_DEVIATION: 无（聚类已内化差异）
+
+更新: 天津从S降A(MAE 754→687)
 """
 from __future__ import annotations
 
@@ -20,21 +25,27 @@ import pandas as pd
 from src.classify import classify_opponent_tier, DERBY_RIVALS
 
 # ── 规则参数 ──
-# 基值: 2025赛季中位数（每年从上一季重算）
-TIER_BASE: dict[str, float] = {"S": 12200, "A": 10900, "B": 9500, "C1": 9000, "C2": 6500}
+# 基值: KMeans K=4 聚类均值（跨年, 仅2026在队）
+# S=15000: 申花三年趋势10383→13977→16827，加权近期(×1/2/3)=14544，上调至15000捕获上行通道
+TIER_BASE: dict[str, float] = {"S": 15000, "A": 10600, "B": 8600, "C": 4900}
 
-# 乘数: 跨赛季网格搜索最优（2024→2025公平测试）
+# ── 对手偏离因子 ──
+# V4: 无偏差——4级聚类已内化差异, 不需要队级修正
+OPP_DEVIATION: dict[str, float] = {}
+
+# 乘数: 4级网格搜索最优（2026六场）
 MULTIPLIERS = {
-    "derby": 1.25,            # 默认德比（B/C级全量）
-    "derby_B": 1.12,          # B级德比降档
-    "lost_bottom": 0.55,
-    "heavy_home_loss": 0.70,
-    "away_winless": 0.78,
-    "saturday": 1.12,
+    "derby": 1.25,
+    "derby_B": 1.15,
+    "lost_bottom": 0.65,
+    "heavy_home_loss": 0.85,
+    "away_winless": 0.88,
+    "saturday": 1.10,
     "late_season": 0.60,
-    "season_opener": 1.12,    # 赛季首个主场
-    "short_rest": 0.82,       # 距上一主场≤5天
-    "midweek": 0.85,          # 周二三四工作日
+    "season_opener": 1.15,
+    "short_rest": 0.78,
+    "midweek": 0.80,
+    "unbeaten_3": 1.08,       # 近3场不败 → 球迷乐观溢价（完整30轮验证+13%,N=9vs6）
 }
 
 # 惩罚底线: 负向乘数叠加不跌破此值
@@ -47,7 +58,7 @@ _ALPHA = 0.20
 
 def _load_cal() -> dict:
     if not os.path.exists(_CAL_FILE):
-        return {"tier": {"S": 1.0, "A": 1.0, "B": 1.0, "C1": 1.0, "C2": 1.0}, "history": []}
+        return {"tier": {"S": 1.0, "A": 1.0, "B": 1.0, "C": 1.0}, "history": []}
     with open(_CAL_FILE) as f:
         return json.load(f)
 
@@ -68,24 +79,35 @@ def predict(opponent: str,
             season_opener: bool = False,
             short_rest: bool = False,
             midweek: bool = False,
+            unbeaten_3: bool = False,
             ) -> float:
-    """规则引擎 V3 预测单场上座（未校准）。
+    """规则引擎 V4 预测单场上座（未校准）。
 
-    big_win_prev → 覆盖 lost_bottom（乐观压倒旧伤）。
-    B级derby → ×1.15（京津德比降档）。
+    S级derby不叠加——京津/京沪德比效应已内嵌在T1基值中。
+    lost_bottom对T1/A级用0.78（复仇效应），T3/C级用0.65（全罚）。
     """
     tier = classify_opponent_tier(opponent)
-    base = TIER_BASE.get(tier, 9000)
+    base = TIER_BASE.get(tier, 8100)
+    # 对手专属偏离度（V4: 无偏差）
+    dev = 1.0
+    for key, val in OPP_DEVIATION.items():
+        if key in opponent or opponent in key:
+            dev = val
+            break
+    base *= dev
     mult = 1.0
 
     if derby and tier != "S":
-        if tier == "B":
+        if tier == "A":
             mult *= MULTIPLIERS["derby_B"]
         else:
             mult *= MULTIPLIERS["derby"]
 
     if lost_bottom:
-        mult *= MULTIPLIERS["lost_bottom"]
+        if tier in ("S", "A"):
+            mult *= 0.78  # 输弱队后踢强队: 球迷更想看复仇, 惩罚减半
+        else:
+            mult *= MULTIPLIERS["lost_bottom"]
     elif heavy_home_loss:
         mult *= MULTIPLIERS["heavy_home_loss"]
 
@@ -102,6 +124,8 @@ def predict(opponent: str,
     # short_rest 不与 lost_bottom/heavy 叠加——避免双重惩罚
     if short_rest and not lost_bottom and not heavy_home_loss:
         mult *= MULTIPLIERS["short_rest"]
+    if unbeaten_3:
+        mult *= MULTIPLIERS["unbeaten_3"]
 
     if mult < PENALTY_FLOOR:
         mult = PENALTY_FLOOR
@@ -138,113 +162,25 @@ def update(match_id: str, opponent: str, actual: float, **match_context):
         f"cal_{tier}_after": new,
     })
     _save_cal(cal)
-    return new
 
 
 def get_calibration() -> dict:
-    return _load_cal()["tier"]
+    return _load_cal()
 
 
 def get_history() -> pd.DataFrame:
-    return pd.DataFrame(_load_cal().get("history", []))
+    cal = _load_cal()
+    return pd.DataFrame(cal.get("history", []))
 
 
 def detect_context_2026(match_date) -> dict:
-    """从CSL Dashboard检测2026比赛情境。"""
-    import urllib.request
-
-    md = pd.Timestamp(match_date)
-    result = {
-        "lost_bottom": False, "heavy_home_loss": False,
-        "away_winless": False, "returning_home": False,
-        "derby": False, "saturday": md.weekday() == 5,
-        "late_season": md.month >= 10, "big_win_prev": False,
-    }
-
-    try:
-        url = "https://xxxniconico.github.io/csl-dashboard-2026/dashboard_embed.json"
-        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-        with urllib.request.urlopen(req, timeout=20) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
-
-        guoan_matches = []
-        for lg in data.get("raw_data", {}).get("leagues", []):
-            for m in lg.get("matches", []):
-                h = m.get("home_club", ""); a = m.get("away_club", "")
-                if "国安" not in h and "国安" not in a: continue
-                score = m.get("score", {})
-                if not isinstance(score, dict) or score.get("home") is None: continue
-                dt = str(m.get("date", ""))[:10]
-                is_home = "国安" in h
-                hg = int(score["home"]); ag = int(score["away"])
-                guoan_matches.append({
-                    "date": dt, "is_home": is_home,
-                    "opponent": a if is_home else h,
-                    "gf": hg if is_home else ag, "ga": ag if is_home else hg,
-                })
-
-        df_g = pd.DataFrame(guoan_matches).sort_values("date")
-        df_g["md"] = pd.to_datetime(df_g["date"])
-        df_g["result"] = df_g.apply(
-            lambda r: "W" if r["gf"] > r["ga"] else "D" if r["gf"] == r["ga"] else "L", axis=1)
-
-        prev = df_g[df_g["md"] < md]; prev3 = prev.tail(3)
-
-        st_path = os.path.join(os.path.dirname(__file__), "..", "data", "processed",
-                               "standings_2026_by_round.parquet")
-        st26 = pd.read_parquet(st_path) if os.path.exists(st_path) else None
-        if st26 is not None:
-            st26["md"] = pd.to_datetime(st26["date"])
-
-        for _, r in prev3.iterrows():
-            if r["result"] != "L": continue
-            opp_rank = 8
-            if st26 is not None:
-                before = st26[st26["md"] <= pd.Timestamp(r["date"])]
-                if not before.empty:
-                    target = before["round"].max()
-                    row = st26[(st26["round"] == target) &
-                               (st26["team"].str.contains(str(r["opponent"])[:4], na=False))]
-                    if not row.empty: opp_rank = int(row["rank"].iloc[0])
-            if opp_rank >= 12: result["lost_bottom"] = True
-            if r["is_home"] and (r["ga"] - r["gf"]) >= 2: result["heavy_home_loss"] = True
-
-        away3 = prev3[prev3["is_home"] == False]
-        if len(away3) >= 2 and (away3["result"] == "W").sum() == 0:
-            result["away_winless"] = True
-        if len(prev3) > 0 and not prev3.iloc[-1]["is_home"]:
-            result["returning_home"] = True
-
-        # big_win_prev: 上场净胜3+
-        if len(prev) > 0 and prev.iloc[-1]["result"] == "W":
-            last = prev.iloc[-1]
-            if (last["gf"] - last["ga"]) >= 3:
-                result["big_win_prev"] = True
-
-    except Exception:
-        pass
-
-    return result
+    """从线上CSL Dashboard JSON检测2026上下文。（deprecated: 用src/csl_context.py）"""
+    from src.csl_context import load_csl_data, get_guoan_matches, detect_ctx
+    matches, standings, _ = load_csl_data()
+    guoan = get_guoan_matches(matches)
+    return detect_ctx({"date": match_date, "is_home": True, "completed": True}, guoan, standings)
 
 
 def init_from_data():
-    """用已有2026数据初始化校准。"""
-    parquet = os.path.join(os.path.dirname(__file__), "..", "data", "processed", "all_unified.parquet")
-    if not os.path.exists(parquet): return
-
-    all_data = pd.read_parquet(parquet)
-    c26 = all_data[
-        (all_data["competition"] == "CSL") & (all_data["is_home"])
-        & (~all_data["is_bundle"]) & (~all_data["is_partial"])
-        & (all_data["match_date"].str.startswith("2026"))
-    ]
-    _save_cal({"tier": {"S": 1.0, "A": 1.0, "B": 1.0, "C": 1.0}, "history": []})
-
-    for mid in sorted(c26["match_id"].unique()):
-        m = c26[c26["match_id"] == mid]
-        md = pd.Timestamp(m["match_date"].iloc[0])
-        opp = str(m["opponent"].iloc[0])
-        actual = int(m["数量"].sum())
-        ctx = detect_context_2026(md)
-        ctx["derby"] = opp in DERBY_RIVALS
-        update(mid, opp, actual, **ctx)
+    """从历史数据初始化参数。（deprecated: V4用聚类基值）"""
+    pass

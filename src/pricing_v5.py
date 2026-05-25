@@ -35,28 +35,13 @@ for tier, sections in ZONE_SECTIONS.items():
         SECTION_TO_TIER[s] = tier
 
 # ═══════════════════════════════════════════
-# 4级对手分类
+# 4级对手分类（统一使用 classify.py 的 KMeans 分级）
 # ═══════════════════════════════════════════
 
-OPPONENT_TIERS = {
-    "S": {"label": "德比/死敌", "teams": ["上海申花"]},
-    "A": {"label": "传统强队", "teams": ["山东泰山", "成都蓉城", "上海海港"]},
-    "B": {"label": "中游",     "teams": ["天津津门虎", "浙江", "河南", "武汉三镇",
-                                          "长春亚泰", "深圳新鹏城"]},
-    "C": {"label": "保级/升班马","teams": ["大连英博海发", "青岛海牛", "梅州客家",
-                                          "青岛西海岸", "云南玉昆", "沧州雄狮",
-                                          "南通支云", "辽宁铁人", "重庆铜梁龙"]},
-}
-
-def classify_opponent(opponent_name: str) -> str:
-    """返回对手级别 S/A/B/C。"""
-    name = str(opponent_name).strip()
-    for level, info in OPPONENT_TIERS.items():
-        for team in info["teams"]:
-            if team in name or name in team:
-                return level
-    return "B"  # 默认中游
-
+from src.classify import (
+    classify_opponent_tier as classify_opponent,
+    S_TIER, A_TIER, B_TIER, C_TIER, DERBY_RIVALS,
+)
 
 def get_pricing_tier(opponent_name: str) -> str:
     """返回实际定价级别（含derby提升、A-/C-降价）。
