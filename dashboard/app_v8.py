@@ -1551,7 +1551,8 @@ def render_heatmap_tab(guoan_matches):
     # ── 热力图 (颜色=上座率) ──
     match_label = f"{match_date}  vs  {opp}"
     heatmap_html = render_gongti_heatmap(section_fills, section_fills, match_label, total_fill)
-    st.components.v1.html(heatmap_html, height=600)
+    # iframe 高度由组件内 JS 按视口动态上报；此处仅作首屏占位（PC 偏大、手机偏小均可被覆盖）
+    st.components.v1.html(heatmap_html, height=520, scrolling=False)
 
     # ── 销售概况 ──
     if section_qty:
@@ -1695,7 +1696,7 @@ def main():
     </div>""", unsafe_allow_html=True)
 
     # ══ Tabs ══
-    tabs = st.tabs(["🎯 下一场预测", "📋 历史定价", "📈 赛季全景", "🔍 对手分析", "🏆 积分榜", "📊 H2策略", "🔥 座位热力图"])
+    tabs = st.tabs(["🎯 下一场预测", "📋 历史定价", "🔍 对手分析", "🏆 积分榜", "📊 H2策略", "🔥 座位热力图"])
 
     # ── Tab 0: 下一场预测 ──
     with tabs[0]:
@@ -1756,25 +1757,20 @@ def main():
         render_mae_chart(home_preds)
         render_history_expanders(home_preds, guoan_matches)
 
-    # ── Tab 3: 赛季全景 ──
+    # ── Tab 3: 对手分析 ──
     with tabs[2]:
-        render_season_chart(home_preds)
-        render_season_table(home_preds)
-
-    # ── Tab 4: 对手分析 ──
-    with tabs[3]:
         render_opponent_analysis(all_matches)
 
-    # ── Tab 5: 积分榜 ──
-    with tabs[4]:
+    # ── Tab 4: 积分榜 ──
+    with tabs[3]:
         render_standings_table(guoan_matches, standings, guoan_ded)
 
-    # ── Tab 6: H2策略 ──
-    with tabs[5]:
+    # ── Tab 5: H2策略 ──
+    with tabs[4]:
         render_h2_strategy(guoan_matches, standings)
 
-    # ── Tab 7: 座位热力图 ──
-    with tabs[6]:
+    # ── Tab 6: 座位热力图 ──
+    with tabs[5]:
         render_heatmap_tab(guoan_matches)
 
     st.caption("V8.1 · 国安绿品牌 · 决策工作台")
