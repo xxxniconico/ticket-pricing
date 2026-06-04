@@ -463,7 +463,7 @@ def render_confidence_bar(pred, mae):
     </div>""", unsafe_allow_html=True)
 
 def render_strategy_card(r, pred_args, actual_revenue=None, actual_attendance=None):
-    """渲染策略卡片。传入 actual_* 时优化效果为场景 vs 实际（历史模式），否则为场景 vs 基准（预测模式）。"""
+    """渲染策略卡片。优化效果始终 vs 基准预测（决策质量），实际数据仅作参考。"""
     rw, aw = r.revenue_weight, r.attendance_weight
     if rw >= 0.7:
         strat_label, strat_color = "收入优先", "#ff6b6b"
@@ -484,22 +484,11 @@ def render_strategy_card(r, pred_args, actual_revenue=None, actual_attendance=No
     if downs: lines.append(f'<span style="color:#51cf66">↓ 降价档位：{" ".join(downs)}（低价抢量）</span>')
     if frozen: lines.append(f'🔒 锁价档位：{" ".join(frozen)}')
 
-    # 预期效果：始终 vs 基准价模型（预测模式语义）
-    rev_delta = r.total_revenue - r.base_revenue
+    # 决策质量：始终 vs 基准预测（r.base_* = 未优化时的预测值）
+    qty_delta = r.total_attendance - r.base_attendance
+    rev_delta_eff = r.total_revenue - r.base_revenue
     att_delta_pct = (r.total_attendance / r.base_attendance - 1) * 100 if r.base_attendance > 0 else 0
-    rev_sign = "+" if rev_delta > 0 else ""
-    lines.append(f'预期效果：增收 {rev_sign}¥{rev_delta/10000:.1f}万 · 上座 {"↑" if att_delta_pct > 0 else "↓"}{abs(att_delta_pct):.0f}%')
-
-    # 优化效果：历史模式 vs 实际，预测模式 vs 基准
-    is_historical = actual_revenue is not None and actual_attendance is not None
-    if is_historical:
-        qty_delta = r.total_attendance - actual_attendance
-        rev_delta_eff = r.total_revenue - actual_revenue
-        vs_label = "vs 实际"
-    else:
-        qty_delta = r.total_attendance - r.base_attendance
-        rev_delta_eff = r.total_revenue - r.base_revenue
-        vs_label = "vs 基准"
+    rev_sign = "+" if rev_delta_eff > 0 else ""
 
     if rw >= 0.7:
         main_metric = f'<span style="color:{"#ff6b6b" if rev_delta_eff > 0 else "#51cf66"}">{"+" if rev_delta_eff > 0 else ""}¥{rev_delta_eff/10000:.1f}万</span>'
@@ -511,7 +500,15 @@ def render_strategy_card(r, pred_args, actual_revenue=None, actual_attendance=No
         main_metric = f'<span style="color:{"#ff6b6b" if rev_delta_eff > 0 else "#51cf66"}">{"+" if rev_delta_eff > 0 else ""}¥{rev_delta_eff/10000:.1f}万</span> · <span style="color:{"#ff6b6b" if qty_delta > 0 else "#51cf66"}">{"+" if qty_delta > 0 else ""}{qty_delta:,.0f}张</span>'
         sub_metric = ''
 
-    lines.append(f'优化效果（{vs_label}）：{main_metric}{"（" + sub_metric + "）" if sub_metric else ""}')
+    lines.append(f'决策质量（vs 基准预测）：{main_metric}{"（" + sub_metric + "）" if sub_metric else ""}')
+
+    # 实际参考：仅当有实际数据时展示
+    if actual_revenue is not None and actual_attendance is not None:
+        base_qty_dev = r.base_attendance - actual_attendance
+        base_rev_dev = (r.base_revenue or 0) - actual_revenue
+        pred_ape = abs(base_qty_dev) / actual_attendance * 100 if actual_attendance > 0 else 0
+        dev_color = "#51cf66" if pred_ape < 10 else "#f0c040" if pred_ape < 20 else "#ff6b6b"
+        lines.append(f'<span style="color:#62666d;font-size:0.85em">预测偏差：基准 {base_qty_dev:+,.0f}张（APE {pred_ape:.1f}%）| 实际到场 {actual_attendance:,} 收入 ¥{actual_revenue/10000:.1f}万</span>')
 
     derby_card_class = "strategy-card derby" if pred_args.get('derby') else "strategy-card"
     st.markdown(f"""<div class="{derby_card_class}" style="border-left:3px solid {strat_color}">
@@ -866,83 +863,87 @@ def render_history_expanders(home_preds, guoan_matches):
         strat_label, rw = render_strategy_card(r_h, pred_args,
             actual_revenue=total_actual_rev, actual_attendance=total_actual_qty)
 
-        # Build pricing table HTML
+        # Build pricing table HTML: 决策质量优先（Δ = 场景 vs 基准预测）
         r_html = ""
         for zt in ZONE_TIERS:
             tr = r_h.tiers[zt]
             dp = (tr.optimal_price / tr.base_price - 1) * 100 if tr.base_price > 0 else 0
-            delta_color = "#51cf66" if dp < -0.5 else "#ff6b6b" if dp > 0.5 else "#8a8f98"
-            dp_s = f'<span style="color:{delta_color}">{dp:+.0f}%</span>' if abs(dp) > 1 else ""
-            actual_z = zone_qty.get(zt, 0)
-            actual_rev = zone_rev.get(zt, 0)
-            qty_delta_z = tr.predicted_qty - actual_z
+            dp_color = "#51cf66" if dp < -0.5 else "#ff6b6b" if dp > 0.5 else "#8a8f98"
+            dp_s = f'<span style="color:{dp_color}">{dp:+.0f}%</span>' if abs(dp) > 1 else ""
+            # 决策质量 Δ = 场景 - 基准（同一预测基础上的优化效应）
+            qty_base_z = tr.base_qty
+            qty_opt_z = tr.predicted_qty
+            qty_delta_z = qty_opt_z - qty_base_z
             qty_delta_color = "#ff6b6b" if qty_delta_z > 0 else "#51cf66" if qty_delta_z < 0 else "#8a8f98"
-            rev_delta_z = tr.revenue - actual_rev
+            rev_base_z = tr.base_price * tr.base_qty
+            rev_opt_z = tr.revenue
+            rev_delta_z = rev_opt_z - rev_base_z
             rev_delta_z_color = "#ff6b6b" if rev_delta_z > 0 else "#51cf66" if rev_delta_z < 0 else "#8a8f98"
+            # 实际数据（纯参考）
+            actual_z = zone_qty.get(zt, 0)
+            actual_rev_z = zone_rev.get(zt, 0)
             r_html += (
                 f'<tr><td>{zt}</td>'
                 f'<td>¥{tr.base_price:,.0f}</td>'
                 f'<td>¥{tr.optimal_price:,.0f} {dp_s}</td>'
-                f'<td>{tr.predicted_qty:,.0f}</td>'
-                f'<td>{actual_z:,}</td>'
+                f'<td style="color:#62666d">{qty_base_z:,.0f}</td>'
+                f'<td style="color:#f7f8f8">{qty_opt_z:,.0f}</td>'
                 f'<td style="color:{qty_delta_color};font-family:JetBrains Mono,ui-monospace">{qty_delta_z:+,.0f}</td>'
-                f'<td>¥{tr.revenue/10000:.2f}万</td>'
-                f'<td>¥{actual_rev/10000:.2f}万</td>'
-                f'<td style="color:{rev_delta_z_color};font-family:JetBrains Mono,ui-monospace">¥{rev_delta_z/10000:+.2f}万</td></tr>'
+                f'<td>¥{rev_opt_z/10000:.2f}万</td>'
+                f'<td style="color:{rev_delta_z_color};font-family:JetBrains Mono,ui-monospace">¥{rev_delta_z/10000:+.1f}万</td>'
+                f'<td style="color:#62666d">{actual_z:,}</td>'
+                f'</tr>'
             )
 
-        # Total row: use r_h aggregates directly (authoritative, avoids summation drift)
-        qty_delta_total = r_h.total_attendance - total_actual_qty
+        # Total row: decision quality deltas (opt - base)
+        qty_delta_total = r_h.total_attendance - r_h.base_attendance
         qty_delta_t_color = "#ff6b6b" if qty_delta_total > 0 else "#51cf66" if qty_delta_total < 0 else "#8a8f98"
-        rev_delta_total = r_h.total_revenue - total_actual_rev
+        rev_delta_total = r_h.total_revenue - (r_h.base_revenue or 0)
         rev_delta_t_color = "#ff6b6b" if rev_delta_total > 0 else "#51cf66" if rev_delta_total < 0 else "#8a8f98"
         r_html += (
             f'<tr style="border-top:1px solid rgba(255,255,255,0.08);font-weight:510">'
             f'<td colspan="3" style="color:#8a8f98">合计</td>'
+            f'<td style="color:#62666d">{r_h.base_attendance:,.0f}</td>'
             f'<td style="color:#f7f8f8">{r_h.total_attendance:,.0f}</td>'
-            f'<td style="color:#f7f8f8">{total_actual_qty:,}</td>'
             f'<td style="color:{qty_delta_t_color};font-family:JetBrains Mono,ui-monospace">{qty_delta_total:+,.0f}</td>'
-            f'<td style="color:#f7f8f8">¥{r_h.total_revenue/10000:.1f}万</td>'
-            f'<td style="color:#f7f8f8">¥{total_actual_rev/10000:.1f}万</td>'
-            f'<td style="color:{rev_delta_t_color};font-family:JetBrains Mono,ui-monospace">¥{rev_delta_total/10000:+.2f}万</td></tr>'
+            f'<td>¥{r_h.total_revenue/10000:.1f}万</td>'
+            f'<td style="color:{rev_delta_t_color};font-family:JetBrains Mono,ui-monospace">¥{rev_delta_total/10000:+.1f}万</td>'
+            f'<td style="color:#62666d">{total_actual_qty:,}</td>'
+            f'</tr>'
         )
 
         st.markdown(f"""<table class="history-table">
-          <thead><tr><th>档位</th><th>基准价</th><th>优化价</th><th>场景量</th><th>实际量</th><th>Δ量</th><th>场景收入</th><th>实际收入</th><th>Δ收入</th></tr></thead>
+          <thead><tr><th>档位</th><th>基准价</th><th>优化价</th><th>基准量</th><th>场景量</th><th>Δ量</th><th>场景收入</th><th>Δ收入</th><th>实际</th></tr></thead>
           <tbody>{r_html}</tbody>
         </table>""", unsafe_allow_html=True)
-        # Bad tradeoff 检测 (strategy card already shows vs-actual)
-        qty_delta_vs_actual = r_h.total_attendance - total_actual_qty
-        rev_delta_vs_actual = r_h.total_revenue - total_actual_rev
 
+        # Bad tradeoff 检测：基于决策质量（场景 vs 基准），不是实际 vs 场景
         bad_tradeoff = False
         bad_reason = ""
-        if rw >= 0.7 and rev_delta_vs_actual < -10000 and qty_delta_vs_actual < 500:
+        if rw >= 0.7 and rev_delta_total < -5000 and qty_delta_total < 100:
             bad_tradeoff = True
-            bad_reason = f"⚠️ 收入优先策略下损失 ¥{abs(rev_delta_vs_actual)/10000:.1f}万，仅增量 {qty_delta_vs_actual:+,.0f}张，tradeoff 不划算"
-        elif rw <= 0.3 and qty_delta_vs_actual < 0 and rev_delta_vs_actual < -5000:
+            bad_reason = f"⚠️ 收入优先策略下损失 ¥{abs(rev_delta_total)/10000:.1f}万（vs 基准），仅增量 {qty_delta_total:+,.0f}张，tradeoff 不划算"
+        elif rw <= 0.3 and qty_delta_total < 0 and rev_delta_total < -3000:
             bad_tradeoff = True
-            bad_reason = f"⚠️ 上座优先策略下未增量（{qty_delta_vs_actual:+,.0f}张），还损失 ¥{abs(rev_delta_vs_actual)/10000:.1f}万"
+            bad_reason = f"⚠️ 上座优先策略下未增量（{qty_delta_total:+,.0f}张 vs 基准），还损失 ¥{abs(rev_delta_total)/10000:.1f}万"
 
-        # 规则3: 增收但代价过大（收入优先+均衡模式）— 每增¥1收入损失超过阈值人数
+        # 规则3: 增收但代价过大（收入优先+均衡模式）
         if not bad_tradeoff and rw >= 0.5:
-            rev_gain = rev_delta_vs_actual
-            qty_loss = -qty_delta_vs_actual  # 正数 = 损失人数
+            rev_gain = rev_delta_total
+            qty_loss = -qty_delta_total
             if rev_gain > 0 and qty_loss > 100:
-                # 每损失1人换来的增收
                 gain_per_lost = rev_gain / qty_loss if qty_loss > 0 else float('inf')
-                if gain_per_lost < 50:  # 低于¥50/人 → bad tradeoff（可调参数）
+                if gain_per_lost < 50:
                     bad_tradeoff = True
                     bad_reason = f"⚠️ 增收 ¥{rev_gain/10000:.1f}万但上座 -{qty_loss:,.0f}张（仅 ¥{gain_per_lost:.0f}/人），代价过大"
 
-        # 规则4: 降价增量但收入损失过大（上座优先模式）— 每获得1人花费过高
+        # 规则4: 降价增量但收入损失过大
         if not bad_tradeoff and rw <= 0.3:
-            qty_gain = qty_delta_vs_actual
-            rev_loss = -rev_delta_vs_actual  # 正数 = 损失金额
+            qty_gain = qty_delta_total
+            rev_loss = -rev_delta_total
             if qty_gain > 0 and rev_loss > 5000:
-                # 每获得1人花费
                 cost_per_gained = rev_loss / qty_gain if qty_gain > 0 else float('inf')
-                if cost_per_gained > 200:  # 高于¥200/人 → bad tradeoff（可调参数）
+                if cost_per_gained > 200:
                     bad_tradeoff = True
                     bad_reason = f"⚠️ 增量 {qty_gain:+,.0f}张但损失 ¥{rev_loss/10000:.1f}万（¥{cost_per_gained:.0f}/人），获客成本过高"
 
@@ -951,16 +952,22 @@ def render_history_expanders(home_preds, guoan_matches):
               {bad_reason}
             </div>""", unsafe_allow_html=True)
 
-        # 策略审计卡片 — 每场比赛通用
+        # 策略审计卡片 — 决策质量评估
         audit_bg = "rgba(81,207,102,0.06)" if not bad_tradeoff else "rgba(255,107,107,0.08)"
         audit_border = "rgba(81,207,102,0.12)" if not bad_tradeoff else "rgba(255,107,107,0.2)"
         audit_color = "#51cf66" if not bad_tradeoff else "#ff6b6b"
         audit_judgment = "✅ 策略目标达成" if not bad_tradeoff else "❌ 策略未达成 — 见上方警告"
+
+        # 预测偏差
+        base_qty_dev_audit = (r_h.base_attendance or 0) - total_actual_qty
+        base_rev_dev_audit = (r_h.base_revenue or 0) - total_actual_rev
+
         st.markdown(f"""<div style="padding:8px 12px;margin:4px 0;background:{audit_bg};border:1px solid {audit_border};border-radius:6px;font-size:0.72rem;color:{audit_color}">
-          <strong>{opp} 策略审计</strong><br>
+          <strong>{opp} 策略审计（决策质量）</strong><br>
           策略模式：{strat_label}（rw={rw:.0%} aw={r_h.attendance_weight:.0%}）<br>
-          收入差：场景 ¥{r_h.total_revenue/10000:.1f}万 vs 实际 ¥{total_actual_rev/10000:.1f}万（{rev_delta_vs_actual/10000:+.1f}万）<br>
-          数量差：场景 {r_h.total_attendance:,.0f}张 vs 实际 {total_actual_qty:,}张（{qty_delta_vs_actual:+,.0f}张）<br>
+          优化效应：场景 ¥{r_h.total_revenue/10000:.1f}万 vs 基准 ¥{(r_h.base_revenue or 0)/10000:.1f}万（{rev_delta_total/10000:+.1f}万）<br>
+          数量效应：场景 {r_h.total_attendance:,.0f}张 vs 基准 {(r_h.base_attendance or 0):.0f}张（{qty_delta_total:+,.0f}张）<br>
+          预测偏差：基准 {base_qty_dev_audit:+,.0f}张 · 实际到场 {total_actual_qty:,} · 实际收入 ¥{total_actual_rev/10000:.1f}万<br>
           判断：{audit_judgment}
         </div>""", unsafe_allow_html=True)
 
@@ -1693,6 +1700,48 @@ def main():
 
     # ── Tab 2: 历史定价 ──
     with tabs[1]:
+        # 累计KPI
+        opt_kpi = get_optimizer()
+        cum_scene_qty = 0; cum_delta_qty = 0; cum_scene_rev = 0; cum_delta_rev = 0
+        for m, pred, actual, ctx in home_preds:
+            opp = m["opponent"]; dt_m = pd.Timestamp(m["date"])
+            is_first = (m == home_preds[0])
+            ub3 = ctx.get('unbeaten_3', False)
+            pred_args = build_pred_args(m, ctx, {'season_opener': is_first, 'unbeaten_3': ub3,
+                                                  'summer': dt_m.month in [7,8], 'match_year': m["date"][:4]})
+            r_h = opt_kpi.optimize(opp, **pred_args)
+            zone_rev = _get_zone_actual_revenue(m)
+            total_actual_rev = sum(zone_rev.values())
+            total_actual_qty = actual
+            cum_scene_qty += r_h.total_attendance
+            cum_delta_qty += r_h.total_attendance - total_actual_qty
+            cum_scene_rev += r_h.total_revenue
+            cum_delta_rev += r_h.total_revenue - total_actual_rev
+
+        kc1, kc2, kc3, kc4 = st.columns(4)
+        with kc1:
+            st.markdown(f"""<div class="kpi-card">
+              <div class="kpi-label">累计场景量</div>
+              <div class="kpi-value">{cum_scene_qty:,.0f}张</div>
+            </div>""", unsafe_allow_html=True)
+        with kc2:
+            qty_color = "#ff6b6b" if cum_delta_qty > 0 else "#51cf66"
+            st.markdown(f"""<div class="kpi-card">
+              <div class="kpi-label">累计Δ量</div>
+              <div class="kpi-value" style="color:{qty_color}">{cum_delta_qty:+,.0f}张</div>
+            </div>""", unsafe_allow_html=True)
+        with kc3:
+            st.markdown(f"""<div class="kpi-card">
+              <div class="kpi-label">累计场景收入</div>
+              <div class="kpi-value">¥{cum_scene_rev/1e4:.1f}万</div>
+            </div>""", unsafe_allow_html=True)
+        with kc4:
+            rev_color = "#ff6b6b" if cum_delta_rev > 0 else "#51cf66"
+            st.markdown(f"""<div class="kpi-card">
+              <div class="kpi-label">累计Δ收入</div>
+              <div class="kpi-value" style="color:{rev_color}">¥{cum_delta_rev/1e4:+.1f}万</div>
+            </div>""", unsafe_allow_html=True)
+
         render_mae_chart(home_preds)
         render_history_expanders(home_preds, guoan_matches)
 
