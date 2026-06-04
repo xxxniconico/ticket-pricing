@@ -402,27 +402,31 @@ class DynamicPricingOptimizer:
             }.get(zt, 'elastic')
 
             if strategy_mode == 'balanced':
-                # 平衡策略：T1-T3激进降价抢量，T4-T6涨价补收入
+                # 平衡策略：降幅与弹性挂钩，高弹性多降、低弹性少降
                 if tier_role == 'volume':
-                    # T1,T2: 强制降到底（min_mult），不设收入底线
-                    p_opt = max(p_min, p0 * 0.80)  # 激进降价
-                    p_opt = min(p_opt, p0)          # 不涨
+                    # T1,T2: 弹性驱动降价 (eps越大越敏感,降越多)
+                    cut_pct = min(0.22, abs(eps) * 1.0)  # eps=0.20→20%, eps=0.10→10%
+                    p_opt = max(p_min, p0 * (1 - cut_pct))
+                    p_opt = min(p_opt, p0)  # 不涨
                 elif tier_role == 'elastic' and zt == 'T3':
-                    # T3: 弹性降价到85%
-                    p_opt = max(p_min, p0 * 0.85)
+                    # T3: 弹性驱动,降幅略小于volume
+                    cut_pct = min(0.18, abs(eps) * 0.85)
+                    p_opt = max(p_min, p0 * (1 - cut_pct))
                     p_opt = min(p_opt, p0)
                 elif tier_role == 'elastic' and zt == 'T4':
-                    # T4: 允许适度涨价补贴
-                    p_opt = min(p0 * 1.10, p_max)
-                    p_opt = max(p_opt, p0)  # 不降
-                elif tier_role == 'revenue':
-                    # T5,T6: 激进涨价补收入
-                    if eps >= 0.30:
-                        cap_up = 1.20
-                    elif eps >= 0.20:
-                        cap_up = 1.15
+                    # T4: 低弹性可涨,高弹性微降
+                    if abs(eps) < 0.15:
+                        cap_up = min(1.10, 1 + (0.15 - abs(eps)) * 1.2)
+                        p_opt = min(p0 * cap_up, p_max)
+                        p_opt = max(p_opt, p0)  # 不降
                     else:
-                        cap_up = 1.12
+                        cut_pct = min(0.10, abs(eps) * 0.50)
+                        p_opt = max(p_min, p0 * (1 - cut_pct))
+                        p_opt = min(p_opt, p0)
+                elif tier_role == 'revenue':
+                    # T5,T6: 弹性驱动涨价 (低弹性可多涨)
+                    cap_up = 1.08 + max(0, (0.25 - abs(eps))) * 0.70  # eps=0.10→1.18, eps=0.25→1.08
+                    cap_up = min(cap_up, 1.22)
                     p_opt = min(p0 * cap_up, p_max)
                     p_opt = max(p_opt, p0)  # 不降
             else:
