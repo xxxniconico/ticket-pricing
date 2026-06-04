@@ -1,0 +1,26 @@
+{
+  "_schema": "v2",
+  "_description": "场次备注与散票数量修正。仅含四场联票(5月打包)。其他补充渠道(工体六折/票星球/俱乐部线下)未计入。",
+  "matches": {
+    "2026-05-06 大连英博海发": {
+      "note": "四场联票573",
+      "adjustment": 573,
+      "adjusted_total": 3992
+    },
+    "2026-05-10 上海海港": {
+      "note": "四场联票573",
+      "adjustment": 573,
+      "adjusted_total": 6576
+    },
+    "2026-05-15 青岛海牛": {
+      "note": "四场联票573",
+      "adjustment": 573,
+      "adjusted_total": 5884
+    },
+    "2026-05-23 河南": {
+      "note": "四场联票573",
+      "adjustment": 573,
+      "adjusted_total": 8224
+    }
+  }
+}
