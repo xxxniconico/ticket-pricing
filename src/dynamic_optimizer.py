@@ -243,7 +243,7 @@ class DynamicPricingOptimizer:
         # V8.1: S/A级对手豁免（票价高/容量有限，预测天花板低，如申花~12,852）
         if strategy_mode == 'revenue':
             att_loss_pct = (base_attendance - total_attendance) / base_attendance if base_attendance > 0 else 0
-            tier_pred_floor = {"S": 11000, "A": 12000, "B": 13000, "C": 13000}
+            tier_pred_floor = {"S": 11000, "A": 10500, "B": 13000, "C": 13000}
             pred_floor = tier_pred_floor.get(opp_tier, 13000)
             if predicted_total < pred_floor or att_loss_pct > 0.03:
                 return self.optimize(opponent, match_date=match_date,
