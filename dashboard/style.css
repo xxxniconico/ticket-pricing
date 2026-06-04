@@ -417,39 +417,21 @@ tr.guoan-row td { color: var(--guoan-green) !important; font-weight: 590; }
 
 /* ══ 移动端适配 ══ */
 @media (max-width: 768px) {
-    /* 表格横向滚动 */
-    .history-table, .compact-table {
-        display: block !important;
-        overflow-x: auto !important;
-        white-space: nowrap !important;
-        -webkit-overflow-scrolling: touch;
-    }
-    /* 标题缩小 */
     h1 { font-size: 1.15rem !important; border-left-width: 2px !important; padding-left: 8px !important; }
     h2 { font-size: 0.95rem !important; }
-    /* Tab缩小 */
     .stTabs [data-baseweb="tab"] { padding: 6px 10px !important; font-size: 0.72rem !important; }
-    /* 品牌栏堆叠 */
     .brand-header { flex-direction: column !important; align-items: flex-start !important; gap: 6px !important; }
     .brand-header .crest { height: 24px !important; }
-    /* 状态栏 */
     .state-bar { font-size: 0.65rem !important; padding: 4px 8px !important; }
-    /* 策略卡片 */
     .strategy-card { font-size: 0.68rem !important; padding: 6px 8px !important; }
-    /* 规则Pill */
     .rule-pill { font-size: 0.62rem !important; padding: 2px 6px !important; }
-    /* KPI卡片缩小间距 */
     .kpi-card { padding: 8px 10px !important; }
     .kpi-card .kpi-value { font-size: 1rem !important; }
     .kpi-card .kpi-sub { font-size: 0.62rem !important; }
-    /* 赛季行 */
     .season-row { font-size: 0.68rem !important; padding: 2px 4px !important; }
 }
 
 @media (max-width: 480px) {
     h1 { font-size: 1rem !important; }
-    /* Tab更小 */
     .stTabs [data-baseweb="tab"] { padding: 4px 6px !important; font-size: 0.65rem !important; }
-    /* 置信区间 */
-    .confidence-bar .ci-labels { font-size: 0.55rem !important; }
 }
