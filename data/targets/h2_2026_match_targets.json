@@ -1,0 +1,232 @@
+{
+  "model_version": "V5.5",
+  "updated": "2026-06-01 14:22",
+  "completed": {
+    "matches": 7,
+    "revenue": 20583095,
+    "quantity": 57291
+  },
+  "summary": {
+    "total_target_revenue": 18871164,
+    "total_target_quantity": 66461,
+    "annual_projection_revenue": 39454259,
+    "annual_projection_quantity": 123752,
+    "vs_2025_revenue_pct": -14.3,
+    "vs_2025_quantity_pct": -13.5
+  },
+  "matches": [
+    {
+      "date": "2026-06-27",
+      "opponent": "武汉三镇",
+      "round": "第16轮",
+      "tier": "B",
+      "pricing_tier": "S_B",
+      "predicted_quantity": 8364,
+      "strategy": "balanced",
+      "revenue_weight": 0.4,
+      "target_revenue": 2077254,
+      "target_quantity": 8624,
+      "target_avg_price": 240.9,
+      "base_prices": {
+        "T1": 160,
+        "T2": 220,
+        "T3": 300,
+        "T4": 460,
+        "T5": 540,
+        "T6": 1080
+      },
+      "context": [],
+      "risks": [],
+      "model_version": "V5.5"
+    },
+    {
+      "date": "2026-07-04",
+      "opponent": "山东泰山",
+      "round": "第17轮",
+      "tier": "A",
+      "pricing_tier": "S_A",
+      "predicted_quantity": 11673,
+      "strategy": "revenue_priority",
+      "revenue_weight": 0.8,
+      "target_revenue": 4980827,
+      "target_quantity": 11605,
+      "target_avg_price": 429.2,
+      "base_prices": {
+        "T1": 260,
+        "T2": 340,
+        "T3": 440,
+        "T4": 580,
+        "T5": 780,
+        "T6": 1380
+      },
+      "context": [],
+      "risks": [
+        "summer"
+      ],
+      "model_version": "V5.5"
+    },
+    {
+      "date": "2026-07-17",
+      "opponent": "辽宁铁人",
+      "round": "第19轮",
+      "tier": "C",
+      "pricing_tier": "S_C",
+      "predicted_quantity": 6440,
+      "strategy": "balanced",
+      "revenue_weight": 0.2,
+      "target_revenue": 1389659,
+      "target_quantity": 6689,
+      "target_avg_price": 207.7,
+      "base_prices": {
+        "T1": 140,
+        "T2": 200,
+        "T3": 280,
+        "T4": 440,
+        "T5": 500,
+        "T6": 1030
+      },
+      "context": [],
+      "risks": [
+        "summer",
+        "升班马B级潜力(C级定价保守)"
+      ],
+      "model_version": "V5.5"
+    },
+    {
+      "date": "2026-08-01",
+      "opponent": "浙江",
+      "round": "第21轮",
+      "tier": "B",
+      "pricing_tier": "S_B",
+      "predicted_quantity": 9451,
+      "strategy": "revenue_tilt",
+      "revenue_weight": 0.6,
+      "target_revenue": 2638946,
+      "target_quantity": 9403,
+      "target_avg_price": 280.6,
+      "base_prices": {
+        "T1": 160,
+        "T2": 220,
+        "T3": 300,
+        "T4": 460,
+        "T5": 540,
+        "T6": 1080
+      },
+      "context": [],
+      "risks": [
+        "summer"
+      ],
+      "model_version": "V5.5"
+    },
+    {
+      "date": "2026-08-07",
+      "opponent": "深圳新鹏城",
+      "round": "第22轮",
+      "tier": "B",
+      "pricing_tier": "S_B",
+      "predicted_quantity": 9266,
+      "strategy": "revenue_tilt",
+      "revenue_weight": 0.6,
+      "target_revenue": 2581900,
+      "target_quantity": 9219,
+      "target_avg_price": 280.0,
+      "base_prices": {
+        "T1": 160,
+        "T2": 220,
+        "T3": 300,
+        "T4": 460,
+        "T5": 540,
+        "T6": 1080
+      },
+      "context": [],
+      "risks": [
+        "summer"
+      ],
+      "model_version": "V5.5"
+    },
+    {
+      "date": "2026-08-22",
+      "opponent": "云南玉昆",
+      "round": "第24轮",
+      "tier": "B",
+      "pricing_tier": "S_B",
+      "predicted_quantity": 9451,
+      "strategy": "revenue_tilt",
+      "revenue_weight": 0.6,
+      "target_revenue": 2638946,
+      "target_quantity": 9403,
+      "target_avg_price": 280.6,
+      "base_prices": {
+        "T1": 160,
+        "T2": 220,
+        "T3": 300,
+        "T4": 460,
+        "T5": 540,
+        "T6": 1080
+      },
+      "context": [],
+      "risks": [
+        "summer"
+      ],
+      "model_version": "V5.5"
+    },
+    {
+      "date": "2026-10-18",
+      "opponent": "青岛西海岸",
+      "round": "第28轮",
+      "tier": "B",
+      "pricing_tier": "S_B",
+      "predicted_quantity": 6560,
+      "strategy": "balanced",
+      "revenue_weight": 0.4,
+      "target_revenue": 1595198,
+      "target_quantity": 6771,
+      "target_avg_price": 235.6,
+      "base_prices": {
+        "T1": 160,
+        "T2": 220,
+        "T3": 300,
+        "T4": 460,
+        "T5": 540,
+        "T6": 1080
+      },
+      "context": [],
+      "risks": [
+        "late_season"
+      ],
+      "model_version": "V5.5"
+    },
+    {
+      "date": "2026-11-08",
+      "opponent": "重庆铜梁龙",
+      "round": "第30轮",
+      "tier": "C",
+      "pricing_tier": "S_C",
+      "predicted_quantity": 4560,
+      "strategy": "balanced",
+      "revenue_weight": 0.2,
+      "target_revenue": 968429,
+      "target_quantity": 4743,
+      "target_avg_price": 204.2,
+      "base_prices": {
+        "T1": 140,
+        "T2": 200,
+        "T3": 280,
+        "T4": 440,
+        "T5": 500,
+        "T6": 1030
+      },
+      "context": [],
+      "risks": [
+        "late_season",
+        "升班马B级潜力(C级定价保守)"
+      ],
+      "model_version": "V5.5"
+    }
+  ],
+  "notes": [
+    "V5.5: ZONE_SECTIONS改为KMeans按赛季聚类(T6仅101/102), 容量基于申花售罄场, share_coeffs重拟合(n=26)",
+    "辽宁铁人/重庆铜梁龙按C级定价(保守), B级升级空间~2M",
+    "全年预估3945万"
+  ]
+}
