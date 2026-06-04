@@ -28,8 +28,9 @@ def render_gongti_heatmap(section_fills=None, _unused=None, match_label="", tota
         section_fills = {}
     svg = _SVG_PATH.read_text()
 
-    # 背景透明
+    # 背景透明 + 响应式
     svg = svg.replace('fill="#fafafa"', 'fill="transparent"')
+    svg = svg.replace('width="1024" height="686"', 'width="100%" height="auto" preserveAspectRatio="xMidYMid meet"')
 
     # 替换每个分区颜色 (数据来源: dict的value = 实际销量张数)
     for m in re.finditer(r'<path id="sec-(\d+)" (d="[^"]*")[^>]*fill="([^"]*)"([^/]*)/>', svg):
@@ -62,9 +63,9 @@ def render_gongti_heatmap(section_fills=None, _unused=None, match_label="", tota
         )
 
     html = f'''<!DOCTYPE html>
-<html><head><meta charset="utf-8"><style>
-body {{ margin:0; padding:8px; background:#0b0c0f; }}
-svg {{ display:block; max-width:100%; height:auto; }}
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><style>
+body {{ margin:0; padding:4px; background:#0b0c0f; }}
+svg {{ display:block; width:100%; height:auto; }}
 </style></head>
 <body>
 {title_html}

@@ -1521,7 +1521,7 @@ def render_heatmap_tab(guoan_matches):
     # ── 热力图 (颜色=上座率) ──
     match_label = f"{match_date}  vs  {opp}"
     heatmap_html = render_gongti_heatmap(section_fills, section_fills, match_label, total_fill)
-    st.components.v1.html(heatmap_html, height=700, scrolling=False)
+    st.components.v1.html(heatmap_html, height=650, scrolling=True)
 
     # ── 销售概况 ──
     if section_qty:
