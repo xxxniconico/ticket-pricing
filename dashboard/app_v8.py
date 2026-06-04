@@ -1658,8 +1658,16 @@ def main():
     else:
         target_match = None
 
-    # ══ KPI Cards (all tabs) ══
-    mae = render_kpi_cards(target_match, home_preds, guoan_rank, total_pts, home_w, home_d, home_l, form_str)
+    # ══ KPI Cards (removed for mobile UX) ══
+    preds_arr = np.array([p for _, p, _, _ in home_preds])
+    actuals_arr = np.array([a for _, _, a, _ in home_preds])
+    mae = np.mean(np.abs(preds_arr - actuals_arr)) if len(preds_arr) > 0 else 0
+    # 赛季进度条
+    pct = len(home_preds) / 15 * 100
+    st.markdown(f"""<div class="progress-line">
+      <div class="progress-label"><span>赛季主场进度</span><span>{len(home_preds)}/15</span></div>
+      <div class="progress-track"><div class="progress-fill" style="width:{pct}%"></div></div>
+    </div>""", unsafe_allow_html=True)
 
     # ══ Tabs ══
     tabs = st.tabs(["🎯 下一场预测", "📋 历史定价", "📈 赛季全景", "🔍 对手分析", "🏆 积分榜", "📊 H2策略", "🔥 座位热力图"])
