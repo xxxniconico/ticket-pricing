@@ -534,7 +534,7 @@ def render_pricing_table(r):
             f'<tr>'
             f'<td style="font-weight:510;color:#f7f8f8">{zt}{lock}</td>'
             f'<td style="font-family:JetBrains Mono,ui-monospace">¥{tr.base_price:,.0f}</td>'
-            f'<td style="font-family:JetBrains Mono,ui-monospace;color:#f7f8f8;font-weight:510">¥{tr.optimal_price:,.0f}</td>'
+            f'<td style="font-family:JetBrains Mono,ui-monospace;color:#f7f8f8;font-weight:510">¥{tr.optimal_price:,.0f} {dp_str}</td>'
             f'<td style="color:#62666d">{tr.base_qty:,.0f}</td>'
             f'<td style="color:#f7f8f8">{tr.predicted_qty:,.0f}</td>'
             f'<td style="color:{qty_d_color};font-family:JetBrains Mono,ui-monospace">{qty_delta:+,.0f}</td>'
