@@ -13,7 +13,7 @@ section[data-testid="stSidebar"] { display: none; }
 
 /* Typography */
 html, body, .stApp, .stMarkdown, p, div, span, label {
-    font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
+    font-family: system-ui, -apple-system, sans-serif !important;
     color: #d0d6e0;
 }
 h1 {

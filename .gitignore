@@ -12,8 +12,9 @@ venv/
 .vscode/
 .idea/
 
-# Streamlit Cloud config (port conflicts with cloud default 8501)
-.streamlit/
+# Streamlit (only track config.toml for cloud font fix)
+.streamlit/*
+!.streamlit/config.toml
 
 # OS
 .DS_Store
