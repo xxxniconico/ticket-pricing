@@ -1525,7 +1525,7 @@ def render_heatmap_tab(guoan_matches):
     # ── 热力图 (颜色=上座率) ──
     match_label = f"{match_date}  vs  {opp}"
     heatmap_html = render_gongti_heatmap(section_fills, section_fills, match_label, total_fill)
-    st.components.v1.html(heatmap_html, height=760, scrolling=False)
+    st.components.v1.html(heatmap_html, height=700, scrolling=False)
 
     # ── 销售概况 ──
     if section_qty:
@@ -1552,7 +1552,6 @@ def render_heatmap_tab(guoan_matches):
             suggestion_parts.append(f"📊 {len(mid_regions)}区在40-90% → 维持现价观察")
         suggestion = "<br>".join(suggestion_parts) if suggestion_parts else "✅ 各分区上座均衡"
 
-        st.divider()
         c1, c2, c3 = st.columns(3)
         with c1:
             st.markdown(
