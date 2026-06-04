@@ -526,34 +526,43 @@ def render_pricing_table(r):
         delta_color = "#ff6b6b" if dp > 0.5 else "#51cf66" if dp < -0.5 else "#8a8f98"
         dp_str = f'<span style="color:{delta_color}">{dp:+.0f}%</span>' if abs(dp) > 1 else '<span style="color:#8a8f98">—</span>'
         lock = " 🔒" if tr.is_frozen else ""
+        qty_delta = tr.predicted_qty - tr.base_qty
+        qty_d_color = "#ff6b6b" if qty_delta > 0 else "#51cf66" if qty_delta < 0 else "#8a8f98"
+        rev_delta_z = tr.revenue - (tr.base_price * tr.base_qty)
+        rev_d_color = "#ff6b6b" if rev_delta_z > 0 else "#51cf66" if rev_delta_z < 0 else "#8a8f98"
         rows += (
             f'<tr>'
             f'<td style="font-weight:510;color:#f7f8f8">{zt}{lock}</td>'
             f'<td style="font-family:JetBrains Mono,ui-monospace">¥{tr.base_price:,.0f}</td>'
             f'<td style="font-family:JetBrains Mono,ui-monospace;color:#f7f8f8;font-weight:510">¥{tr.optimal_price:,.0f}</td>'
-            f'<td>{dp_str}</td>'
-            f'<td style="font-family:JetBrains Mono,ui-monospace">{tr.predicted_qty:,.0f}</td>'
+            f'<td style="color:#62666d">{tr.base_qty:,.0f}</td>'
+            f'<td style="color:#f7f8f8">{tr.predicted_qty:,.0f}</td>'
+            f'<td style="color:{qty_d_color};font-family:JetBrains Mono,ui-monospace">{qty_delta:+,.0f}</td>'
             f'<td style="font-family:JetBrains Mono,ui-monospace">¥{tr.revenue/10000:.2f}万</td>'
+            f'<td style="color:{rev_d_color};font-family:JetBrains Mono,ui-monospace">¥{rev_delta_z/10000:+.1f}万</td>'
             f'</tr>'
         )
 
     total_dq = (r.total_attendance / r.base_attendance - 1) * 100 if r.base_attendance > 0 else 0
     rev_delta = r.total_revenue - r.base_revenue
     rev_color = "#ff6b6b" if rev_delta > 0 else "#51cf66"
-    att_color = "#ff6b6b" if total_dq > 0 else "#51cf66"
-    rev_sign = "+" if rev_delta > 0 else ""
+    qty_delta_total = r.total_attendance - r.base_attendance
+    qty_d_color = "#ff6b6b" if qty_delta_total > 0 else "#51cf66"
 
     rows += (
         f'<tr style="border-top:1px solid rgba(255,255,255,0.08);font-weight:510">'
         f'<td colspan="2" style="color:#8a8f98">合计</td>'
-        f'<td style="color:#f7f8f8">—</td><td>—</td>'
+        f'<td style="color:#f7f8f8">—</td>'
+        f'<td style="color:#62666d">{r.base_attendance:,.0f}</td>'
         f'<td style="color:#f7f8f8">{r.total_attendance:,.0f}</td>'
+        f'<td style="color:{qty_d_color};font-family:JetBrains Mono,ui-monospace">{qty_delta_total:+,.0f}</td>'
         f'<td style="color:#f7f8f8">¥{r.total_revenue/10000:.1f}万</td>'
+        f'<td style="color:{rev_color};font-family:JetBrains Mono,ui-monospace">¥{rev_delta/10000:+.1f}万</td>'
         f'</tr>'
     )
 
     st.markdown(f"""<table class="history-table" style="font-size:0.68rem">
-      <thead><tr><th>档位</th><th>基准价</th><th>优化价</th><th>Δ价</th><th>预测量</th><th>场景收入</th></tr></thead>
+      <thead><tr><th>档位</th><th>基准价</th><th>优化价</th><th>基准量</th><th>场景量</th><th>Δ量</th><th>场景收入</th><th>Δ收入</th></tr></thead>
       <tbody>{rows}</tbody>
     </table>""", unsafe_allow_html=True)
     st.caption("情景推演未经验证 · 实际定价请结合实时预售数据")
