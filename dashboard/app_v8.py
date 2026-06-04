@@ -891,6 +891,7 @@ def render_history_expanders(home_preds, guoan_matches):
                 f'<td style="color:{qty_delta_color};font-family:JetBrains Mono,ui-monospace">{qty_delta_z:+,.0f}</td>'
                 f'<td>¥{rev_opt_z/10000:.2f}万</td>'
                 f'<td style="color:{rev_delta_z_color};font-family:JetBrains Mono,ui-monospace">¥{rev_delta_z/10000:+.1f}万</td>'
+                f'<td style="color:#62666d">{actual_z:,}</td>'
                 f'<td style="color:#62666d">¥{actual_rev_z/10000:.2f}万</td>'
                 f'</tr>'
             )
@@ -908,12 +909,13 @@ def render_history_expanders(home_preds, guoan_matches):
             f'<td style="color:{qty_delta_t_color};font-family:JetBrains Mono,ui-monospace">{qty_delta_total:+,.0f}</td>'
             f'<td>¥{r_h.total_revenue/10000:.1f}万</td>'
             f'<td style="color:{rev_delta_t_color};font-family:JetBrains Mono,ui-monospace">¥{rev_delta_total/10000:+.1f}万</td>'
+            f'<td style="color:#62666d">{total_actual_qty:,}</td>'
             f'<td style="color:#62666d">¥{total_actual_rev/10000:.1f}万</td>'
             f'</tr>'
         )
 
         st.markdown(f"""<table class="history-table">
-          <thead><tr><th>档位</th><th>基准价</th><th>优化价</th><th>基准量</th><th>场景量</th><th>Δ量</th><th>场景收入</th><th>Δ收入</th><th>实际收入</th></tr></thead>
+          <thead><tr><th>档位</th><th>基准价</th><th>优化价</th><th>基准量</th><th>场景量</th><th>Δ量</th><th>场景收入</th><th>Δ收入</th><th>实际量</th><th>实际收入</th></tr></thead>
           <tbody>{r_html}</tbody>
         </table>""", unsafe_allow_html=True)
 
