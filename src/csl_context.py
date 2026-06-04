@@ -28,6 +28,11 @@ def load_csl_data(csl_path: str = _CSL_PATH, deductions_path: str = _DEDUCTIONS_
         resp.raise_for_status()
         raw = resp.json()
         data = raw.get("raw_data", raw)
+        # Cloud数据source字段为空, 统一标记为云端来源
+        for lg in data.get("leagues", []):
+            for m in lg.get("matches", []):
+                if not m.get("source"):
+                    m["source"] = "cfl_fixtures_api"
         resp2 = _requests.get(_DED_CLOUD_URL, timeout=10)
         resp2.raise_for_status()
         ded_config = resp2.json()
