@@ -1441,11 +1441,18 @@ def render_standings_table(guoan_matches, standings, guoan_ded):
 
 @st.cache_data(ttl=86400)
 def _get_section_capacities():
-    """用各场比赛各区历史最大销量 × 1.05 作为容量基准，确保不超100%。"""
+    """用 2026 赛季各区最大销量 × 1.05 作为容量基准。
+
+    仅使用 2026 年数据，避免跨年分区变化导致容量虚高
+    （2023-2025 工体改造前分区结构与新工体不同）。
+    """
     csl = _get_csl_parquet()
     if csl is None:
         return {}
-    per_match = csl.groupby(["match_date", "section"])["数量"].sum().reset_index()
+    csl_2026 = csl[csl["match_date"].astype(str).str.startswith("2026")]
+    if csl_2026.empty:
+        csl_2026 = csl  # fallback
+    per_match = csl_2026.groupby(["match_date", "section"])["数量"].sum().reset_index()
     caps = per_match.groupby("section")["数量"].max().to_dict()
     return {str(s): int(v * 1.05) + 1 for s, v in caps.items()}
 
@@ -1521,7 +1528,7 @@ def render_heatmap_tab(guoan_matches):
     # ── 热力图 (颜色=上座率) ──
     match_label = f"{match_date}  vs  {opp}"
     heatmap_html = render_gongti_heatmap(section_fills, section_fills, match_label, total_fill)
-    st.components.v1.html(heatmap_html, height=650, scrolling=True)
+    st.components.v1.html(heatmap_html, height=600)
 
     # ── 销售概况 ──
     if section_qty:
