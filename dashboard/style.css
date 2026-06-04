@@ -417,8 +417,6 @@ tr.guoan-row td { color: var(--guoan-green) !important; font-weight: 590; }
 
 /* ══ 移动端适配 ══ */
 @media (max-width: 768px) {
-    /* KPI卡片: 4列→2列 */
-    .stColumn { min-width: 50% !important; }
     /* 表格横向滚动 */
     .history-table, .compact-table {
         display: block !important;
@@ -446,15 +444,9 @@ tr.guoan-row td { color: var(--guoan-green) !important; font-weight: 590; }
     .kpi-card .kpi-sub { font-size: 0.62rem !important; }
     /* 赛季行 */
     .season-row { font-size: 0.68rem !important; padding: 2px 4px !important; }
-    /* 下拉框全宽 */
-    .stSelectbox { width: 100% !important; }
-    /* radio按钮横向 */
-    .stRadio [role="radiogroup"] { flex-wrap: wrap !important; }
 }
 
 @media (max-width: 480px) {
-    /* KPI卡片: 2列→1列 */
-    .stColumn { min-width: 100% !important; }
     h1 { font-size: 1rem !important; }
     /* Tab更小 */
     .stTabs [data-baseweb="tab"] { padding: 4px 6px !important; font-size: 0.65rem !important; }
