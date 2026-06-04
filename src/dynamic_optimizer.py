@@ -139,7 +139,7 @@ class DynamicPricingOptimizer:
         # 防止 上海海港 类 case：预测上座高但实际价格弹性大 → 涨价驱客
         from src.classify import classify_opponent_tier
         opp_tier = classify_opponent_tier(opponent)
-        tier_rw_cap = {"S": 1.0, "A": 0.65, "B": 0.50, "C": 0.35}
+        tier_rw_cap = {"S": 1.0, "A": 0.75, "B": 0.50, "C": 0.35}
         if rw > tier_rw_cap.get(opp_tier, 1.0):
             rw = tier_rw_cap[opp_tier]
         aw = 1.0 - rw
