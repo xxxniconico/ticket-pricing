@@ -124,13 +124,13 @@ class DynamicPricingOptimizer:
         # 1. 规则引擎预测总量（硬编码基值，MAE=549）
         predicted_total = predict_attendance(opponent, **context)
 
-        # 动态目标权重：四级分档，减少均衡灰色地带
-        if predicted_total >= 11000:
+        # 动态目标权重：四级分档 (V8.2: 门槛下调, 更平滑过渡)
+        if predicted_total >= 10000:
             rw = 0.80  # 收入优先
-        elif predicted_total >= 8500:
-            rw = 0.60  # 收入倾向
-        elif predicted_total >= 6500:
-            rw = 0.40  # 上座倾向
+        elif predicted_total >= 8000:
+            rw = 0.55  # 收入倾向
+        elif predicted_total >= 6000:
+            rw = 0.35  # 上座倾向
         else:
             rw = 0.20  # 上座优先
 
