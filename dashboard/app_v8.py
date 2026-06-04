@@ -1517,13 +1517,18 @@ def render_heatmap_tab(guoan_matches):
 
     section_fills, section_qty, total_fill, section_rev, total_revenue = _compute_match_fill_rates(match_date)
     total_sold = sum(section_qty.values())
+    # 联票修正（四场联票573张/场，未分区，仅在总量体现）
+    from src.match_notes import get_adjusted_actual
+    match_id_full = f"{match_date} {opp}"
+    adj_total = get_adjusted_actual(match_id_full, total_sold)
+    bundle_note = f"（含联票+{adj_total - total_sold:.0f}张）" if adj_total > total_sold else ""
 
     if not section_qty:
         st.warning("该场比赛暂无分区销售数据")
         return
 
     with c2:
-        st.metric("总售出", f"{total_sold:,}张")
+        st.metric("总售出" if not bundle_note else f"总售出{bundle_note}", f"{adj_total:,}张")
 
     # ── 热力图 (颜色=上座率) ──
     match_label = f"{match_date}  vs  {opp}"
