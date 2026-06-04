@@ -18,6 +18,7 @@ from src.rule_engine import predict_calibrated as rule_predict, TIER_BASE, MULTI
 from src.dynamic_optimizer import DynamicPricingOptimizer
 # live_calibrate removed — no pre-sale data available
 from src.pricing_v5 import ZONE_TIERS, ZONE_SECTIONS, classify_opponent, get_pricing_tier, build_price_matrix, build_elasticity_matrix, get_zone_bounds
+from src.csl_context import load_csl_data, get_guoan_matches, detect_ctx
 
 st.set_page_config(page_title="国安票务", page_icon="⚽", layout="wide")
 
@@ -109,106 +110,8 @@ DEDUCTIONS = {
 }
 
 @st.cache_data(ttl=3600)
-def load_csl_data():
-    import requests
-    try:
-        resp = requests.get(CSL_JSON_URL, timeout=60)
-        resp.raise_for_status()
-        data = resp.json()
-    except Exception:
-        st.error("无法加载比赛数据，请稍后刷新")
-        return [], {}, {}
-    raw = data.get("raw_data", data)
-
-    deductions = DEDUCTIONS
-
-    # 在线JSON没有round字段，按日期顺序推断（每8场一轮）
-    all_raw = []
-    for lg in raw.get("leagues", []):
-        if lg.get("name") != "中超联赛": continue
-        all_raw.extend(lg["matches"])
-    all_raw.sort(key=lambda x: x["date"])
-
-    def _safe_score(val):
-        if val is None:
-            return None
-        try:
-            return int(val)
-        except (TypeError, ValueError):
-            return None
-
-    matches = []
-    for i, m in enumerate(all_raw):
-        s = m.get("score", {})
-        hg = _safe_score(s.get("home")) if isinstance(s, dict) else None
-        ag = _safe_score(s.get("away")) if isinstance(s, dict) else None
-        ok = hg is not None and ag is not None
-        rd_num = i // 8 + 1
-        matches.append({"date": m["date"][:10], "round": f"第{rd_num}轮",
-                       "home": m["home_club"], "away": m["away_club"],
-                       "hg": hg, "ag": ag, "completed": ok})
-    standings = _build_standings(matches, deductions)
-    guoan = []
-    for m in matches:
-        if "国安" in m["home"] or "国安" in m["away"]:
-            is_home = "国安" in m["home"]
-            guoan.append({**m, "is_home": is_home, "opponent": m["away"] if is_home else m["home"]})
-    return guoan, standings, deductions
-
-def _round_num(rnd: str) -> int:
-    try:
-        return int(str(rnd).replace("第", "").replace("轮", ""))
-    except ValueError:
-        return 0
-
-
-def _build_standings(matches, deductions):
-    ts = defaultdict(lambda: {"p":0,"w":0,"d":0,"l":0,"gf":0,"ga":0,"pts":0})
-    rounds = {}
-    for m in sorted(matches, key=lambda x: x["date"]):
-        if not m["completed"]: continue
-        rnd, h, a = m["round"], m["home"], m["away"]
-        ts[h]["p"]+=1; ts[a]["p"]+=1; ts[h]["gf"]+=m["hg"]; ts[h]["ga"]+=m["ag"]; ts[a]["gf"]+=m["ag"]; ts[a]["ga"]+=m["hg"]
-        if m["hg"]>m["ag"]: ts[h]["w"]+=1; ts[h]["pts"]+=3; ts[a]["l"]+=1
-        elif m["hg"]==m["ag"]: ts[h]["d"]+=1; ts[a]["d"]+=1; ts[h]["pts"]+=1; ts[a]["pts"]+=1
-        else: ts[a]["w"]+=1; ts[a]["pts"]+=3; ts[h]["l"]+=1
-        rank = [(t,s["p"],s["pts"],deductions.get(t,0),s["pts"]-deductions.get(t,0),s["gf"]-s["ga"],s["gf"],s["w"],s["d"],s["l"]) for t,s in ts.items()]
-        rank.sort(key=lambda x: (-x[4],-x[5],-x[6]))
-        rounds[rnd] = {t: i+1 for i,(t,*_) in enumerate(rank)}
-    return rounds
-
 def get_optimizer():
     return DynamicPricingOptimizer(revenue_weight=0.6)
-
-def detect_ctx(all_matches, match, standings):
-    ctx = {}; md = pd.Timestamp(match["date"])
-    prev = [m for m in all_matches if m["completed"] and pd.Timestamp(m["date"]) < md]
-    last3 = prev[-3:] if len(prev) >= 3 else prev
-    away3 = [m for m in last3 if not m["is_home"]]
-    if len(away3)>=2 and sum(1 for m in away3 if ((m["is_home"] and m["hg"]>m["ag"]) or (not m["is_home"] and m["ag"]>m["hg"])))==0:
-        ctx["away_winless"] = True
-    for m in last3:
-        is_loss = (m["is_home"] and m["hg"]<m["ag"]) or (not m["is_home"] and m["ag"]<m["hg"])
-        if not is_loss: continue
-        if standings.get(m["round"],{}).get(m["opponent"],8) >= 12:
-            # 仅对C级对手触发：S/A/B级因扣分排名低≠真弱队
-            from src.classify import classify_opponent_tier
-            opp_tier = classify_opponent_tier(m["opponent"])
-            if opp_tier == "C":
-                ctx["lost_bottom"] = True
-        if m["is_home"] and abs(m["hg"]-m["ag"])>=2:
-            idx = prev.index(m) if m in prev else -1
-            later = prev[idx+1:] if idx>=0 else []
-            if not any((lm["is_home"] and lm["hg"]>lm["ag"]) or (not lm["is_home"] and lm["ag"]>lm["hg"]) for lm in later):
-                ctx["heavy_home_loss"] = True
-    hp = [m for m in prev if m["is_home"]]
-    if hp and (md - pd.Timestamp(hp[-1]["date"])).days <= 4: ctx["short_rest"] = True
-    # unbeaten_3: 近3场不败
-    if len(last3) >= 3:
-        if all((g["is_home"] and g["hg"] > g["ag"]) or (not g["is_home"] and g["ag"] > g["hg"]) or g["hg"] == g["ag"] for g in last3):
-            ctx["unbeaten_3"] = True
-    return ctx
-
 def render_seating_chart(tier, pred, r):
     """工体鸟瞰图 — 椭圆弧形分区 + 草坪 + 建筑感"""
     tcolors = {
@@ -297,8 +200,8 @@ def render_home_card(match):
     from src.classify import classify_opponent_tier
     tier = classify_opponent_tier(opp)
     base = TIER_BASE.get(tier, 9000)
-    ctx = detect_ctx(guoan_matches, match, standings)
-    derby = opp in {"上海申花","天津津门虎","山东泰山"}
+    ctx = detect_ctx(match, guoan_matches, standings)
+    derby = opp in {"上海申花","山东泰山"}
     sat = dt.weekday()==5; late = dt.month>=10; mid = dt.weekday() in [1,2,3]
     lb = ctx.get("lost_bottom",False); hh = ctx.get("heavy_home_loss",False)
     aw = ctx.get("away_winless",False); sr = ctx.get("short_rest",False); ub3 = ctx.get("unbeaten_3",False)
@@ -361,28 +264,28 @@ def render_home_card(match):
 
     rules_triggered = []
     rules_triggered.append(("基值", f"{tier}级 {base:,.0f}张", 1.0,
-        f"{tier}级基值来自KMeans聚类均值（S=15,000 A=10,600 B=8,600 C=4,900）"))
+        f"{tier}级基值来自KMeans聚类均值（S={TIER_BASE['S']:,.0f} A={TIER_BASE['A']:,.0f} B={TIER_BASE['B']:,.0f} C={TIER_BASE['C']:,.0f}）"))
     if ub3:
-        rules_triggered.append(("不败", "近3场不败 ×1.08", 1.08, "国安近3场未尝败绩，球迷乐观情绪传导至主场观赛意愿。完整30轮验证+13%效应"))
+        rules_triggered.append(("不败", "近3场不败 ×1.00", 1.00, "国安近3场未尝败绩，球迷乐观情绪传导至主场观赛意愿。V5.1网格搜索收敛至中性，效应不显著"))
     if so:
         rules_triggered.append(("揭幕战", f"赛季首个主场 ×1.15", 1.15, "赛季揭幕战球迷关注度高，历史上座溢价约15%。仅本赛季第一个主场触发"))
     if derby:
         if tier=="S":
-            rules_triggered.append(("德比", "S级德比不叠加溢价", 1.0, "申花已是S级最高基值（15,000），德比溢价已内嵌在分级中，不再重复"))
+            rules_triggered.append(("德比", "S级德比不叠加溢价", 1.0, f"申花已是S级最高基值（{TIER_BASE['S']:,}），德比溢价已内嵌在分级中，不再重复"))
         else:
-            m=1.15 if tier=="A" else 1.25
+            m=1.05 if tier=="A" else 1.25
             label = "A级德比" if tier=="A" else "德比"
             rules_triggered.append((label, f"{opp} {label}对手 ×{m}", m,
-                f"{'B级' if tier=='B' else '非S级'}德比仍存较强情感驱动，{'京津德比溢价15%' if tier=='B' else '历史数据显示溢价25%'}，S级不叠加"))
+                f"{'A级德比溢价5%' if tier=='A' else '历史数据显示溢价25%'}，S级不叠加"))
     if sat:
-        rules_triggered.append(("周六场", "周末上座溢价 ×1.10", 1.10, "周六比赛日球迷时间充裕，网格搜索最优溢价约10%"))
+        rules_triggered.append(("周六场", "周末上座溢价 ×1.05", 1.05, "周六比赛日球迷时间充裕，V5.1网格搜索最优溢价约5%"))
     if late:
-        rules_triggered.append(("赛季末", f"{dt.month}月 战意衰减 ×0.60", 0.60, "10月以后赛季末，若球队已无争冠/保级悬念，上座显著下滑。乘数0.60意味着预测降至基准的60%"))
+        rules_triggered.append(("赛季末", f"{dt.month}月 战意衰减 ×0.80", 0.80, "10月以后赛季末，若球队已无争冠/保级悬念，上座下滑。乘数0.80"))
     if mid and not lb and not hh:
-        rules_triggered.append(("工作日", f"周{'一二三四五六日'[dt.weekday()]} 工作日衰减 ×0.80", 0.80, "周二/三/四工作日影响-20%（2024-25数据），乘数0.80。不与lost_bottom/heavy叠加"))
+        rules_triggered.append(("工作日", f"周{'一二三四五六日'[dt.weekday()]} 工作日衰减 ×0.90", 0.90, "周二/三/四工作日影响-10%，乘数0.90。不与lost_bottom/heavy叠加"))
     if aw:
         away3 = [m for m in last3 if not m["is_home"]]
-        rules_triggered.append(("客场不胜", f"近3场{len(away3)}客0胜 ×0.88", 0.88, f"近3场中{len(away3)}个客场无胜，球迷对客场表现失望传导至主场观赛意愿。跨赛季网格搜索最优乘数0.88"))
+        rules_triggered.append(("客场不胜", f"近3场{len(away3)}客0胜 ×0.95", 0.95, f"近3场中{len(away3)}个客场无胜，球迷对客场表现失望传导至主场观赛意愿。跨赛季网格搜索最优乘数0.95"))
     if lb and lb_found:
         rules_triggered.append(("输保级队", f"{lb_found[0]} {lb_found[1]} 排名#{lb_found[2]}≥12 ×0.65", 0.65, f"最近3场中输给排名≥12的保级队（{lb_found[1]} #{lb_found[2]}），对球迷信心打击极大。乘数0.65；对A/S级对手降至×0.78（复仇效应）。后续需赢球抵消"))
     elif hh and hh_found:
@@ -390,9 +293,9 @@ def render_home_card(match):
     if sr and not lb and not hh:
         if last_home_dates:
             prev_home_date = last_home_dates[-1].strftime('%m/%d')
-            rules_triggered.append(("双赛周", f"距上一主场 {prev_home_date} {days_since_home}天 ×0.78", 0.78, f"距上一主场仅{days_since_home}天，双赛周疲劳导致观赛意愿下降。≤4天触发，乘数0.78。不与lost_bottom/heavy叠加"))
+            rules_triggered.append(("双赛周", f"距上一主场 {prev_home_date} {days_since_home}天 ×0.75", 0.75, f"距上一主场仅{days_since_home}天，双赛周疲劳导致观赛意愿下降。≤4天触发，乘数0.75。不与lost_bottom/heavy叠加"))
         else:
-            rules_triggered.append(("双赛周", "双赛周疲劳 ×0.78", 0.78, "双赛周疲劳导致观赛意愿下降。≤4天触发。不与lost_bottom/heavy叠加"))
+            rules_triggered.append(("双赛周", "双赛周疲劳 ×0.75", 0.75, "双赛周疲劳导致观赛意愿下降。≤4天触发。不与lost_bottom/heavy叠加"))
 
     final_mult = 1.0
     for name, desc, m_val, detail in rules_triggered[1:]:
@@ -563,13 +466,16 @@ def render_home_card(match):
 
 @st.cache_data(ttl=300)
 def get_actual(m):
+    from src.match_notes import get_adjusted_actual
     pq = ROOT/"data/processed/all_unified.parquet"
     if not pq.exists(): return 0
     df = pd.read_parquet(pq)
     csl = df[(df["competition"]=="CSL")&(~df["is_partial"])&(~df["is_bundle"])]
     for mid in csl["match_id"].unique():
         md = csl[csl["match_id"]==mid]
-        if str(md["match_date"].iloc[0]).startswith(m["date"]): return int(md["数量"].sum())
+        if str(md["match_date"].iloc[0]).startswith(m["date"]):
+            raw = int(md["数量"].sum())
+            return get_adjusted_actual(mid, raw)
     return 0
 
 @st.cache_data(ttl=300)
@@ -590,7 +496,11 @@ def _get_zone_qtys(m):
             return result
     return {}
 
-guoan_matches, standings, deductions = load_csl_data()
+all_matches, rounds, deductions = load_csl_data()
+# Filter: 国安 only, CSL only
+guoan_matches = get_guoan_matches(all_matches)
+guoan_matches = [m for m in guoan_matches if 'cfl_fixtures_api' in m.get('source','') or 'wikipedia' in m.get('source','')]
+standings = rounds  # alias for backward compat
 if not guoan_matches:
     st.warning("数据加载失败，请刷新页面重试")
     st.stop()
@@ -599,15 +509,19 @@ elasticity_matrix = build_elasticity_matrix()
 optimizer = get_optimizer()
 # calibrator removed
 
-completed = [m for m in guoan_matches if m["completed"]]
+completed = [m for m in guoan_matches if m["completed"] and m["date"].startswith("2026")]
 home_done = [m for m in completed if m["is_home"]]
 total_pts = sum(3 if (m["is_home"] and m["hg"]>m["ag"]) or (not m["is_home"] and m["ag"]>m["hg"]) else 1 if m["hg"]==m["ag"] else 0 for m in completed)
 guoan_ded = deductions.get("北京国安",0)
+def _round_num(rnd: str) -> int:
+    try: return int(str(rnd).replace("第","").replace("轮",""))
+    except: return 0
+
 latest_rnd = max(standings.keys(), key=_round_num, default=None) if standings else None
 guoan_rank = standings.get(latest_rnd, {}).get("北京国安", "?") if latest_rnd else "?"
 
-next_match = next((m for m in guoan_matches if not m["completed"]), None)
-next_home = next((m for m in guoan_matches if not m["completed"] and m["is_home"]), None)
+next_match = next((m for m in guoan_matches if not m["completed"] and m["date"].startswith("2026")), None)
+next_home = next((m for m in guoan_matches if not m["completed"] and m["is_home"] and m["date"].startswith("2026")), None)
 home_w = sum(1 for m in home_done if m["hg"]>m["ag"])
 home_d = sum(1 for m in home_done if m["hg"]==m["ag"])
 home_l = sum(1 for m in home_done if m["hg"]<m["ag"])
@@ -646,12 +560,14 @@ with left:
         for m in home_done:
             a = get_actual(m)
             if a==0: continue
-            ctx = detect_ctx(guoan_matches, m, standings)
+            ctx = detect_ctx(m, guoan_matches, standings)
             dt = pd.Timestamp(m["date"])
             opp = m["opponent"]
-            p = rule_predict(opp, derby=opp in {"上海申花","天津津门虎","山东泰山"},
+            p = rule_predict(opp, derby=opp in {"上海申花","山东泰山"},
                             saturday=dt.weekday()==5, late_season=dt.month>=10, midweek=dt.weekday() in [1,2,3],
+                            summer=dt.month in [7,8],
                             season_opener=(m==home_done[0]),
+                            match_year=m["date"][:4],
                             **{k:ctx.get(k,False) for k in ['away_winless','lost_bottom','heavy_home_loss','short_rest','unbeaten_3']})
             preds.append(p); actuals.append(a)
             rows.append({"日期":m["date"],"对手":opp,"预测":f"{p:,.0f}","实际":f"{a:,.0f}","误差":f"{p-a:+,.0f}","APE":f"{abs(p-a)/a*100:.1f}%"})
@@ -668,7 +584,7 @@ with left:
             a = get_actual(m)
             if a==0: continue
             opp=m["opponent"]; dt=pd.Timestamp(m["date"])
-            ctx=detect_ctx(guoan_matches, m, standings)
+            ctx=detect_ctx(m, guoan_matches, standings)
             zone_qty=_get_zone_qtys(m)
             from src.classify import classify_opponent_tier
             mt=classify_opponent_tier(opp)
@@ -677,11 +593,13 @@ with left:
             pt_hist = get_pricing_tier(opp)
             prices_fixed = {zt: _pm[pt_hist][zt] for zt in ZONE_TIERS}
             fixed_rev=sum(zone_qty.get(zt,0)*prices_fixed[zt] for zt in ZONE_TIERS)
-            pred_args={'derby':opp in {"上海申花","天津津门虎","山东泰山"},
+            pred_args={'derby':opp in {"上海申花","山东泰山"},
                        'saturday':dt.weekday()==5,'late_season':dt.month>=10,
-                       'midweek':dt.weekday() in [1,2,3],'season_opener':(m==home_done[0]),
+                       'midweek':dt.weekday() in [1,2,3],'summer':dt.month in [7,8],
+                       'season_opener':(m==home_done[0]),
+                       'match_year':m["date"][:4],
                        **{k:ctx.get(k,False) for k in ['away_winless','lost_bottom','heavy_home_loss','short_rest','unbeaten_3']}}
-            r=optimizer.optimize(opp, min_revenue=fixed_rev, **pred_args)
+            r=optimizer.optimize(opp, **pred_args)
             rw = r.revenue_weight; aw = r.attendance_weight
             if rw >= 0.7: strat_label, strat_color = "收入优先", "#ff6b6b"
             elif rw <= 0.3: strat_label, strat_color = "上座优先", "#51cf66"
@@ -706,11 +624,13 @@ with left:
             if ups: desc_lines.append(f"↑ 涨价档位：{' '.join(ups)}（高价创收，目标涨10-20%）")
             if downs: desc_lines.append(f"↓ 降价档位：{' '.join(downs)}（低价抢量，目标降10-25%）")
             if frozen: desc_lines.append(f"🔒 锁价档位：{' '.join(frozen)}")
-            rev_delta = r.total_revenue - fixed_rev
-            if rev_delta > 0:
-                desc_lines.append(f"预期效果：增收 ¥{rev_delta/10000:+.1f}万（{rev_delta/fixed_rev*100:+.1f}%），上座 {r.total_attendance:,.0f}（{'↑' if r.total_attendance > r.base_attendance else '↓'}{abs(r.total_attendance/r.base_attendance-1)*100:.0f}%）")
+            # 预期效果：优化 vs 基准（同模型基线对比，不含实际数据）
+            rev_delta_model = r.total_revenue - r.base_revenue
+            att_delta_pct = (r.total_attendance / r.base_attendance - 1) * 100 if r.base_attendance > 0 else 0
+            if rev_delta_model > 0:
+                desc_lines.append(f"预期效果：增收 ¥{rev_delta_model/10000:+.1f}万（{rev_delta_model/r.base_revenue*100:+.1f}%），上座 {r.total_attendance:,.0f}（{'↑' if att_delta_pct>0 else '↓'}{abs(att_delta_pct):.0f}%）")
             else:
-                desc_lines.append(f"预期效果：以价换量，上座 {r.total_attendance:,.0f}（+{(r.total_attendance/r.base_attendance-1)*100:.0f}%），收入微调 ¥{rev_delta/10000:+.1f}万")
+                desc_lines.append(f"预期效果：以价换量，增收 ¥{rev_delta_model/10000:+.1f}万，上座 {r.total_attendance:,.0f}（{'↑' if att_delta_pct>0 else '↓'}{abs(att_delta_pct):.0f}%）")
             strategy_html = f"""<div style="font-size:0.7rem;color:#8a8f98;line-height:1.5;padding:6px 10px;
             margin:6px 0;background:rgba(255,255,255,0.015);border:1px solid rgba(255,255,255,0.05);border-radius:6px;
             border-left:3px solid {strat_color}">
@@ -727,17 +647,17 @@ with left:
                 actual_z=zone_qty.get(zt,0)
                 actual_rev=actual_z*prices_fixed[zt]
                 total_fixed += actual_rev; total_scenario += tr.revenue
-                total_pred_qty += tr.predicted_qty; total_actual_qty += actual_z
+                total_pred_qty += tr.base_qty; total_actual_qty += actual_z
                 dp_color = "#51cf66" if dp < -0.5 else "#ff6b6b" if dp > 0.5 else "#8a8f98"
                 dp_str = f'<span style="color:{dp_color}">{dp:+.0f}%</span>' if abs(dp) > 1 else ""
                 rows_html += (f'<tr><td>{zt}</td><td>¥{tr.base_price:,.0f}</td>'
                              f'<td>¥{tr.optimal_price:,.0f} {dp_str}</td>'
-                             f'<td>{tr.predicted_qty:,.0f}</td><td>{actual_z:,}</td>'
+                             f'<td>{tr.base_qty:,.0f}</td><td>{actual_z:,}</td>'
                              f'<td>¥{tr.revenue/10000:.2f}万</td><td>¥{actual_rev/10000:.2f}万</td></tr>')
-            rev_delta = total_scenario - total_fixed
-            rev_color = "#ff6b6b" if rev_delta > 0 else "#51cf66"
-            rev_sign = "+" if rev_delta > 0 else ""
-            rev_delta_str = f'<span style="color:{rev_color}">{rev_sign}¥{rev_delta/10000:.1f}万</span>'
+            rev_delta_model = r.total_revenue - r.base_revenue
+            rev_color = "#ff6b6b" if rev_delta_model > 0 else "#51cf66"
+            rev_sign = "+" if rev_delta_model > 0 else ""
+            rev_delta_str = f'<span style="color:{rev_color}">{rev_sign}¥{rev_delta_model/10000:.1f}万</span>'
             rows_html += (f'<tr style="border-top:1px solid rgba(255,255,255,0.08);font-weight:510">'
                          f'<td colspan="3" style="color:#8a8f98">合计</td>'
                          f'<td style="color:#f7f8f8">{total_pred_qty:,.0f}</td>'
@@ -745,12 +665,13 @@ with left:
                          f'<td style="color:#f7f8f8">¥{total_scenario/10000:.1f}万</td>'
                          f'<td style="color:#f7f8f8">¥{total_fixed/10000:.1f}万</td></tr>')
             st.markdown(f'<table class="history-table"><thead><tr><th>档位</th><th>基准价</th><th>优化价</th><th>场景量</th><th>实际量</th><th>场景收入</th><th>实际收入</th></tr></thead><tbody>{rows_html}</tbody></table>', unsafe_allow_html=True)
-            st.caption(f"实际收入 ¥{total_fixed/10000:.1f}万 | 情景收入 ¥{total_scenario/10000:.1f}万 | 增量 {rev_delta_str}（未验证）", unsafe_allow_html=True)
+            st.caption(f"优化效果 {rev_delta_str}（vs 基准价模型收入 ¥{r.base_revenue/10000:.1f}万）| 实际收入 ¥{total_fixed/10000:.1f}万（仅供参考，未验证）", unsafe_allow_html=True)
 
 with right:
     st.subheader("赛季全览")
     cum_pts=0; prev_rank=None
     for m in guoan_matches:
+        if not m["date"].startswith("2026"): continue
         rnd=m["round"]; ds=m["date"][5:]; opp=m["opponent"]; vs="vs" if m["is_home"] else "@ "
         if m["completed"]:
             if m["is_home"]: res="W" if m["hg"]>m["ag"] else "D" if m["hg"]==m["ag"] else "L"; sc=f"{m['hg']}-{m['ag']}"

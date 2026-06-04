@@ -1,0 +1,247 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 纯矢量：path + text，无内嵌 PNG/JPEG；由 scripts/generate_stadium_svg.py 生成 -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 686" width="1024" height="686">
+  <defs>
+    <pattern id="awayPattern" width="5" height="5" patternUnits="userSpaceOnUse">
+      <rect width="5" height="5" fill="#fff"/>
+      <circle cx="2.5" cy="2.5" r="1" fill="#888"/>
+    </pattern>
+    <linearGradient id="pitchGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#5aad6a"/>
+      <stop offset="45%" stop-color="#3f8f52"/>
+      <stop offset="100%" stop-color="#2d7340"/>
+    </linearGradient>
+    <pattern id="grassStripe" width="12" height="76" patternUnits="userSpaceOnUse">
+      <rect width="6" height="100%" fill="#ffffff" opacity="0.12"/>
+      <rect x="6" width="6" height="100%" fill="#000000" opacity="0"/>
+    </pattern>
+    <filter id="pitchShadow" x="-10%" y="-15%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-color="#1a3d24" flood-opacity="0.28"/>
+    </filter>
+  </defs>
+  <g id="pitch" filter="url(#pitchShadow)">
+    <rect x="391.0" y="300.0" width="218.0" height="76.0" rx="4" fill="url(#pitchGrad)"/>
+    <rect x="391.0" y="300.0" width="218.0" height="76.0" rx="4" fill="url(#grassStripe)"/>
+    <rect x="396.0" y="305.0" width="208.0" height="66.0" fill="none" stroke="rgba(255,255,255,0.78)" stroke-width="0.72"/>
+    <line x1="500.0" y1="305.0" x2="500.0" y2="371.0" stroke="rgba(255,255,255,0.78)" stroke-width="0.6839999999999999"/>
+    <circle cx="500.0" cy="338.0" r="10.6" fill="none" stroke="rgba(255,255,255,0.78)" stroke-width="0.6839999999999999"/>
+    <circle cx="500.0" cy="338.0" r="1.3" fill="rgba(255,255,255,0.78)"/>
+    <rect x="396.0" y="316.0" width="33.8" height="44.1" fill="none" stroke="rgba(255,255,255,0.78)" stroke-width="0.648" opacity="0.88"/>
+    <rect x="396.0" y="326.6" width="11.3" height="22.8" fill="none" stroke="rgba(255,255,255,0.78)" stroke-width="0.612" opacity="0.82"/>
+    <rect x="570.2" y="316.0" width="33.8" height="44.1" fill="none" stroke="rgba(255,255,255,0.78)" stroke-width="0.648" opacity="0.88"/>
+    <rect x="592.7" y="326.6" width="11.3" height="22.8" fill="none" stroke="rgba(255,255,255,0.78)" stroke-width="0.612" opacity="0.82"/>
+    <rect x="391.0" y="300.0" width="218.0" height="76.0" rx="4" fill="none" stroke="#1a4d2c" stroke-width="1.15"/>
+  </g>
+<path id="sec-307" d="M259.94,420.52L192.23,443.79A352.00,218.00,0,0,0,221.71,471.49L282.93,442.12A274.56,170.04,0,0,1,259.94,420.52Z" fill="#ffffff" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="238.4" y="444.8" text-anchor="middle" dominant-baseline="middle" font-size="8.5" font-family="Arial,Helvetica,sans-serif" fill="#111">307</text>
+<path id="sec-306" d="M282.93,442.12L221.71,471.49A352.00,218.00,0,0,0,257.63,496.09L310.95,461.31A274.56,170.04,0,0,1,282.93,442.12Z" fill="#ffffff" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="267.6" y="468.1" text-anchor="middle" dominant-baseline="middle" font-size="8.5" font-family="Arial,Helvetica,sans-serif" fill="#111">306</text>
+<path id="sec-305" d="M310.95,461.31L257.63,496.09A352.00,218.00,0,0,0,299.17,517.04L343.35,477.65A274.56,170.04,0,0,1,310.95,461.31Z" fill="#ffffff" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="302.2" y="488.5" text-anchor="middle" dominant-baseline="middle" font-size="8.5" font-family="Arial,Helvetica,sans-serif" fill="#111">305</text>
+<path id="sec-304" d="M343.35,477.65L299.17,517.04A352.00,218.00,0,0,0,345.36,533.84L379.38,490.75A274.56,170.04,0,0,1,343.35,477.65Z" fill="#ffffff" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="341.4" y="505.3" text-anchor="middle" dominant-baseline="middle" font-size="8.5" font-family="Arial,Helvetica,sans-serif" fill="#111">304</text>
+<path id="sec-303" d="M379.38,490.75L345.36,533.84A352.00,218.00,0,0,0,395.13,546.10L418.20,500.32A274.56,170.04,0,0,1,379.38,490.75Z" fill="#ffffff" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="384.2" y="518.3" text-anchor="middle" dominant-baseline="middle" font-size="8.5" font-family="Arial,Helvetica,sans-serif" fill="#111">303</text>
+<path id="sec-302" d="M418.20,500.32L395.13,546.10A352.00,218.00,0,0,0,464.35,554.88L472.19,507.17A274.56,170.04,0,0,1,418.20,500.32Z" fill="#ffffff" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="437.2" y="528.1" text-anchor="middle" dominant-baseline="middle" font-size="8.5" font-family="Arial,Helvetica,sans-serif" fill="#111">302</text>
+<path id="sec-301" d="M472.19,507.17L464.35,554.88A352.00,218.00,0,0,0,536.61,554.82L528.55,507.12A274.56,170.04,0,0,1,472.19,507.17Z" fill="#ffffff" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="500.4" y="532.0" text-anchor="middle" dominant-baseline="middle" font-size="8.5" font-family="Arial,Helvetica,sans-serif" fill="#111">301</text>
+<path id="sec-340" d="M528.55,507.12L536.61,554.82A352.00,218.00,0,0,0,604.76,546.12L581.71,500.33A274.56,170.04,0,0,1,528.55,507.12Z" fill="#ffffff" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="563.2" y="528.0" text-anchor="middle" dominant-baseline="middle" font-size="8.5" font-family="Arial,Helvetica,sans-serif" fill="#111">340</text>
+<path id="sec-339" d="M581.71,500.33L604.76,546.12A352.00,218.00,0,0,0,667.88,529.61L630.95,487.45A274.56,170.04,0,0,1,581.71,500.33Z" fill="#ffffff" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="621.9" y="516.7" text-anchor="middle" dominant-baseline="middle" font-size="8.5" font-family="Arial,Helvetica,sans-serif" fill="#111">339</text>
+<path id="sec-338" d="M630.95,487.45L667.88,529.61A352.00,218.00,0,0,0,712.88,511.61L666.05,473.42A274.56,170.04,0,0,1,630.95,487.45Z" fill="#f9a61a" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="669.9" y="501.0" text-anchor="middle" dominant-baseline="middle" font-size="8.5" font-family="Arial,Helvetica,sans-serif" fill="#111">338</text>
+<path id="sec-337" d="M666.05,473.42L712.88,511.61A352.00,218.00,0,0,0,752.95,489.60L697.30,456.25A274.56,170.04,0,0,1,666.05,473.42Z" fill="#b7b7b7" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="707.9" y="483.1" text-anchor="middle" dominant-baseline="middle" font-size="8.5" font-family="Arial,Helvetica,sans-serif" fill="#111">337</text>
+<path id="sec-336" d="M697.30,456.25L752.95,489.60A352.00,218.00,0,0,0,787.16,464.07L723.99,436.34A274.56,170.04,0,0,1,697.30,456.25Z" fill="#b7b7b7" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="741.1" y="461.9" text-anchor="middle" dominant-baseline="middle" font-size="8.5" font-family="Arial,Helvetica,sans-serif" fill="#111">336</text>
+<path id="sec-335" d="M723.99,436.34L787.16,464.07A352.00,218.00,0,0,0,814.73,435.63L745.49,414.15A274.56,170.04,0,0,1,723.99,436.34Z" fill="url(#awayPattern)" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="768.6" y="437.8" text-anchor="middle" dominant-baseline="middle" font-size="8.5" font-family="Arial,Helvetica,sans-serif" fill="#111">335</text>
+<path id="sec-334" d="M745.49,414.15L814.73,435.63A352.00,218.00,0,0,0,835.00,404.92L761.30,390.20A274.56,170.04,0,0,1,745.49,414.15Z" fill="url(#awayPattern)" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="790.0" y="411.4" text-anchor="middle" dominant-baseline="middle" font-size="8.5" font-family="Arial,Helvetica,sans-serif" fill="#111">334</text>
+<path id="sec-333" d="M761.30,390.20L835.00,404.92A352.00,218.00,0,0,0,847.52,372.67L771.07,365.04A274.56,170.04,0,0,1,761.30,390.20Z" fill="#b7b7b7" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="804.6" y="383.3" text-anchor="middle" dominant-baseline="middle" font-size="8.5" font-family="Arial,Helvetica,sans-serif" fill="#111">333</text>
+<path id="sec-332" d="M771.07,365.04L847.52,372.67A352.00,218.00,0,0,0,851.99,339.61L774.55,339.26A274.56,170.04,0,0,1,771.07,365.04Z" fill="#27d08a" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="812.2" y="354.2" text-anchor="middle" dominant-baseline="middle" font-size="8.5" font-family="Arial,Helvetica,sans-serif" fill="#111">332</text>
+<path id="sec-331" d="M774.55,339.26L851.99,339.61A352.00,218.00,0,0,0,848.31,306.52L771.68,313.44A274.56,170.04,0,0,1,774.55,339.26Z" fill="#27d08a" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="812.5" y="324.7" text-anchor="middle" dominant-baseline="middle" font-size="8.5" font-family="Arial,Helvetica,sans-serif" fill="#111">331</text>
+<path id="sec-330" d="M771.68,313.44L848.31,306.52A352.00,218.00,0,0,0,836.56,274.15L762.52,288.20A274.56,170.04,0,0,1,771.68,313.44Z" fill="#27d08a" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="805.7" y="295.5" text-anchor="middle" dominant-baseline="middle" font-size="8.5" font-family="Arial,Helvetica,sans-serif" fill="#111">330</text>
+<path id="sec-329" d="M762.52,288.20L836.56,274.15A352.00,218.00,0,0,0,817.02,243.26L747.28,264.11A274.56,170.04,0,0,1,762.52,288.20Z" fill="#8da1f7" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="791.7" y="267.2" text-anchor="middle" dominant-baseline="middle" font-size="8.5" font-family="Arial,Helvetica,sans-serif" fill="#111">329</text>
+<path id="sec-328" d="M747.28,264.11L817.02,243.26A352.00,218.00,0,0,0,790.14,214.57L726.31,241.72A274.56,170.04,0,0,1,747.28,264.11Z" fill="#8da1f7" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="771.0" y="240.6" text-anchor="middle" dominant-baseline="middle" font-size="8.5" font-family="Arial,Helvetica,sans-serif" fill="#111">328</text>
+<path id="sec-327" d="M726.31,241.72L790.14,214.57A352.00,218.00,0,0,0,756.54,188.73L700.10,221.57A274.56,170.04,0,0,1,726.31,241.72Z" fill="#8da1f7" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="744.0" y="216.3" text-anchor="middle" dominant-baseline="middle" font-size="8.5" font-family="Arial,Helvetica,sans-serif" fill="#111">327</text>
+<path id="sec-326" d="M700.10,221.57L756.54,188.73A352.00,218.00,0,0,0,717.00,166.35L669.26,204.12A274.56,170.04,0,0,1,700.10,221.57Z" fill="#f9a61a" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="711.3" y="194.8" text-anchor="middle" dominant-baseline="middle" font-size="8.5" font-family="Arial,Helvetica,sans-serif" fill="#111">326</text>
+<path id="sec-325" d="M669.26,204.12L717.00,166.35A352.00,218.00,0,0,0,672.44,147.95L634.50,189.76A274.56,170.04,0,0,1,669.26,204.12Z" fill="#f9a61a" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="673.8" y="176.6" text-anchor="middle" dominant-baseline="middle" font-size="8.5" font-family="Arial,Helvetica,sans-serif" fill="#111">325</text>
+<path id="sec-324" d="M634.50,189.76L672.44,147.95A352.00,218.00,0,0,0,623.88,133.95L596.63,178.84A274.56,170.04,0,0,1,634.50,189.76Z" fill="#f1f530" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="632.2" y="162.1" text-anchor="middle" dominant-baseline="middle" font-size="8.5" font-family="Arial,Helvetica,sans-serif" fill="#111">324</text>
+<path id="sec-323" d="M596.63,178.84L623.88,133.95A352.00,218.00,0,0,0,572.45,124.67L556.51,171.60A274.56,170.04,0,0,1,596.63,178.84Z" fill="#f1f530" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="587.6" y="151.7" text-anchor="middle" dominant-baseline="middle" font-size="8.5" font-family="Arial,Helvetica,sans-serif" fill="#111">323</text>
+<path id="sec-322" d="M556.51,171.60L572.45,124.67A352.00,218.00,0,0,0,519.35,120.33L515.09,168.22A274.56,170.04,0,0,1,556.51,171.60Z" fill="#f1f530" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="541.0" y="145.6" text-anchor="middle" dominant-baseline="middle" font-size="8.5" font-family="Arial,Helvetica,sans-serif" fill="#111">322</text>
+<path id="sec-321" d="M515.09,168.22L519.35,120.33A352.00,218.00,0,0,0,465.80,121.03L473.32,168.76A274.56,170.04,0,0,1,515.09,168.22Z" fill="#f1f530" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="493.4" y="144.0" text-anchor="middle" dominant-baseline="middle" font-size="8.5" font-family="Arial,Helvetica,sans-serif" fill="#111">321</text>
+<path id="sec-320" d="M473.32,168.76L465.80,121.03A352.00,218.00,0,0,0,413.03,126.76L432.17,173.23A274.56,170.04,0,0,1,473.32,168.76Z" fill="#f1f530" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="445.9" y="146.9" text-anchor="middle" dominant-baseline="middle" font-size="8.5" font-family="Arial,Helvetica,sans-serif" fill="#111">320</text>
+<path id="sec-319" d="M432.17,173.23L413.03,126.76A352.00,218.00,0,0,0,362.29,137.38L392.58,181.51A274.56,170.04,0,0,1,432.17,173.23Z" fill="#f1f530" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="399.7" y="154.2" text-anchor="middle" dominant-baseline="middle" font-size="8.5" font-family="Arial,Helvetica,sans-serif" fill="#111">319</text>
+<path id="sec-318" d="M392.58,181.51L362.29,137.38A352.00,218.00,0,0,0,314.73,152.64L355.49,193.42A274.56,170.04,0,0,1,392.58,181.51Z" fill="#f9a61a" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="355.9" y="165.7" text-anchor="middle" dominant-baseline="middle" font-size="8.5" font-family="Arial,Helvetica,sans-serif" fill="#111">318</text>
+<path id="sec-317" d="M355.49,193.42L314.73,152.64A352.00,218.00,0,0,0,271.46,172.20L321.74,208.67A274.56,170.04,0,0,1,355.49,193.42Z" fill="#f9a61a" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="315.3" y="181.3" text-anchor="middle" dominant-baseline="middle" font-size="8.5" font-family="Arial,Helvetica,sans-serif" fill="#111">317</text>
+<path id="sec-316" d="M321.74,208.67L271.46,172.20A352.00,218.00,0,0,0,233.49,195.59L292.12,226.92A274.56,170.04,0,0,1,321.74,208.67Z" fill="#8da1f7" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="279.1" y="200.4" text-anchor="middle" dominant-baseline="middle" font-size="8.5" font-family="Arial,Helvetica,sans-serif" fill="#111">316</text>
+<path id="sec-315" d="M292.12,226.92L233.49,195.59A352.00,218.00,0,0,0,201.68,222.28L267.31,247.74A274.56,170.04,0,0,1,292.12,226.92Z" fill="#8da1f7" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="247.9" y="222.8" text-anchor="middle" dominant-baseline="middle" font-size="8.5" font-family="Arial,Helvetica,sans-serif" fill="#111">315</text>
+<path id="sec-314" d="M267.31,247.74L201.68,222.28A352.00,218.00,0,0,0,176.79,251.66L247.89,270.65A274.56,170.04,0,0,1,267.31,247.74Z" fill="#8da1f7" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="222.6" y="247.8" text-anchor="middle" dominant-baseline="middle" font-size="8.5" font-family="Arial,Helvetica,sans-serif" fill="#111">314</text>
+<path id="sec-313" d="M247.89,270.65L176.79,251.66A352.00,218.00,0,0,0,159.37,283.03L234.31,295.12A274.56,170.04,0,0,1,247.89,270.65Z" fill="#27d08a" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="203.7" y="274.9" text-anchor="middle" dominant-baseline="middle" font-size="8.5" font-family="Arial,Helvetica,sans-serif" fill="#111">313</text>
+<path id="sec-312" d="M234.31,295.12L159.37,283.03A352.00,218.00,0,0,0,149.85,315.67L226.88,320.59A274.56,170.04,0,0,1,234.31,295.12Z" fill="#27d08a" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="191.7" y="303.5" text-anchor="middle" dominant-baseline="middle" font-size="8.5" font-family="Arial,Helvetica,sans-serif" fill="#111">312</text>
+<path id="sec-311" d="M226.88,320.59L149.85,315.67A352.00,218.00,0,0,0,148.44,348.84L225.78,346.45A274.56,170.04,0,0,1,226.88,320.59Z" fill="#27d08a" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="186.8" y="332.9" text-anchor="middle" dominant-baseline="middle" font-size="8.5" font-family="Arial,Helvetica,sans-serif" fill="#111">311</text>
+<path id="sec-310" d="M225.78,346.45L148.44,348.84A352.00,218.00,0,0,0,155.16,381.75L231.03,372.12A274.56,170.04,0,0,1,225.78,346.45Z" fill="#27d08a" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="189.2" y="362.4" text-anchor="middle" dominant-baseline="middle" font-size="8.5" font-family="Arial,Helvetica,sans-serif" fill="#111">310</text>
+<path id="sec-309" d="M231.03,372.12L155.16,381.75A352.00,218.00,0,0,0,169.87,413.64L242.50,397.00A274.56,170.04,0,0,1,231.03,372.12Z" fill="#8da1f7" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="198.8" y="391.3" text-anchor="middle" dominant-baseline="middle" font-size="8.5" font-family="Arial,Helvetica,sans-serif" fill="#111">309</text>
+<path id="sec-308" d="M242.50,397.00L169.87,413.64A352.00,218.00,0,0,0,192.23,443.79L259.94,420.52A274.56,170.04,0,0,1,242.50,397.00Z" fill="#8da1f7" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="215.3" y="419.0" text-anchor="middle" dominant-baseline="middle" font-size="8.5" font-family="Arial,Helvetica,sans-serif" fill="#111">308</text>
+<path id="sec-209" d="M294.88,384.16L241.95,396.08A274.56,170.04,0,0,0,261.20,421.91L310.18,404.70A218.24,135.16,0,0,1,294.88,384.16Z" fill="#f9a61a" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="276.3" y="401.9" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">209</text>
+<path id="sec-208" d="M310.18,404.70L261.20,421.91A274.56,170.04,0,0,0,287.13,445.39L330.80,423.36A218.24,135.16,0,0,1,310.18,404.70Z" fill="#f9a61a" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="296.6" y="424.1" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">208</text>
+<path id="sec-207" d="M330.80,423.36L287.13,445.39A274.56,170.04,0,0,0,319.02,465.87L356.15,439.64A218.24,135.16,0,0,1,330.80,423.36Z" fill="#ffffff" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="322.7" y="443.9" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">207</text>
+<path id="sec-206" d="M356.15,439.64L319.02,465.87A274.56,170.04,0,0,0,355.98,482.77L385.52,453.07A218.24,135.16,0,0,1,356.15,439.64Z" fill="#ffffff" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="353.7" y="460.8" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">206</text>
+<path id="sec-205" d="M385.52,453.07L355.98,482.77A274.56,170.04,0,0,0,392.72,494.52L414.73,462.42A218.24,135.16,0,0,1,385.52,453.07Z" fill="#ffffff" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="386.9" y="473.6" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">205</text>
+<path id="sec-240" d="M511.42,472.97L514.37,507.81A274.56,170.04,0,0,0,555.39,504.54L544.02,470.38A218.24,135.16,0,0,1,511.42,472.97Z" fill="#ffffff" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="531.4" y="489.4" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">240</text>
+<path id="sec-239" d="M544.02,470.38L555.39,504.54A274.56,170.04,0,0,0,599.45,496.49L579.05,463.98A218.24,135.16,0,0,1,544.02,470.38Z" fill="#ffffff" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="569.7" y="484.4" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">239</text>
+<path id="sec-238" d="M579.05,463.98L599.45,496.49A274.56,170.04,0,0,0,640.72,484.01L611.86,454.06A218.24,135.16,0,0,1,579.05,463.98Z" fill="#f9a61a" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="608.1" y="475.1" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">238</text>
+<path id="sec-237" d="M611.86,454.06L640.72,484.01A274.56,170.04,0,0,0,678.06,467.43L641.54,440.88A218.24,135.16,0,0,1,611.86,454.06Z" fill="#f9a61a" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="643.5" y="462.0" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">237</text>
+<path id="sec-230" d="M641.54,440.88L678.06,467.43A274.56,170.04,0,0,0,710.41,447.23L667.25,424.83A218.24,135.16,0,0,1,641.54,440.88Z" fill="#f9a61a" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="674.9" y="445.5" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">230</text>
+<path id="sec-231" d="M667.25,424.83L710.41,447.23A274.56,170.04,0,0,0,736.88,423.98L688.29,406.34A218.24,135.16,0,0,1,667.25,424.83Z" fill="#f9a61a" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="701.4" y="425.9" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">231</text>
+<path id="sec-232" d="M688.29,406.34L736.88,423.98A274.56,170.04,0,0,0,756.71,398.32L704.05,385.94A218.24,135.16,0,0,1,688.29,406.34Z" fill="#f9a61a" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="722.3" y="403.9" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">232</text>
+<path id="sec-233" d="M704.05,385.94L756.71,398.32A274.56,170.04,0,0,0,769.35,370.96L714.10,364.20A218.24,135.16,0,0,1,704.05,385.94Z" fill="#b7b7b7" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="736.9" y="380.0" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">233</text>
+<path id="sec-234" d="M714.10,364.20L769.35,370.96A274.56,170.04,0,0,0,774.46,342.69L718.16,341.73A218.24,135.16,0,0,1,714.10,364.20Z" fill="url(#awayPattern)" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="744.9" y="355.0" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">234</text>
+<path id="sec-235" d="M718.16,341.73L774.46,342.69A274.56,170.04,0,0,0,771.88,314.28L716.11,319.15A218.24,135.16,0,0,1,718.16,341.73Z" fill="url(#awayPattern)" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="746.0" y="329.4" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">235</text>
+<path id="sec-236" d="M716.11,319.15L771.88,314.28A274.56,170.04,0,0,0,761.69,286.54L708.01,297.10A218.24,135.16,0,0,1,716.11,319.15Z" fill="#b7b7b7" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="740.3" y="304.1" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">236</text>
+<path id="sec-229" d="M708.01,297.10L761.69,286.54A274.56,170.04,0,0,0,744.17,260.24L694.08,276.19A218.24,135.16,0,0,1,708.01,297.10Z" fill="#f9a61a" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="727.8" y="279.8" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">229</text>
+<path id="sec-228" d="M694.08,276.19L744.17,260.24A274.56,170.04,0,0,0,719.82,236.12L674.73,257.02A218.24,135.16,0,0,1,694.08,276.19Z" fill="#f9a61a" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="708.9" y="257.1" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">228</text>
+<path id="sec-227" d="M674.73,257.02L719.82,236.12A274.56,170.04,0,0,0,689.31,214.85L650.48,240.11A218.24,135.16,0,0,1,674.73,257.02Z" fill="#f9a61a" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="684.2" y="236.7" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">227</text>
+<path id="sec-226" d="M650.48,240.11L689.31,214.85A274.56,170.04,0,0,0,653.51,197.02L622.02,225.94A218.24,135.16,0,0,1,650.48,240.11Z" fill="#f9a61a" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="654.4" y="219.1" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">226</text>
+<path id="sec-225" d="M622.02,225.94L653.51,197.02A274.56,170.04,0,0,0,613.41,183.14L590.14,214.91A218.24,135.16,0,0,1,622.02,225.94Z" fill="#f66d81" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="620.2" y="204.8" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">225</text>
+<path id="sec-224" d="M590.14,214.91L613.41,183.14A274.56,170.04,0,0,0,570.13,173.60L555.74,207.32A218.24,135.16,0,0,1,590.14,214.91Z" fill="#f66d81" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="582.6" y="194.2" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">224</text>
+<path id="sec-223" d="M555.74,207.32L570.13,173.60A274.56,170.04,0,0,0,524.89,168.66L519.78,203.40A218.24,135.16,0,0,1,555.74,207.32Z" fill="#f66d81" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="542.8" y="187.7" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">223</text>
+<path id="sec-222" d="M519.78,203.40L524.89,168.66A274.56,170.04,0,0,0,478.95,168.46L483.27,203.24A218.24,135.16,0,0,1,519.78,203.40Z" fill="#f66d81" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="501.7" y="185.4" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">222</text>
+<path id="sec-221" d="M483.27,203.24L478.95,168.46A274.56,170.04,0,0,0,433.60,173.01L447.22,206.85A218.24,135.16,0,0,1,483.27,203.24Z" fill="#f66d81" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="460.6" y="187.4" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">221</text>
+<path id="sec-220" d="M447.22,206.85L433.60,173.01A274.56,170.04,0,0,0,390.12,182.17L412.66,214.14A218.24,135.16,0,0,1,447.22,206.85Z" fill="#f66d81" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="420.6" y="193.5" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">220</text>
+<path id="sec-219" d="M412.66,214.14L390.12,182.17A274.56,170.04,0,0,0,349.70,195.70L380.53,224.89A218.24,135.16,0,0,1,412.66,214.14Z" fill="#f66d81" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="382.8" y="203.8" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">219</text>
+<path id="sec-218" d="M380.53,224.89L349.70,195.70A274.56,170.04,0,0,0,313.50,213.21L351.75,238.81A218.24,135.16,0,0,1,380.53,224.89Z" fill="#f66d81" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="348.3" y="217.7" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">218</text>
+<path id="sec-217" d="M351.75,238.81L313.50,213.21A274.56,170.04,0,0,0,282.51,234.22L327.13,255.50A218.24,135.16,0,0,1,351.75,238.81Z" fill="#f9a61a" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="318.1" y="235.1" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">217</text>
+<path id="sec-216" d="M327.13,255.50L282.51,234.22A274.56,170.04,0,0,0,257.62,258.13L307.34,274.51A218.24,135.16,0,0,1,327.13,255.50Z" fill="#f9a61a" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="292.9" y="255.3" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">216</text>
+<path id="sec-215" d="M307.34,274.51L257.62,258.13A274.56,170.04,0,0,0,239.51,284.27L292.94,295.29A218.24,135.16,0,0,1,307.34,274.51Z" fill="#f9a61a" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="273.6" y="277.8" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">215</text>
+<path id="sec-214" d="M292.94,295.29L239.51,284.27A274.56,170.04,0,0,0,228.69,311.92L284.34,317.27A218.24,135.16,0,0,1,292.94,295.29Z" fill="#f9a61a" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="260.5" y="302.1" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">214</text>
+<path id="sec-213" d="M284.34,317.27L228.69,311.92A274.56,170.04,0,0,0,225.47,340.30L281.78,339.83A218.24,135.16,0,0,1,284.34,317.27Z" fill="#f9a61a" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="254.2" y="327.3" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">213</text>
+<path id="sec-212" d="M281.78,339.83L225.47,340.30A274.56,170.04,0,0,0,229.93,368.62L285.33,362.34A218.24,135.16,0,0,1,281.78,339.83Z" fill="#f9a61a" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="254.8" y="352.8" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">212</text>
+<path id="sec-211" d="M285.33,362.34L229.93,368.62A274.56,170.04,0,0,0,241.95,396.08L294.88,384.16A218.24,135.16,0,0,1,285.33,362.34Z" fill="#f9a61a" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="262.2" y="377.9" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">211</text>
+<path id="sec-106" d="M340.98,373.36L294.60,383.68A218.24,135.16,0,0,0,314.19,408.89L356.14,392.88A168.96,104.64,0,0,1,340.98,373.36Z" fill="#f9a61a" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="325.5" y="390.0" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">106</text>
+<path id="sec-105" d="M356.14,392.88L314.19,408.89A218.24,135.16,0,0,0,341.73,431.06L377.47,410.05A168.96,104.64,0,0,1,356.14,392.88Z" fill="#f9a61a" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="346.6" y="411.1" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">105</text>
+<path id="sec-104" d="M377.47,410.05L341.73,431.06A218.24,135.16,0,0,0,376.06,449.25L404.05,424.13A168.96,104.64,0,0,1,377.47,410.05Z" fill="#f66d81" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="374.2" y="429.1" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">104</text>
+<path id="sec-103" d="M404.05,424.13L376.06,449.25A218.24,135.16,0,0,0,415.70,462.67L434.74,434.52A168.96,104.64,0,0,1,404.05,424.13Z" fill="#f66d81" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="407.1" y="443.2" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">103</text>
+<path id="sec-102" d="M434.74,434.52L415.70,462.67A218.24,135.16,0,0,0,465.64,471.47L473.40,441.33A168.96,104.64,0,0,1,434.74,434.52Z" fill="#b9bc9f" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="447.0" y="453.3" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">102</text>
+<path id="sec-101" d="M473.40,441.33L465.64,471.47A218.24,135.16,0,0,0,517.52,472.72L513.56,442.30A168.96,104.64,0,0,1,473.40,441.33Z" fill="#b9bc9f" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="492.5" y="457.8" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">101</text>
+<path id="sec-130" d="M513.56,442.30L517.52,472.72A218.24,135.16,0,0,0,561.93,467.60L547.95,438.34A168.96,104.64,0,0,1,513.56,442.30Z" fill="#f66d81" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="535.4" y="455.9" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">130</text>
+<path id="sec-129" d="M547.95,438.34L561.93,467.60A218.24,135.16,0,0,0,603.69,456.93L580.27,430.08A168.96,104.64,0,0,1,547.95,438.34Z" fill="#f66d81" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="573.9" y="448.8" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">129</text>
+<path id="sec-128" d="M580.27,430.08L603.69,456.93A218.24,135.16,0,0,0,641.00,441.16L609.16,417.87A168.96,104.64,0,0,1,580.27,430.08Z" fill="#f9a61a" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="609.1" y="437.0" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">128</text>
+<path id="sec-121" d="M609.16,417.87L641.00,441.16A218.24,135.16,0,0,0,672.28,420.97L633.38,402.24A168.96,104.64,0,0,1,609.16,417.87Z" fill="#f9a61a" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="639.7" y="421.0" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">121</text>
+<path id="sec-122" d="M633.38,402.24L672.28,420.97A218.24,135.16,0,0,0,696.17,397.23L651.87,383.85A168.96,104.64,0,0,1,633.38,402.24Z" fill="#f9a61a" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="664.3" y="401.4" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">122</text>
+<path id="sec-123" d="M651.87,383.85L696.17,397.23A218.24,135.16,0,0,0,711.66,370.95L663.86,363.51A168.96,104.64,0,0,1,651.87,383.85Z" fill="#f9a61a" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="681.9" y="379.1" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">123</text>
+<path id="sec-124" d="M663.86,363.51L711.66,370.95A218.24,135.16,0,0,0,718.08,343.25L668.83,342.07A168.96,104.64,0,0,1,663.86,363.51Z" fill="#f9a61a" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="691.6" y="355.0" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">124</text>
+<path id="sec-125" d="M668.83,342.07L718.08,343.25A218.24,135.16,0,0,0,715.15,315.34L666.57,320.45A168.96,104.64,0,0,1,668.83,342.07Z" fill="#b7b7b7" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="693.2" y="330.2" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">125</text>
+<path id="sec-126" d="M666.57,320.45L715.15,315.34A218.24,135.16,0,0,0,703.01,288.39L657.17,299.59A168.96,104.64,0,0,1,666.57,320.45Z" fill="url(#awayPattern)" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="686.5" y="305.8" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">126</text>
+<path id="sec-127" d="M657.17,299.59L703.01,288.39A218.24,135.16,0,0,0,682.16,263.57L641.03,280.37A168.96,104.64,0,0,1,657.17,299.59Z" fill="#b7b7b7" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="671.8" y="282.7" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">127</text>
+<path id="sec-120" d="M641.03,280.37L682.16,263.57A218.24,135.16,0,0,0,653.52,241.93L618.85,263.63A168.96,104.64,0,0,1,641.03,280.37Z" fill="#f9a61a" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="649.7" y="262.0" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">120</text>
+<path id="sec-119" d="M618.85,263.63L653.52,241.93A218.24,135.16,0,0,0,618.29,224.42L591.58,250.06A168.96,104.64,0,0,1,618.85,263.63Z" fill="#f9a61a" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="621.2" y="244.5" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">119</text>
+<path id="sec-118" d="M591.58,250.06L618.29,224.42A218.24,135.16,0,0,0,578.00,211.77L560.39,240.27A168.96,104.64,0,0,1,591.58,250.06Z" fill="#f66d81" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="587.5" y="231.1" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">118</text>
+<path id="sec-117" d="M560.39,240.27L578.00,211.77A218.24,135.16,0,0,0,534.36,204.53L526.60,234.67A168.96,104.64,0,0,1,560.39,240.27Z" fill="#f66d81" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="550.1" y="222.2" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">117</text>
+<path id="sec-116" d="M526.60,234.67L534.36,204.53A218.24,135.16,0,0,0,489.26,203.00L491.68,233.49A168.96,104.64,0,0,1,526.60,234.67Z" fill="#f66d81" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="510.5" y="218.3" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">116</text>
+<path id="sec-115" d="M491.68,233.49L489.26,203.00A218.24,135.16,0,0,0,444.61,207.27L457.12,236.79A168.96,104.64,0,0,1,491.68,233.49Z" fill="#f66d81" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="470.5" y="219.5" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">115</text>
+<path id="sec-114" d="M457.12,236.79L444.61,207.27A218.24,135.16,0,0,0,402.34,217.13L424.39,244.42A168.96,104.64,0,0,1,457.12,236.79Z" fill="#f66d81" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="431.7" y="225.8" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">114</text>
+<path id="sec-113" d="M424.39,244.42L402.34,217.13A218.24,135.16,0,0,0,364.25,232.17L394.90,256.07A168.96,104.64,0,0,1,424.39,244.42Z" fill="#f66d81" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="395.9" y="236.9" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">113</text>
+<path id="sec-112" d="M394.90,256.07L364.25,232.17A218.24,135.16,0,0,0,331.97,251.75L369.91,271.22A168.96,104.64,0,0,1,394.90,256.07Z" fill="#f9a61a" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="364.5" y="252.3" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">112</text>
+<path id="sec-111" d="M369.91,271.22L331.97,251.75A218.24,135.16,0,0,0,306.90,275.02L350.50,289.24A168.96,104.64,0,0,1,369.91,271.22Z" fill="#f9a61a" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="339.0" y="271.5" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">111</text>
+<path id="sec-110" d="M350.50,289.24L306.90,275.02A218.24,135.16,0,0,0,290.10,300.99L337.50,309.35A168.96,104.64,0,0,1,350.50,289.24Z" fill="#f9a61a" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="320.3" y="293.4" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">110</text>
+<path id="sec-109" d="M337.50,309.35L290.10,300.99A218.24,135.16,0,0,0,282.29,328.55L331.45,330.68A168.96,104.64,0,0,1,337.50,309.35Z" fill="#f9a61a" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="309.3" y="317.3" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">109</text>
+<path id="sec-108" d="M331.45,330.68L282.29,328.55A218.24,135.16,0,0,0,283.82,356.51L332.63,352.33A168.96,104.64,0,0,1,331.45,330.68Z" fill="#f9a61a" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="306.5" y="342.0" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">108</text>
+<path id="sec-107" d="M332.63,352.33L283.82,356.51A218.24,135.16,0,0,0,294.60,383.68L340.98,373.36A168.96,104.64,0,0,1,332.63,352.33Z" fill="#f9a61a" stroke="#1a1a1a" stroke-width="0.55"/>
+<text x="312.0" y="366.6" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">107</text>
+<path id="sec-vip-200" d="M414.73,462.42L392.72,494.52A274.56,170.04,0,0,0,514.37,507.81L511.42,472.97A218.24,135.16,0,0,1,414.73,462.42Z" fill="#fff" stroke="#1a1a1a" stroke-width="0.7"/>
+<text x="457.2" y="488.3" text-anchor="middle" dominant-baseline="middle" font-size="11" font-weight="600" font-family="SimHei,Arial,sans-serif" fill="#333">主席台</text>
+</svg>

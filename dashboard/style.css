@@ -1,0 +1,416 @@
+/* 国安票务动态定价看板 V8.1 — 国安绿品牌 · Linear暗色 */
+
+:root {
+    --guoan-green: #00A651;
+    --guoan-green-dim: rgba(0, 166, 81, 0.15);
+    --guoan-green-glow: rgba(0, 166, 81, 0.30);
+    --derby-gold: #f0c040;
+    --derby-gold-dim: rgba(240, 192, 64, 0.10);
+}
+
+.stApp { background: #0c0d0f; }
+section[data-testid="stSidebar"] { display: none; }
+
+/* Typography */
+html, body, .stApp, .stMarkdown, p, div, span, label {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
+    color: #d0d6e0;
+}
+h1 {
+    font-family: 'Inter', system-ui, sans-serif !important;
+    font-weight: 510 !important;
+    font-size: 1.5rem !important;
+    color: #f7f8f8 !important;
+    letter-spacing: -0.03em !important;
+    margin: 0 !important;
+    border-left: 3px solid var(--guoan-green);
+    padding-left: 12px !important;
+}
+h2 { font-weight: 510 !important; font-size: 1.1rem !important; color: #e2e4e7 !important; }
+h3, h4 { font-weight: 510 !important; font-size: 0.95rem !important; color: #c8ccd4 !important; }
+
+/* stMetric overrides */
+.stMetric {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 6px;
+    padding: 8px 12px !important;
+}
+.stMetric label {
+    font-size: 0.68rem !important;
+    color: #62666d !important;
+    font-weight: 400 !important;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+}
+.stMetric [data-testid="stMetricValue"] {
+    font-size: 1.2rem !important;
+    font-weight: 510 !important;
+    color: #f7f8f8 !important;
+}
+.stMetric [data-testid="stMetricDelta"] { font-size: 0.7rem !important; }
+
+/* Dividers */
+hr { border-color: rgba(0, 166, 81, 0.12) !important; margin: 0.6rem 0 !important; }
+
+/* Native Streamlit table fixes */
+.stDataFrame {
+    border: 1px solid rgba(255,255,255,0.06) !important;
+    border-radius: 6px !important;
+    background: rgba(255,255,255,0.015) !important;
+}
+.stDataFrame th {
+    background: rgba(255,255,255,0.03) !important;
+    color: #8a8f98 !important;
+    font-size: 0.68rem !important;
+    font-weight: 510 !important;
+    text-transform: uppercase;
+}
+.stDataFrame td {
+    color: #d0d6e0 !important;
+    font-size: 0.78rem !important;
+    background: transparent !important;
+}
+[data-testid="stTable"] { background: rgba(255,255,255,0.015) !important; }
+
+/* Hand-written tables */
+table.history-table, table.compact-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.78rem;
+    background: rgba(255,255,255,0.015);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 6px;
+    overflow: hidden;
+}
+table.history-table thead th, table.compact-table thead th {
+    background: rgba(255,255,255,0.03);
+    color: #8a8f98;
+    font-weight: 510;
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    padding: 6px 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    text-align: center;
+}
+table.history-table tbody td, table.compact-table tbody td {
+    color: #d0d6e0;
+    padding: 5px 10px;
+    text-align: center;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+}
+table.history-table tbody tr:hover, table.compact-table tbody tr:hover { background: rgba(255,255,255,0.03); }
+
+table.compact-table { font-size: 0.7rem; }
+table.compact-table thead th { font-size: 0.6rem; padding: 4px 6px; }
+table.compact-table tbody td { font-size: 0.7rem; padding: 3px 6px; }
+
+table.history-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.65rem;
+    background: rgba(255,255,255,0.015);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 6px;
+    overflow: hidden;
+    margin: 4px 0;
+}
+table.history-table thead th {
+    background: rgba(255,255,255,0.03);
+    color: #8a8f98;
+    font-weight: 510;
+    font-size: 0.58rem;
+    padding: 3px 5px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    text-align: center;
+}
+table.history-table tbody td {
+    color: #d0d6e0;
+    padding: 2px 5px;
+    text-align: center;
+    border-bottom: 1px solid rgba(255,255,255,0.02);
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+}
+table.history-table tbody tr:hover { background: rgba(255,255,255,0.02); }
+
+/* Expander */
+.streamlit-expanderHeader {
+    background: rgba(255,255,255,0.02) !important;
+    border: 1px solid rgba(255,255,255,0.06) !important;
+    border-radius: 6px !important;
+    color: #8a8f98 !important;
+    font-size: 0.78rem !important;
+}
+
+/* State bar */
+.state-bar {
+    font-size: 0.75rem;
+    color: #8a8f98;
+    padding: 6px 12px;
+    background: rgba(255,255,255,0.015);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 6px;
+}
+.state-bar strong { color: #f7f8f8; font-weight: 510; }
+
+/* Rule line */
+.rule-line {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 0.8rem;
+    padding: 3px 10px;
+    margin: 1px 0;
+    background: rgba(255,255,255,0.015);
+    border-radius: 4px;
+    border-left: 2px solid rgba(255,255,255,0.08);
+}
+.rule-line .val { color: #f7f8f8; font-weight: 510; }
+.rule-line .mul { color: #ff6b6b; }
+.rule-line .mul-neg { color: #51cf66; }
+
+/* Global mul/mul-neg for recent results */
+.mul { color: #ff6b6b; font-weight: 590; }
+.mul-neg { color: #51cf66; font-weight: 590; }
+
+/* Rule pills (V8 new) */
+.rule-pill {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 0.72rem;
+    font-weight: 510;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+}
+.rule-pill.rule-base {
+    background: rgba(255,255,255,0.04);
+    color: #8a8f98;
+    border: 1px solid rgba(255,255,255,0.08);
+}
+.rule-pill.rule-up {
+    background: rgba(255,107,107,0.08);
+    color: #ff6b6b;
+    border: 1px solid rgba(255,107,107,0.15);
+}
+.rule-pill.rule-down {
+    background: rgba(81,207,102,0.08);
+    color: #51cf66;
+    border: 1px solid rgba(81,207,102,0.15);
+}
+.rule-pill.rule-neutral {
+    background: rgba(255,255,255,0.03);
+    color: #8a8f98;
+    border: 1px solid rgba(255,255,255,0.06);
+}
+
+/* Price tag */
+.price-tag {
+    display: inline-block;
+    text-align: center;
+    padding: 5px 2px;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 6px;
+    width: 100%;
+}
+.price-tag .label {
+    font-size: 0.55rem;
+    color: #62666d;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+.price-tag .value { font-size: 0.95rem; font-weight: 590; }
+.price-tag .base { font-size: 0.55rem; color: #62666d; }
+
+/* Semantic colors */
+.up { color: #ff6b6b; }
+.down { color: #51cf66; }
+.flat { color: #8a8f98; }
+.W { color: #ff6b6b; font-weight: 590; }
+.D { color: #f0c040; font-weight: 590; }
+.L { color: #51cf66; font-weight: 590; }
+.pts { color: #c2ef4e; font-weight: 510; }
+.rank-up { color: #ff6b6b; }
+.rank-down { color: #51cf66; }
+.muted { color: #4a4d55; }
+
+/* Cards */
+.card-row { display: flex; gap: 6px; }
+
+/* KPI card (V8 new) */
+.kpi-card {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 8px;
+    padding: 12px 14px;
+}
+.kpi-card .kpi-label {
+    font-size: 0.62rem;
+    color: #62666d;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+.kpi-card .kpi-value {
+    font-size: 1.2rem;
+    font-weight: 590;
+    color: #f7f8f8;
+    margin-top: 2px;
+}
+.kpi-card .kpi-sub {
+    font-size: 0.68rem;
+    color: #8a8f98;
+    margin-top: 3px;
+}
+
+/* Strategy card (V8 new) */
+.strategy-card {
+    font-size: 0.72rem;
+    color: #8a8f98;
+    line-height: 1.5;
+    padding: 8px 12px;
+    margin: 6px 0;
+    background: rgba(255,255,255,0.015);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 6px;
+}
+
+/* Season row */
+.season-row {
+    font-size: 0.76rem;
+    padding: 3px 8px;
+    margin: 1px 0;
+    border-radius: 3px;
+    display: flex;
+    justify-content: space-between;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+}
+.season-row.done { background: rgba(255,255,255,0.015); }
+
+/* Confidence bar (V8 new) */
+.confidence-bar { margin: 10px 0; }
+.confidence-bar .bar-track {
+    position: relative;
+    height: 6px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 3px;
+    margin: 6px 0;
+}
+.confidence-bar .bar-ci {
+    position: absolute;
+    height: 6px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 3px;
+}
+.confidence-bar .bar-marker {
+    position: absolute;
+    width: 3px;
+    height: 14px;
+    background: #ff6b6b;
+    border-radius: 2px;
+    top: -4px;
+}
+.confidence-bar .ci-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.62rem;
+    color: #62666d;
+    font-family: 'JetBrains Mono', ui-monospace;
+}
+.confidence-bar .ci-note {
+    font-size: 0.58rem;
+    color: #4a4d55;
+    margin-top: 2px;
+}
+
+/* Progress bar (V8 new) */
+.progress-line {
+    margin: 8px 0;
+}
+.progress-line .progress-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.65rem;
+    color: #62666d;
+}
+.progress-line .progress-track {
+    height: 3px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 2px;
+    margin-top: 4px;
+}
+.progress-line .progress-fill {
+    height: 3px;
+    background: #ff6b6b;
+    border-radius: 2px;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 2px; }
+
+/* Tab overrides for dark theme */
+.stTabs [data-baseweb="tab-list"] {
+    gap: 8px;
+    background: transparent;
+}
+.stTabs [data-baseweb="tab"] {
+    color: #8a8f98;
+    border-radius: 6px 6px 0 0;
+    padding: 8px 20px;
+    margin-right: 4px;
+}
+.stTabs [aria-selected="true"] {
+    color: #f7f8f8;
+    background: rgba(0, 166, 81, 0.08);
+    border-bottom: 2px solid var(--guoan-green);
+}
+
+/* ── V8.1 国安品牌色 ── */
+
+/* 标题栏品牌行 */
+.brand-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 0 10px 0;
+}
+.brand-header .crest { height: 36px; width: auto; }
+.brand-header .csl-logo { height: 24px; width: auto; opacity: 0.5; }
+
+/* 队徽（对手名称旁） */
+.team-crest { height: 18px; width: auto; vertical-align: middle; margin-right: 4px; }
+.team-crest-lg { height: 28px; width: auto; vertical-align: middle; margin-right: 6px; }
+
+/* 德比对手强调 */
+.derby-match {
+    border: 1px solid rgba(240, 192, 64, 0.2) !important;
+    background: rgba(240, 192, 64, 0.04) !important;
+}
+
+/* 进度条 国安绿 */
+.progress-line .progress-fill {
+    height: 3px;
+    background: var(--guoan-green);
+    border-radius: 2px;
+}
+
+/* KPI 卡片顶部绿色强调线 */
+.kpi-card {
+    border-top: 2px solid var(--guoan-green) !important;
+}
+
+/* 策略卡片德比高亮 */
+.strategy-card.derby {
+    border-left: 3px solid var(--derby-gold) !important;
+    background: rgba(240, 192, 64, 0.03);
+}
+
+/* 对手分析表格中 国安行高亮 */
+tr.guoan-row { background: rgba(0, 166, 81, 0.06) !important; }
+tr.guoan-row td { color: var(--guoan-green) !important; font-weight: 590; }
+
+.stMetric {
+    background: rgba(255,255,255,0.02) !important;
+    border: 1px solid rgba(255,255,255,0.06) !important;
+    border-radius: 6px !important;
+}
+.stMetric label { color: #62666d !important; }
+.stMetric [data-testid="stMetricValue"] { color: #f7f8f8 !important; }

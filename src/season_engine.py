@@ -19,7 +19,7 @@ import pandas as pd
 from src.classify import classify_opponent_tier, DERBY_RIVALS
 
 # ── 规则基值 ──
-TIER_BASE: dict[str, float] = {"S": 12200, "A": 10900, "B": 9500, "C1": 9000, "C2": 6500}
+TIER_BASE: dict[str, float] = {"S": 11100, "A": 10100, "B": 8600, "C1": 5100, "C2": 6500}
 DEFAULT_MULTIPLIERS = {
     "derby": 1.25, "lost_bottom": 0.55, "heavy_home_loss": 0.70,
     "away_winless": 0.78, "saturday": 1.12,

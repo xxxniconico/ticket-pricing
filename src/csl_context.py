@@ -9,15 +9,29 @@ import pandas as pd
 
 from src.classify import classify_opponent_tier, DERBY_RIVALS
 
-# 本地 CSL 数据
+# CSL 数据源：本地优先，云端回退
 _CSL_PATH = "/mnt/c/Users/xxxsu/.openclaw/workspace/csl_project_v2/data/csl_final_production_ready.json"
 _DEDUCTIONS_PATH = "/mnt/c/Users/xxxsu/.openclaw/workspace/csl_project_v2/config/csl_cfa_2026_official_deductions.json"
+_CSL_CLOUD_URL = "https://xxxniconico.github.io/csl-dashboard-2026/dashboard_embed.json"
+_DED_CLOUD_URL = "https://raw.githubusercontent.com/xxxniconico/csl-dashboard-2026/main/config/csl_cfa_2026_official_deductions.json"
 
 
 def load_csl_data(csl_path: str = _CSL_PATH, deductions_path: str = _DEDUCTIONS_PATH):
     """加载 CSL 比赛数据和扣分配置。返回 (matches, standings_by_round, deductions)。"""
-    data = json.load(open(csl_path))
-    deductions = json.load(open(deductions_path))
+    import requests as _requests
+    try:
+        data = json.load(open(csl_path))
+        deductions = json.load(open(deductions_path))
+    except (FileNotFoundError, OSError):
+        # Cloud 环境回退到 GitHub Pages
+        resp = _requests.get(_CSL_CLOUD_URL, timeout=20)
+        resp.raise_for_status()
+        raw = resp.json()
+        data = raw.get("raw_data", raw)
+        resp2 = _requests.get(_DED_CLOUD_URL, timeout=10)
+        resp2.raise_for_status()
+        ded_config = resp2.json()
+        deductions = ded_config.get("deductions_by_club", {})
 
     all_raw = []
     seen_ids = set()
@@ -44,14 +58,16 @@ def load_csl_data(csl_path: str = _CSL_PATH, deductions_path: str = _DEDUCTIONS_
         hg = _safe_score(s.get("home")) if isinstance(s, dict) else None
         ag = _safe_score(s.get("away")) if isinstance(s, dict) else None
         ok = hg is not None and ag is not None and m.get("status") != "scheduled"
-        rd_num = i // 8 + 1
+        # Use round from JSON data, fall back to computed
+        rd = m.get("round", f"第{i // 8 + 1}轮")
         matches.append({
             "date": m["date"][:10],
-            "round": f"第{rd_num}轮",
+            "round": rd,
             "home": m["home_club"],
             "away": m["away_club"],
             "hg": hg, "ag": ag,
             "completed": ok,
+            "source": m.get("source", ""),
         })
 
     # Build standings
@@ -108,15 +124,14 @@ def detect_ctx(match: dict, guoan_all: list[dict], standings: dict) -> dict:
     )) == 0:
         ctx["away_winless"] = True
 
-    # lost_bottom: lost to B/C opponent ranked ≥12 in last3
+    # lost_bottom: 近3场输给C级弱队(升班马等) 或 B级排名≥12
     for m in last3:
         is_loss = (m["is_home"] and m["hg"] < m["ag"]) or (not m["is_home"] and m["ag"] < m["hg"])
         if not is_loss: continue
+        opp_tier = classify_opponent_tier(m["opponent"])
         opp_rank = standings.get(m["round"], {}).get(m["opponent"], 8)
-        if opp_rank >= 12:
-            opp_tier = classify_opponent_tier(m["opponent"])
-            if opp_tier == "C":
-                ctx["lost_bottom"] = True
+        if opp_tier == "C" or (opp_tier == "B" and opp_rank >= 12):
+            ctx["lost_bottom"] = True
 
     # heavy_home_loss: home loss by 2+, no subsequent win to "wash" it
     for i, m in enumerate(last3):
@@ -154,6 +169,8 @@ def predict_with_context(opponent: str, match_date: str,
         matches, standings, _ = load_csl_data()
     if guoan_all is None:
         guoan_all = get_guoan_matches(matches)
+        # Filter CSL-only for accurate context
+        guoan_all = [m for m in guoan_all if 'cfl_fixtures_api' in m.get('source','') or 'wikipedia' in m.get('source','')]
 
     match = {"date": match_date, "opponent": opponent, "is_home": True, "completed": True}
     ctx = detect_ctx(match, guoan_all, standings)
@@ -165,5 +182,7 @@ def predict_with_context(opponent: str, match_date: str,
         saturday=dt.weekday() == 5,
         late_season=dt.month >= 10,
         midweek=dt.weekday() in (1, 2, 3),
+        summer=dt.month in (7, 8),
+        match_year=match_date[:4],
         **{k: ctx.get(k, False) for k in ["away_winless", "lost_bottom", "heavy_home_loss", "short_rest"]},
     )

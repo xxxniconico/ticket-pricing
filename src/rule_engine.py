@@ -1,186 +1,105 @@
 """
-国安散票预测 — 规则引擎 V4（4级KMeans聚类 + 数据修正）
+国安散票预测 — 规则引擎 V5.3（大麦+联票 + 暑假效应 + 客场连败拆分）
 
-基值: KMeans K=4 聚类均值（2024-2025跨年, 仅2026在队）
-  S=15000(申花,时间加权) A=10600(成都/山东/武汉/云南/天津) B=8600 C=4900
-乘数: 4级网格搜索最优
-  derby=1.25 derby_B=1.15 lost_bottom=0.65 heavy_home_loss=0.85
-  away_winless=0.88 saturday=1.10 late_season=0.60
-  season_opener=1.15 short_rest=0.78 midweek=0.80
-惩罚底线: 0.35
-EMA alpha: 0.20
-OPP_DEVIATION: 无（聚类已内化差异）
+基值: 2023-2026 去情境化中位数 (53场)
+  S=12600 A=10900 B=8200 C=5700
+乘数: 53场网格搜索
+  derby=1.25 derby_B=1.05 lost_bottom=0.65 heavy_home_loss=0.85
+  away_winless=0.98 away_winless_losses=0.82 saturday=1.02
+  season_opener=1.15 short_rest=0.78 midweek=0.92
+  summer=1.15 (B/C级, 7-8月, 暑假运营活动)
+年份因子: year_2023=1.45 (S级豁免)
+惩罚底线: 0.35  EMA: 0.20
 
-更新: 天津从S降A(MAE 754→687)
+V5.3: away_winless 拆分为两档
+  - 含平局(n=5, ratio 1.07): 保持 0.98（轻罚）
+  - 全败  (n=1, ratio 0.78): 新增 0.82（保守标定，距最优 0.78 留 4% buffer）
+  逻辑: 连平=有竞争力, 连败=心态崩盘
 """
 from __future__ import annotations
-
-import json
-import os
+import json, os
 from pathlib import Path
-
-import numpy as np
-import pandas as pd
-
+import numpy as np, pandas as pd
 from src.classify import classify_opponent_tier, DERBY_RIVALS
 
-# ── 规则参数 ──
-# 基值: KMeans K=4 聚类均值（跨年, 仅2026在队）
-# S=15000: 申花三年趋势10383→13977→16827，加权近期(×1/2/3)=14544，上调至15000捕获上行通道
-TIER_BASE: dict[str, float] = {"S": 15000, "A": 10600, "B": 8600, "C": 4900}
-
-# ── 对手偏离因子 ──
-# V4: 无偏差——4级聚类已内化差异, 不需要队级修正
+TIER_BASE: dict[str, float] = {"S": 12600, "A": 10900, "B": 8200, "C": 5700}
 OPP_DEVIATION: dict[str, float] = {}
 
-# 乘数: 4级网格搜索最优（2026六场）
 MULTIPLIERS = {
-    "derby": 1.25,
-    "derby_B": 1.15,
-    "lost_bottom": 0.65,
-    "heavy_home_loss": 0.85,
-    "away_winless": 0.88,
-    "saturday": 1.10,
-    "late_season": 0.60,
-    "season_opener": 1.15,
-    "short_rest": 0.78,
-    "midweek": 0.80,
-    "unbeaten_3": 1.08,       # 近3场不败 → 球迷乐观溢价（完整30轮验证+13%,N=9vs6）
+    "derby": 1.25, "derby_B": 1.05,
+    "lost_bottom": 0.65, "heavy_home_loss": 0.85,
+    "consecutive_home_losses": 0.82,
+    "away_winless": 0.98, "away_winless_losses": 0.82,
+    "saturday": 1.02,
+    "season_opener": 1.17,
+    "short_rest": 0.78, "midweek": 0.86,
+    "summer": 1.13,
 }
 
-# 惩罚底线: 负向乘数叠加不跌破此值
-PENALTY_FLOOR = 0.35
+YEAR_2023 = 1.45
 
-# ── 校准 ──
+PENALTY_FLOOR = 0.35
 _CAL_FILE = os.path.join(os.path.dirname(__file__), "..", "data", "processed", "calibration.json")
 _ALPHA = 0.20
-
 
 def _load_cal() -> dict:
     if not os.path.exists(_CAL_FILE):
         return {"tier": {"S": 1.0, "A": 1.0, "B": 1.0, "C": 1.0}, "history": []}
-    with open(_CAL_FILE) as f:
-        return json.load(f)
-
+    with open(_CAL_FILE) as f: return json.load(f)
 
 def _save_cal(cal: dict):
     os.makedirs(os.path.dirname(_CAL_FILE), exist_ok=True)
-    with open(_CAL_FILE, "w") as f:
-        json.dump(cal, f, indent=2, ensure_ascii=False)
+    with open(_CAL_FILE, "w") as f: json.dump(cal, f, indent=2, ensure_ascii=False)
 
-
-def predict(opponent: str,
-            derby: bool = False,
-            lost_bottom: bool = False,
-            heavy_home_loss: bool = False,
-            away_winless: bool = False,
-            saturday: bool = False,
-            late_season: bool = False,
-            season_opener: bool = False,
-            short_rest: bool = False,
-            midweek: bool = False,
-            unbeaten_3: bool = False,
-            ) -> float:
-    """规则引擎 V4 预测单场上座（未校准）。
-
-    S级derby不叠加——京津/京沪德比效应已内嵌在T1基值中。
-    lost_bottom对T1/A级用0.78（复仇效应），T3/C级用0.65（全罚）。
-    """
+def predict(opponent, derby=False, lost_bottom=False, heavy_home_loss=False,
+            consecutive_home_losses=False,
+            away_winless=False, saturday=False, season_opener=False,
+            short_rest=False, midweek=False, summer=False,
+            away_winless_losses=False, match_year=None, **__) -> float:
     tier = classify_opponent_tier(opponent)
     base = TIER_BASE.get(tier, 8100)
-    # 对手专属偏离度（V4: 无偏差）
-    dev = 1.0
     for key, val in OPP_DEVIATION.items():
-        if key in opponent or opponent in key:
-            dev = val
-            break
-    base *= dev
+        if key in opponent or opponent in key: base *= val; break
     mult = 1.0
-
+    if match_year == "2023" and tier != "S":
+        mult *= YEAR_2023
     if derby and tier != "S":
-        if tier == "A":
-            mult *= MULTIPLIERS["derby_B"]
-        else:
-            mult *= MULTIPLIERS["derby"]
-
-    if lost_bottom:
-        if tier in ("S", "A"):
-            mult *= 0.78  # 输弱队后踢强队: 球迷更想看复仇, 惩罚减半
-        else:
-            mult *= MULTIPLIERS["lost_bottom"]
-    elif heavy_home_loss:
-        mult *= MULTIPLIERS["heavy_home_loss"]
-
-    if away_winless:
+        mult *= MULTIPLIERS["derby_B"] if tier == "A" else MULTIPLIERS["derby"]
+    if lost_bottom: mult *= 0.78 if tier in ("S","A") else MULTIPLIERS["lost_bottom"]
+    elif consecutive_home_losses: mult *= MULTIPLIERS["consecutive_home_losses"]
+    elif heavy_home_loss: mult *= MULTIPLIERS["heavy_home_loss"]
+    if away_winless_losses:
+        mult *= MULTIPLIERS["away_winless_losses"]
+    elif away_winless:
         mult *= MULTIPLIERS["away_winless"]
-    if saturday:
-        mult *= MULTIPLIERS["saturday"]
-    if late_season:
-        mult *= MULTIPLIERS["late_season"]
-    if season_opener:
-        mult *= MULTIPLIERS["season_opener"]
-    if midweek and not lost_bottom and not heavy_home_loss:
-        mult *= MULTIPLIERS["midweek"]
-    # short_rest 不与 lost_bottom/heavy 叠加——避免双重惩罚
-    if short_rest and not lost_bottom and not heavy_home_loss:
-        mult *= MULTIPLIERS["short_rest"]
-    if unbeaten_3:
-        mult *= MULTIPLIERS["unbeaten_3"]
-
-    if mult < PENALTY_FLOOR:
-        mult = PENALTY_FLOOR
-
+    if saturday: mult *= MULTIPLIERS["saturday"]
+    if season_opener: mult *= MULTIPLIERS["season_opener"]
+    if midweek and not lost_bottom: mult *= MULTIPLIERS["midweek"]
+    if short_rest and not lost_bottom and not heavy_home_loss: mult *= MULTIPLIERS["short_rest"]
+    if summer and tier in ("B","C"): mult *= MULTIPLIERS["summer"]
+    if mult < PENALTY_FLOOR: mult = PENALTY_FLOOR
     return min(base * mult, 20000.0)
 
-
-def predict_calibrated(opponent: str, **kwargs) -> float:
-    """规则引擎 + 分级校准 → 最终预测。"""
+def predict_calibrated(opponent, **kwargs):
     raw = predict(opponent, **kwargs)
-    tier = classify_opponent_tier(opponent)
+    return raw * _load_cal()["tier"].get(classify_opponent_tier(opponent), 1.0)
+
+def update(match_id, opponent, actual, **ctx):
     cal = _load_cal()
-    factor = cal["tier"].get(tier, 1.0)
-    return raw * factor
-
-
-def update(match_id: str, opponent: str, actual: float, **match_context):
-    """赛后更新分级校准因子。"""
-    raw = predict(opponent, **match_context)
+    # 去重：同一match_id不重复更新
+    if any(h.get("match_id") == match_id for h in cal.get("history", [])):
+        return
+    raw = predict(opponent, **ctx)
     tier = classify_opponent_tier(opponent)
     ratio = actual / raw if raw > 0 else 1.0
-
-    cal = _load_cal()
     old = cal["tier"].get(tier, 1.0)
     new = round(_ALPHA * ratio + (1 - _ALPHA) * old, 4)
     new = max(0.3, min(2.0, new))
     cal["tier"][tier] = new
-
-    cal["history"].append({
-        "match_id": match_id, "tier": tier,
-        "raw_pred": round(raw, 0), "actual": round(actual, 0),
-        "ratio": round(ratio, 4),
-        f"cal_{tier}_before": round(old, 4),
-        f"cal_{tier}_after": new,
-    })
+    cal["history"].append({"match_id": match_id, "tier": tier, "raw_pred": round(raw,0),
+        "actual": round(actual,0), "ratio": round(ratio,4)})
     _save_cal(cal)
 
-
-def get_calibration() -> dict:
-    return _load_cal()
-
-
-def get_history() -> pd.DataFrame:
-    cal = _load_cal()
-    return pd.DataFrame(cal.get("history", []))
-
-
-def detect_context_2026(match_date) -> dict:
-    """从线上CSL Dashboard JSON检测2026上下文。（deprecated: 用src/csl_context.py）"""
-    from src.csl_context import load_csl_data, get_guoan_matches, detect_ctx
-    matches, standings, _ = load_csl_data()
-    guoan = get_guoan_matches(matches)
-    return detect_ctx({"date": match_date, "is_home": True, "completed": True}, guoan, standings)
-
-
-def init_from_data():
-    """从历史数据初始化参数。（deprecated: V4用聚类基值）"""
-    pass
+def get_calibration(): return _load_cal()
+def get_history(): return pd.DataFrame(_load_cal().get("history", []))
+def init_from_data(): pass

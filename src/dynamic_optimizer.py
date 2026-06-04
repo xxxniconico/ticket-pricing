@@ -82,17 +82,18 @@ class DynamicPricingOptimizer:
         # Zone tier capacities (estimated from section counts)
         self.capacities = self._estimate_capacities()
 
-        # Zone tier volume shares — 动态，基于 total_predicted 线性回归
-        # 拟合自 2024-2025 全部主场数据（R²: T1=0.91, T2=0.80, T3=0.64）
-        # T1 share 随总上座↓（穷游党主导低上座场次）
-        # T2 share 随总上座↑（买家升级）
+        # 动态份额：基于 total_predicted 线性回归，每 tier 独立拟合
+        # V5.5: 基于 2026 KMeans zone 重映射后 2025-2026 数据重拟合 (n=26)
+        # T1 share 随总上座↓（低价区在弱队场次占比更高）
+        # T2/T3 share 随总上座↑（中档在强队场次更受欢迎）
+        # T4-T6 share 近似常数（区段少，波动小）
         self._share_coeffs = {
-            "T1": (-0.000030, 0.641),  # share = coeff[0]*total + coeff[1]
-            "T2": ( 0.000020, 0.014),
-            "T3": ( 0.000006, 0.244),
-            "T4": ( 0.000003,-0.004),
-            "T5": ( 0.000001, 0.098),
-            "T6": ( 0.000000, 0.007),
+            "T1": (-0.0000250, 0.5912),  # R²=0.853
+            "T2": ( 0.0000150, 0.0753),  # R²=0.686
+            "T3": ( 0.0000070, 0.2281),  # R²=0.721
+            "T4": ( 0.0000030, 0.0000),  # R²=0.325, clamped to ≥0
+            "T5": ( 0.0000010, 0.0965),  # R²=0.024
+            "T6": (-0.0000001, 0.0101),  # R²=0.112
         }
 
         # Reference price for attendance-to-revenue conversion (per-tier, not global)
@@ -100,11 +101,13 @@ class DynamicPricingOptimizer:
         self.p_ref = {zt: BASE_PRICES_B[zt] for zt in ZONE_TIERS}
 
     def _estimate_capacities(self) -> dict[str, float]:
-        """估计每zone tier的容量上限（基于历史峰值销量+缓冲）。"""
-        # 2024-2025各zone tier历史单场峰值（来自all_unified.parquet）
-        peak = {"T1": 3754, "T2": 3938, "T3": 5246, "T4": 1291, "T5": 2057, "T6": 152}
-        # 加10%缓冲
-        return {zt: int(v * 1.1) for zt, v in peak.items()}
+        """估计每zone tier的容量上限（基于2026申花售罄场次 + 2% buffer）。
+        
+        V5.5: ZONE_SECTIONS改为KMeans按赛季聚类后，旧峰值失效。
+        申花2026-03-21为售罄场（~98%上座率），各区销量接近物理上限。
+        """
+        sellout = {"T1": 3718, "T2": 3914, "T3": 5203, "T4": 453, "T5": 2070, "T6": 115}
+        return {zt: int(v / 0.98) + 1 for zt, v in sellout.items()}
 
     def optimize(self, opponent: str, match_date: str | None = None,
                  min_revenue: float = 0.0, strategy: str = 'auto', **context) -> OptimizeResult:
@@ -121,18 +124,28 @@ class DynamicPricingOptimizer:
         # 1. 规则引擎预测总量（硬编码基值，MAE=549）
         predicted_total = predict_attendance(opponent, **context)
 
-        # 动态目标权重：高预测→追收入，低预测→追上座
-        # 阈值来自2024-2025数据：P25≈7500, P75≈11000
+        # 动态目标权重：四级分档，减少均衡灰色地带
         if predicted_total >= 11000:
             rw = 0.80  # 收入优先
-        elif predicted_total <= 7500:
-            rw = 0.20  # 上座优先
+        elif predicted_total >= 8500:
+            rw = 0.60  # 收入倾向
+        elif predicted_total >= 6500:
+            rw = 0.40  # 上座倾向
         else:
-            rw = 0.20 + 0.60 * (predicted_total - 7500) / 3500  # 线性过渡
+            rw = 0.20  # 上座优先
+
+        # ── 对手级别约束：非德比场次涨价空间受限 ──
+        # S级德比可以激进涨价，A级适度，B/C级保守
+        # 防止 上海海港 类 case：预测上座高但实际价格弹性大 → 涨价驱客
+        from src.classify import classify_opponent_tier
+        opp_tier = classify_opponent_tier(opponent)
+        tier_rw_cap = {"S": 1.0, "A": 0.65, "B": 0.50, "C": 0.35}
+        if rw > tier_rw_cap.get(opp_tier, 1.0):
+            rw = tier_rw_cap[opp_tier]
         aw = 1.0 - rw
 
-        # 策略模式：auto时低预测场自动切换平衡策略（T1-T3降价拉量, T4-T6涨价补收入）
-        if strategy == 'balanced' or (strategy == 'auto' and rw <= 0.3):
+        # 策略模式：rw≤0.4时自动切换平衡策略（T1-T3降价拉量）
+        if strategy == 'balanced' or (strategy == 'auto' and rw <= 0.4):
             strategy_mode = 'balanced'
         else:
             strategy_mode = 'revenue'
@@ -154,6 +167,25 @@ class DynamicPricingOptimizer:
         base_demand = {}
         for zt in ZONE_TIERS:
             base_demand[zt] = predicted_total * volume_shares[zt]
+
+        # 容量约束 + 溢出重分配（V8.1：防止高需求时份额超容量）
+        for _ in range(3):
+            overflow = 0.0
+            remaining_tiers = []
+            for zt in ZONE_TIERS:
+                if base_demand[zt] > self.capacities[zt]:
+                    overflow += base_demand[zt] - self.capacities[zt]
+                    base_demand[zt] = self.capacities[zt]
+                else:
+                    remaining_tiers.append(zt)
+            if overflow <= 1 or not remaining_tiers:
+                break
+            total_rem_cap = sum(self.capacities[zt] - base_demand[zt] for zt in remaining_tiers)
+            if total_rem_cap <= 0:
+                break
+            for zt in remaining_tiers:
+                share = (self.capacities[zt] - base_demand[zt]) / total_rem_cap
+                base_demand[zt] += overflow * share
 
         # 5. 逐档优化
         tier_results = {}
@@ -191,23 +223,33 @@ class DynamicPricingOptimizer:
                 )
 
             rev = p_opt * q_opt
-            rev_base = p0 * min(q0, cap)  # 基准价下的收入
+            rev_base = p0 * min(q0, cap)  # optimized baseline (capped for realistic comparison)
 
             tier_results[zt] = TierResult(
                 zone_tier=zt,
                 base_price=p0,
                 optimal_price=p_opt,
                 predicted_qty=q_opt,
-                base_qty=min(q0, cap),
+                base_qty=q0,  # uncapped demand, matches predict_calibrated total
                 revenue=rev,
                 is_frozen=frozen,
             )
             total_revenue += rev
             total_attendance += q_opt
             base_revenue += rev_base
-            base_attendance += min(q0, cap)
+            base_attendance += min(q0, cap)  # capped baseline (realistic comparison)
 
-        # 6. 平衡策略跨档补贴检查：收入低于基准90%时，T4-T6涨价补偿
+        # 6. 收入策略安全阀：预测偏低或掉量>3% → 降级均衡
+        # V8.1: S/A级对手豁免（票价高/容量有限，预测天花板低，如申花~12,852）
+        if strategy_mode == 'revenue':
+            att_loss_pct = (base_attendance - total_attendance) / base_attendance if base_attendance > 0 else 0
+            tier_pred_floor = {"S": 11000, "A": 12000, "B": 13000, "C": 13000}
+            pred_floor = tier_pred_floor.get(opp_tier, 13000)
+            if predicted_total < pred_floor or att_loss_pct > 0.03:
+                return self.optimize(opponent, match_date=match_date,
+                                     min_revenue=min_revenue, strategy='balanced', **context)
+
+        # 7. 平衡策略跨档补贴检查：收入低于基准90%时，T4-T6涨价补偿
         if strategy_mode == 'balanced' and total_revenue < base_revenue * 0.90:
             shortfall = base_revenue * 0.90 - total_revenue
             revenue_tiers = ['T4', 'T5', 'T6']
@@ -393,8 +435,16 @@ class DynamicPricingOptimizer:
                     else:
                         target = p0  # 强队不降
                     rev_min = p0 * (0.93 ** (1.0 / max(1.0 - max(eps, 0.05), 0.01)))
-                    p_opt = max(target, rev_min)
-                    p_opt = min(p_opt, p0)  # 不涨
+                    # V8.1: 基于容量紧张度允许涨价（原: p_opt = max(target, rev_min) + min(p_opt, p0) 双重锁定）
+                    demand_ratio = q0 / max(cap, 1)
+                    if demand_ratio > 0.85 and rw >= 0.6:
+                        # 供需紧张 + 收入倾向 → scipy结果驱动，target为底，动态cap_up为顶
+                        cap_up = min(1.05 + (demand_ratio - 0.85) * 0.40, 1.12)
+                        p_opt = max(p_opt, target)  # floor: 不降
+                        p_opt = min(p_opt, round(p0 * cap_up / 10) * 10)  # ceiling: 动态上限
+                    else:
+                        p_opt = max(target, rev_min)
+                        p_opt = min(p_opt, p0)
 
                 elif tier_role == 'revenue':
                     if eps >= 0.30:
@@ -448,8 +498,10 @@ class DynamicPricingOptimizer:
                     p_opt = p0
                     q_opt = min(q0, cap)
             elif p_opt < p0:
-                # 降价：增量数量不足100人 → 不调
-                if q_test - min(q0, cap) < 100:
+                # 降价：增量不足100人 且 增幅不足2% → 不调
+                delta_q = q_test - min(q0, cap)
+                delta_pct = delta_q / max(q0, 1)
+                if delta_q < 100 and delta_pct < 0.02:
                     p_opt = p0
                     q_opt = min(q0, cap)
 
