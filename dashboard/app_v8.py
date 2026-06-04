@@ -1441,17 +1441,13 @@ def render_standings_table(guoan_matches, standings, guoan_ded):
 
 @st.cache_data(ttl=86400)
 def _get_section_capacities():
-    """用申花售罄场 (2026-03-21) 各区销量 + 2% buffer 作为容量基准。"""
+    """用各场比赛各区历史最大销量 × 1.05 作为容量基准，确保不超100%。"""
     csl = _get_csl_parquet()
     if csl is None:
         return {}
-    sellout = csl[csl["match_date"].astype(str).str.startswith("2026-03-21")]
-    if sellout.empty:
-        caps = csl.groupby(["match_date", "section"])["数量"].sum().reset_index()
-        caps = caps.groupby("section")["数量"].max().to_dict()
-    else:
-        caps = sellout.groupby("section")["数量"].sum().to_dict()
-    return {str(s): int(v * 1.02) + 1 for s, v in caps.items()}
+    per_match = csl.groupby(["match_date", "section"])["数量"].sum().reset_index()
+    caps = per_match.groupby("section")["数量"].max().to_dict()
+    return {str(s): int(v * 1.05) + 1 for s, v in caps.items()}
 
 
 def _compute_match_fill_rates(match_date: str):
