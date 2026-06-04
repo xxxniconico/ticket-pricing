@@ -1515,6 +1515,10 @@ def render_heatmap_tab(guoan_matches):
     section_fills, section_qty, total_fill, section_rev, total_revenue = _compute_match_fill_rates(match_date)
     total_sold = sum(section_qty.values())
 
+    if not section_qty:
+        st.warning("该场比赛暂无分区销售数据")
+        return
+
     with c2:
         st.metric("总售出", f"{total_sold:,}张")
 
