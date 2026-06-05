@@ -1,0 +1,86 @@
+"""
+国安散票预测 — 规则引擎 V4.8（新2024数据 + 纯度分级）
+
+基值: 2024-2026 去情境化中位数
+  S=11100 A=10100 B=8600 C=5100
+乘数: 38场网格搜索
+  derby=1.25 derby_B=1.05 lost_bottom=0.65 heavy_home_loss=0.85
+  away_winless=0.82 saturday=1.15 late_season=0.75
+  season_opener=1.15 short_rest=0.72 midweek=0.80 unbeaten_3=1.02
+惩罚底线: 0.35  EMA: 0.20
+
+变更: V4.8 新2024数据(含座位) | C_base 3800→5100(南通/沧州拉升)
+"""
+from __future__ import annotations
+import json, os
+from pathlib import Path
+import numpy as np, pandas as pd
+from src.classify import classify_opponent_tier, DERBY_RIVALS
+
+TIER_BASE: dict[str, float] = {"S": 11100, "A": 10100, "B": 8600, "C": 5100}
+OPP_DEVIATION: dict[str, float] = {}
+
+MULTIPLIERS = {
+    "derby": 1.25, "derby_B": 1.05,
+    "lost_bottom": 0.65, "heavy_home_loss": 0.85,
+    "away_winless": 0.82, "saturday": 1.15,
+    "late_season": 0.75, "season_opener": 1.15,
+    "short_rest": 0.72, "midweek": 0.80,
+    "unbeaten_3": 1.02,
+}
+
+PENALTY_FLOOR = 0.35
+_CAL_FILE = os.path.join(os.path.dirname(__file__), "..", "data", "processed", "calibration.json")
+_ALPHA = 0.20
+
+def _load_cal() -> dict:
+    if not os.path.exists(_CAL_FILE):
+        return {"tier": {"S": 1.0, "A": 1.0, "B": 1.0, "C": 1.0}, "history": []}
+    with open(_CAL_FILE) as f: return json.load(f)
+
+def _save_cal(cal: dict):
+    os.makedirs(os.path.dirname(_CAL_FILE), exist_ok=True)
+    with open(_CAL_FILE, "w") as f: json.dump(cal, f, indent=2, ensure_ascii=False)
+
+def predict(opponent, derby=False, lost_bottom=False, heavy_home_loss=False,
+            away_winless=False, saturday=False, late_season=False, season_opener=False,
+            short_rest=False, midweek=False, unbeaten_3=False) -> float:
+    tier = classify_opponent_tier(opponent)
+    base = TIER_BASE.get(tier, 8100)
+    for key, val in OPP_DEVIATION.items():
+        if key in opponent or opponent in key: base *= val; break
+    mult = 1.0
+    if derby and tier != "S":
+        mult *= MULTIPLIERS["derby_B"] if tier == "A" else MULTIPLIERS["derby"]
+    if lost_bottom: mult *= 0.78 if tier in ("S","A") else MULTIPLIERS["lost_bottom"]
+    elif heavy_home_loss: mult *= MULTIPLIERS["heavy_home_loss"]
+    if away_winless: mult *= MULTIPLIERS["away_winless"]
+    if saturday: mult *= MULTIPLIERS["saturday"]
+    if late_season: mult *= MULTIPLIERS["late_season"]
+    if season_opener: mult *= MULTIPLIERS["season_opener"]
+    if midweek and not lost_bottom and not heavy_home_loss: mult *= MULTIPLIERS["midweek"]
+    if short_rest and not lost_bottom and not heavy_home_loss: mult *= MULTIPLIERS["short_rest"]
+    if unbeaten_3: mult *= MULTIPLIERS["unbeaten_3"]
+    if mult < PENALTY_FLOOR: mult = PENALTY_FLOOR
+    return min(base * mult, 20000.0)
+
+def predict_calibrated(opponent, **kwargs):
+    raw = predict(opponent, **kwargs)
+    return raw * _load_cal()["tier"].get(classify_opponent_tier(opponent), 1.0)
+
+def update(match_id, opponent, actual, **ctx):
+    raw = predict(opponent, **ctx)
+    tier = classify_opponent_tier(opponent)
+    ratio = actual / raw if raw > 0 else 1.0
+    cal = _load_cal()
+    old = cal["tier"].get(tier, 1.0)
+    new = round(_ALPHA * ratio + (1 - _ALPHA) * old, 4)
+    new = max(0.3, min(2.0, new))
+    cal["tier"][tier] = new
+    cal["history"].append({"match_id": match_id, "tier": tier, "raw_pred": round(raw,0),
+        "actual": round(actual,0), "ratio": round(ratio,4)})
+    _save_cal(cal)
+
+def get_calibration(): return _load_cal()
+def get_history(): return pd.DataFrame(_load_cal().get("history", []))
+def init_from_data(): pass

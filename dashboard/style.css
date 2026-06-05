@@ -434,4 +434,9 @@ tr.guoan-row td { color: var(--guoan-green) !important; font-weight: 590; }
 @media (max-width: 480px) {
     h1 { font-size: 1rem !important; }
     .stTabs [data-baseweb="tab"] { padding: 4px 6px !important; font-size: 0.65rem !important; }
+    /* 座位热力图 iframe：禁止横向溢出 */
+    iframe[title="streamlit_components_v1.html"] {
+        max-width: 100% !important;
+        width: 100% !important;
+    }
 }

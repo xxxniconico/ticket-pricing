@@ -20,19 +20,59 @@ _fill_color = _heat
 SECTION_BLOCKS = []
 _SEC_MAP = {}
 
-LEGEND_SVG = '<g transform="translate(890, 20)"><text x="0" y="0" fill="#8a8f98" font-size="9" font-family="Inter,sans-serif" font-weight="590">上座率</text><rect x="0" y="14" width="12" height="8" rx="1.5" fill="#a01020" fill-opacity="0.85"/><text x="16" y="21" fill="#a0a4a8" font-size="7" font-family="Inter,sans-serif">95%+</text><rect x="0" y="28" width="12" height="8" rx="1.5" fill="#c82828" fill-opacity="0.85"/><text x="16" y="35" fill="#a0a4a8" font-size="7" font-family="Inter,sans-serif">80%</text><rect x="0" y="42" width="12" height="8" rx="1.5" fill="#e07030" fill-opacity="0.85"/><text x="16" y="49" fill="#a0a4a8" font-size="7" font-family="Inter,sans-serif">65%</text><rect x="0" y="56" width="12" height="8" rx="1.5" fill="#f0c040" fill-opacity="0.85"/><text x="16" y="63" fill="#a0a4a8" font-size="7" font-family="Inter,sans-serif">50%</text><rect x="0" y="70" width="12" height="8" rx="1.5" fill="#2d7ab0" fill-opacity="0.85"/><text x="16" y="77" fill="#a0a4a8" font-size="7" font-family="Inter,sans-serif">30%</text><rect x="0" y="84" width="12" height="8" rx="1.5" fill="#1a4a7a" fill-opacity="0.85"/><text x="16" y="91" fill="#a0a4a8" font-size="7" font-family="Inter,sans-serif">&lt;30%</text></g>'
+# 热力图裁剪：去掉模板右侧图例区，看台占满宽度（手机端可读）
+_HEATMAP_VIEWBOX = "118 32 808 628"
+
+_LEGEND_ITEMS = (
+    ("#a01020", "95%+"),
+    ("#c82828", "80%"),
+    ("#e07030", "65%"),
+    ("#f0c040", "50%"),
+    ("#2d7ab0", "30%"),
+    ("#1a4a7a", "&lt;30%"),
+    ("#14161c", "无售"),
+)
+
+
+def _legend_html() -> str:
+    chips = "".join(
+        f'<span class="lg-chip"><i style="background:{c}"></i>{lbl}</span>'
+        for c, lbl in _LEGEND_ITEMS
+    )
+    return f'<div class="lg-bar"><span class="lg-title">上座率</span>{chips}</div>'
+
+
+def _strip_template_decorations(svg: str) -> str:
+    """移除 B 类模板中的票价图例、指南针等（热力图不需要）。"""
+    svg = re.sub(r'<g transform="translate\(940,48\)">.*?</g>\s*', '', svg, flags=re.DOTALL)
+    svg = re.sub(r'<text x="8[47]\d[^"]*".*?</text>\s*', '', svg)
+    svg = re.sub(r'<rect x="8[47]\d[^"]*".*?/>\s*', '', svg)
+    svg = re.sub(r'<text x="9\d\d".*?</text>\s*', '', svg)
+    svg = re.sub(r'<rect x="9\d\d".*?/>\s*', '', svg)
+    svg = re.sub(r'<title>.*?</title>\s*', '', svg)
+    svg = re.sub(r'<desc>.*?</desc>\s*', '', svg)
+    svg = re.sub(r'<g transform="translate\(96\d.*?</g>\s*', '', svg, flags=re.DOTALL)
+    return svg
+
+
+def _make_svg_responsive(svg: str) -> str:
+    svg = _strip_template_decorations(svg)
+    svg = re.sub(r'viewBox="0 0 1024 686"', f'viewBox="{_HEATMAP_VIEWBOX}"', svg, count=1)
+    svg = re.sub(r'\s+width="[^"]*"', '', svg, count=1)
+    svg = re.sub(r'\s+height="[^"]*"', '', svg, count=1)
+    if 'preserveAspectRatio' not in svg:
+        svg = svg.replace('<svg ', '<svg preserveAspectRatio="xMidYMid meet" ', 1)
+    return svg
 
 
 def render_gongti_heatmap(section_fills=None, _unused=None, match_label="", total_fill=0.0):
     if section_fills is None:
         section_fills = {}
     svg = _SVG_PATH.read_text()
-
-    # 背景透明 + 响应式
     svg = svg.replace('fill="#fafafa"', 'fill="transparent"')
-    svg = svg.replace('width="1024" height="686"', 'width="100%" height="auto" preserveAspectRatio="xMidYMid meet"')
+    svg = _make_svg_responsive(svg)
 
-    # 替换每个分区颜色 (数据来源: dict的value = 实际销量张数)
+    # 替换每个分区颜色 (数据来源: dict的value = 实际上座率 0-1)
     for m in re.finditer(r'<path id="sec-(\d+)" (d="[^"]*")[^>]*fill="([^"]*)"([^/]*)/>', svg):
         sec = m.group(1); d_attr = m.group(2); orig_fill = m.group(3); rest = m.group(4); old = m.group(0)
         val = section_fills.get(sec, 0)
@@ -45,31 +85,131 @@ def render_gongti_heatmap(section_fills=None, _unused=None, match_label="", tota
         new_tag = f'<path id="sec-{sec}" {d_attr} fill="{new_fill}"{rest}/>'
         svg = svg.replace(old, new_tag, 1)
 
-    # 去掉旧图例/标题/指南针
-    svg = re.sub(r'<text x="9\d\d".*?</text>\r?\n?', '', svg)
-    svg = re.sub(r'<rect x="9\d\d".*?/>\r?\n?', '', svg)
-    svg = re.sub(r'<title>.*?</title>\r?\n?', '', svg)
-    svg = re.sub(r'<desc>.*?</desc>\r?\n?', '', svg)
-    svg = re.sub(r'<g transform="translate\(96\d.*?</g>', '', svg, flags=re.DOTALL)
-    svg = svg.replace('</svg>', LEGEND_SVG + '\n</svg>')
-
     title_html = ""
     if match_label:
+        sub = (
+            f'<span class="hm-sub">总上座率 {total_fill * 100:.1f}%</span>'
+            if total_fill > 0
+            else ""
+        )
         title_html = (
-            f'<div style="text-align:center;padding:8px 0 4px 0;background:transparent">'
-            f'<span style="color:#f0f2f5;font-size:1.1rem;font-weight:590;font-family:Inter,sans-serif">{match_label}</span>'
-            f'{f"<span style=\"color:#8a8f98;font-size:0.85rem;margin-left:10px;font-family:Inter,sans-serif\">总上座率 {total_fill*100:.1f}%</span>" if total_fill > 0 else ""}'
-            f'</div>'
+            f'<div class="hm-title"><span class="hm-match">{match_label}</span>{sub}</div>'
         )
 
+    # viewBox 宽高比 808:628 — 用于 JS 按容器宽度推算高度
     html = f'''<!DOCTYPE html>
-<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><style>
-body {{ margin:0; padding:4px; background:#0b0c0f; }}
-svg {{ display:block; width:100%; height:auto; }}
+<html><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<style>
+* {{ box-sizing: border-box; }}
+html, body {{
+  margin: 0; padding: 0; width: 100%; max-width: 100%;
+  overflow-x: hidden; background: #0b0c0f;
+  font-family: Inter, system-ui, sans-serif;
+}}
+.hm-wrap {{ width: 100%; max-width: 100%; padding: 4px 6px 6px; }}
+.hm-title {{ text-align: center; padding: 4px 0 2px; line-height: 1.35; }}
+.hm-match {{ color: #f0f2f5; font-size: clamp(0.78rem, 3.2vw, 1.1rem); font-weight: 600; }}
+.hm-sub {{ display: block; color: #8a8f98; font-size: clamp(0.68rem, 2.8vw, 0.88rem); margin-top: 2px; }}
+@media (min-width: 480px) {{
+  .hm-sub {{ display: inline; margin-top: 0; margin-left: 8px; }}
+}}
+.chart-box {{
+  width: 100%; margin: 0 auto; overflow: hidden;
+  max-width: min(100%, var(--hm-chart-max-w, 960px));
+}}
+.chart-box svg {{
+  display: block; width: 100%; height: auto; max-width: 100%;
+  max-height: var(--hm-chart-max-h, clamp(240px, 55vh, 720px));
+}}
+/* CSS 断点兜底（无 JS 时） */
+@media (max-width: 479px) {{
+  .chart-box svg {{ max-height: min(56vh, 380px); }}
+}}
+@media (min-width: 480px) and (max-width: 767px) {{
+  .chart-box svg {{ max-height: min(58vh, 440px); }}
+}}
+@media (min-width: 768px) and (max-width: 1199px) {{
+  .chart-box {{ max-width: min(100%, 820px); }}
+  .chart-box svg {{ max-height: min(68vh, 620px); }}
+}}
+@media (min-width: 1200px) {{
+  .chart-box {{ max-width: min(100%, 1024px); }}
+  .chart-box svg {{ max-height: min(78vh, 860px); }}
+}}
+.lg-bar {{
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: center;
+  gap: 6px 12px; padding: 8px 4px 2px;
+}}
+.lg-title {{ color: #8a8f98; font-size: clamp(0.62rem, 2vw, 0.75rem); font-weight: 600; margin-right: 2px; }}
+.lg-chip {{
+  display: inline-flex; align-items: center; gap: 4px;
+  color: #a0a4a8; font-size: clamp(0.58rem, 1.8vw, 0.7rem); white-space: nowrap;
+}}
+.lg-chip i {{
+  display: inline-block; width: 10px; height: 8px; border-radius: 2px; opacity: 0.9;
+}}
 </style></head>
 <body>
+<div class="hm-wrap">
 {title_html}
-{svg}
+<div class="chart-box">{svg}</div>
+{_legend_html()}
+</div>
+<script>
+(function() {{
+  var VB_W = 808, VB_H = 628;
+
+  function chartLimits() {{
+    var vw = window.innerWidth, vh = window.innerHeight;
+    var maxW, maxH;
+    if (vw < 480) {{
+      maxW = vw - 16;
+      maxH = Math.min(vh * 0.56, 380);
+    }} else if (vw < 768) {{
+      maxW = vw - 24;
+      maxH = Math.min(vh * 0.58, 440);
+    }} else if (vw < 1200) {{
+      maxW = Math.min(vw - 48, 820);
+      maxH = Math.min(vh * 0.68, 620);
+    }} else {{
+      maxW = Math.min(vw - 64, 1024);
+      maxH = Math.min(vh * 0.78, 860);
+    }}
+    var box = document.querySelector(".chart-box");
+    var wrapW = box ? box.clientWidth : maxW;
+    if (wrapW > 0) maxW = Math.min(maxW, wrapW);
+    var byAspect = maxW * (VB_H / VB_W);
+    maxH = Math.max(200, Math.min(maxH, byAspect));
+    return {{ maxW: maxW, maxH: maxH }};
+  }}
+
+  function applyChartSize() {{
+    var lim = chartLimits();
+    var root = document.documentElement;
+    root.style.setProperty("--hm-chart-max-w", lim.maxW + "px");
+    root.style.setProperty("--hm-chart-max-h", lim.maxH + "px");
+  }}
+
+  function reportHeight() {{
+    var h = Math.ceil(document.documentElement.scrollHeight) + 6;
+    window.parent.postMessage({{type: "streamlit:setFrameHeight", height: h}}, "*");
+  }}
+
+  function onLayout() {{
+    applyChartSize();
+    requestAnimationFrame(reportHeight);
+  }}
+
+  onLayout();
+  window.addEventListener("resize", onLayout);
+  if (window.ResizeObserver) {{
+    var box = document.querySelector(".chart-box");
+    if (box) new ResizeObserver(onLayout).observe(box);
+  }}
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(onLayout);
+}})();
+</script>
 </body></html>'''
     return html
 
