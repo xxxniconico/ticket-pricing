@@ -1,18 +1,18 @@
 {
-  "model_version": "V5.5",
-  "updated": "2026-06-01 14:22",
+  "model_version": "V5.3+V8.2",
+  "updated": "2026-06-06 00:58",
   "completed": {
     "matches": 7,
-    "revenue": 20583095,
-    "quantity": 57291
+    "revenue": 18135034,
+    "quantity": 59583
   },
   "summary": {
-    "total_target_revenue": 18871164,
-    "total_target_quantity": 66461,
-    "annual_projection_revenue": 39454259,
-    "annual_projection_quantity": 123752,
-    "vs_2025_revenue_pct": -14.3,
-    "vs_2025_quantity_pct": -13.5
+    "total_target_revenue": 18616614,
+    "total_target_quantity": 70488,
+    "annual_projection_revenue": 36751648,
+    "annual_projection_quantity": 130071,
+    "vs_2025_revenue_pct": -20.0,
+    "vs_2025_quantity_pct": -10.7
   },
   "matches": [
     {
@@ -22,11 +22,11 @@
       "tier": "B",
       "pricing_tier": "S_B",
       "predicted_quantity": 8364,
-      "strategy": "balanced",
-      "revenue_weight": 0.4,
-      "target_revenue": 2077254,
-      "target_quantity": 8624,
-      "target_avg_price": 240.9,
+      "strategy": "revenue_tilt",
+      "revenue_weight": 0.5,
+      "target_revenue": 2060446,
+      "target_quantity": 8643,
+      "target_avg_price": 238.0,
       "base_prices": {
         "T1": 160,
         "T2": 220,
@@ -37,7 +37,7 @@
       },
       "context": [],
       "risks": [],
-      "model_version": "V5.5"
+      "model_version": "V5.3+V8.2"
     },
     {
       "date": "2026-07-04",
@@ -47,10 +47,10 @@
       "pricing_tier": "S_A",
       "predicted_quantity": 11673,
       "strategy": "revenue_priority",
-      "revenue_weight": 0.8,
-      "target_revenue": 4980827,
-      "target_quantity": 11605,
-      "target_avg_price": 429.2,
+      "revenue_weight": 0.75,
+      "target_revenue": 4817532,
+      "target_quantity": 11173,
+      "target_avg_price": 431.0,
       "base_prices": {
         "T1": 260,
         "T2": 340,
@@ -63,7 +63,7 @@
       "risks": [
         "summer"
       ],
-      "model_version": "V5.5"
+      "model_version": "V5.3+V8.2"
     },
     {
       "date": "2026-07-17",
@@ -73,10 +73,10 @@
       "pricing_tier": "S_C",
       "predicted_quantity": 6440,
       "strategy": "balanced",
-      "revenue_weight": 0.2,
-      "target_revenue": 1389659,
-      "target_quantity": 6689,
-      "target_avg_price": 207.7,
+      "revenue_weight": 0.35,
+      "target_revenue": 1422085,
+      "target_quantity": 6951,
+      "target_avg_price": 205.0,
       "base_prices": {
         "T1": 140,
         "T2": 200,
@@ -87,10 +87,10 @@
       },
       "context": [],
       "risks": [
-        "summer",
-        "升班马B级潜力(C级定价保守)"
+        "升班马B级潜力(C级定价保守)",
+        "summer"
       ],
-      "model_version": "V5.5"
+      "model_version": "V5.3+V8.2"
     },
     {
       "date": "2026-08-01",
@@ -100,10 +100,10 @@
       "pricing_tier": "S_B",
       "predicted_quantity": 9451,
       "strategy": "revenue_tilt",
-      "revenue_weight": 0.6,
-      "target_revenue": 2638946,
-      "target_quantity": 9403,
-      "target_avg_price": 280.6,
+      "revenue_weight": 0.5,
+      "target_revenue": 2368323,
+      "target_quantity": 9759,
+      "target_avg_price": 243.0,
       "base_prices": {
         "T1": 160,
         "T2": 220,
@@ -116,7 +116,7 @@
       "risks": [
         "summer"
       ],
-      "model_version": "V5.5"
+      "model_version": "V5.3+V8.2"
     },
     {
       "date": "2026-08-07",
@@ -126,10 +126,10 @@
       "pricing_tier": "S_B",
       "predicted_quantity": 9266,
       "strategy": "revenue_tilt",
-      "revenue_weight": 0.6,
-      "target_revenue": 2581900,
-      "target_quantity": 9219,
-      "target_avg_price": 280.0,
+      "revenue_weight": 0.5,
+      "target_revenue": 2317012,
+      "target_quantity": 9569,
+      "target_avg_price": 242.0,
       "base_prices": {
         "T1": 160,
         "T2": 220,
@@ -142,7 +142,7 @@
       "risks": [
         "summer"
       ],
-      "model_version": "V5.5"
+      "model_version": "V5.3+V8.2"
     },
     {
       "date": "2026-08-22",
@@ -152,10 +152,10 @@
       "pricing_tier": "S_B",
       "predicted_quantity": 9451,
       "strategy": "revenue_tilt",
-      "revenue_weight": 0.6,
-      "target_revenue": 2638946,
-      "target_quantity": 9403,
-      "target_avg_price": 280.6,
+      "revenue_weight": 0.5,
+      "target_revenue": 2368323,
+      "target_quantity": 9759,
+      "target_avg_price": 243.0,
       "base_prices": {
         "T1": 160,
         "T2": 220,
@@ -168,7 +168,7 @@
       "risks": [
         "summer"
       ],
-      "model_version": "V5.5"
+      "model_version": "V5.3+V8.2"
     },
     {
       "date": "2026-10-18",
@@ -176,12 +176,12 @@
       "round": "第28轮",
       "tier": "B",
       "pricing_tier": "S_B",
-      "predicted_quantity": 6560,
-      "strategy": "balanced",
-      "revenue_weight": 0.4,
-      "target_revenue": 1595198,
-      "target_quantity": 6771,
-      "target_avg_price": 235.6,
+      "predicted_quantity": 8200,
+      "strategy": "revenue_tilt",
+      "revenue_weight": 0.5,
+      "target_revenue": 2016203,
+      "target_quantity": 8475,
+      "target_avg_price": 238.0,
       "base_prices": {
         "T1": 160,
         "T2": 220,
@@ -194,7 +194,7 @@
       "risks": [
         "late_season"
       ],
-      "model_version": "V5.5"
+      "model_version": "V5.3+V8.2"
     },
     {
       "date": "2026-11-08",
@@ -202,12 +202,12 @@
       "round": "第30轮",
       "tier": "C",
       "pricing_tier": "S_C",
-      "predicted_quantity": 4560,
+      "predicted_quantity": 5700,
       "strategy": "balanced",
       "revenue_weight": 0.2,
-      "target_revenue": 968429,
-      "target_quantity": 4743,
-      "target_avg_price": 204.2,
+      "target_revenue": 1246690,
+      "target_quantity": 6159,
+      "target_avg_price": 202.0,
       "base_prices": {
         "T1": 140,
         "T2": 200,
@@ -218,15 +218,15 @@
       },
       "context": [],
       "risks": [
-        "late_season",
-        "升班马B级潜力(C级定价保守)"
+        "升班马B级潜力(C级定价保守)",
+        "late_season"
       ],
-      "model_version": "V5.5"
+      "model_version": "V5.3+V8.2"
     }
   ],
   "notes": [
-    "V5.5: ZONE_SECTIONS改为KMeans按赛季聚类(T6仅101/102), 容量基于申花售罄场, share_coeffs重拟合(n=26)",
+    "rule_engine V5.3 + optimizer V8.2 + pricing V8.1: away_winless拆分(0.98/0.82), 弹性矩阵按对手区分, 策略门槛10000/8000/6000",
     "辽宁铁人/重庆铜梁龙按C级定价(保守), B级升级空间~2M",
-    "全年预估3945万"
+    "全年预估3675万, 同比-20.0%"
   ]
 }
