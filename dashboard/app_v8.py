@@ -715,13 +715,15 @@ def render_tab1(target_match, home_preds, guoan_matches, standings, mae):
     sat = dt.weekday() == 5
     late = dt.month >= 10
     mid = dt.weekday() in [1, 2, 3]
+    sm = dt.month in (7, 8)
     lb = ctx.get("lost_bottom", False)
     hh = ctx.get("heavy_home_loss", False)
     aw = ctx.get("away_winless", False)
     awl = ctx.get("away_winless_losses", False)
     sr = ctx.get("short_rest", False)
+    mr = ctx.get("midseason_restart", False)
     ub3 = ctx.get("unbeaten_3", False)
-    so = len([m for m in guoan_matches if m["completed"]]) == 0
+    so = ctx.get("season_opener", False)
 
     prev_matches = [m for m in guoan_matches if m.get("completed") and pd.Timestamp(m["date"]) < dt]
     last_home_dates = [pd.Timestamp(m["date"]) for m in prev_matches if m["is_home"]]
@@ -737,7 +739,7 @@ def render_tab1(target_match, home_preds, guoan_matches, standings, mae):
     if ub3:
         rules_triggered.append(("不败", "近3场不败 ×1.00", 1.00, "近3场未尝败绩，球迷乐观情绪。V5.1网格搜索收敛至中性"))
     if so:
-        rules_triggered.append(("揭幕战", "赛季首个主场 ×1.15", 1.15, "揭幕战球迷关注度高，历史上座溢价约15%"))
+        rules_triggered.append(("揭幕战", "赛季首个主场 ×1.17", 1.17, "揭幕战球迷关注度高，历史上座溢价约17%"))
     if derby:
         if tier == "S":
             rules_triggered.append(("德比", "S级德比不叠加溢价", 1.0, f"申花已是S级最高基值（{TIER_BASE['S']:,}），德比溢价已内嵌在分级中"))
@@ -748,10 +750,15 @@ def render_tab1(target_match, home_preds, guoan_matches, standings, mae):
                 f"{'A级德比溢价5%' if tier == 'A' else '历史数据显示溢价25%'}，S级不叠加"))
     if sat:
         rules_triggered.append(("周六场", "周末上座溢价 ×1.02", 1.02, "周六比赛日球迷时间充裕，V5.1网格搜索最优溢价约2%"))
+    if mr and not so:
+        rules_triggered.append(("盛夏重启", f"距上场≥28天 下半季回归 ×1.10", 1.10,
+            f"长休{28 if not prev_matches else (dt - pd.Timestamp(prev_matches[-1]['date'])).days}天后球迷回流，B级6月重启场次历史均值1.22x，保守标定1.10"))
+    if sm and tier in ("B", "C"):
+        rules_triggered.append(("暑假效应", "7-8月暑假运营活动 ×1.13", 1.13, "暑假期间球迷观赛时间充裕，运营促销活动叠加"))
     if late:
         rules_triggered.append(("赛季末", f"{dt.month}月 战意衰减 ×0.80", 0.80, "10月以后赛季末，若球队已无争冠/保级悬念，上座下滑"))
     if mid and not lb and not hh:
-        rules_triggered.append(("工作日", f"周{'一二三四五六日'[dt.weekday()]} 工作日衰减 ×0.92", 0.92, "周二/三/四工作日影响-8%，不与lost_bottom/heavy叠加"))
+        rules_triggered.append(("工作日", f"周{'一二三四五六日'[dt.weekday()]} 工作日衰减 ×0.86", 0.86, "周二/三/四工作日影响-14%，不与lost_bottom/heavy叠加"))
     if aw:
         away3 = [m for m in prev_matches[-3:] if not m["is_home"]] if len(prev_matches) >= 3 else []
         rules_triggered.append(("客场不胜", f"近3场{len(away3)}客0胜 ×0.98", 0.98, "球迷对客场表现失望传导至主场观赛意愿"))
