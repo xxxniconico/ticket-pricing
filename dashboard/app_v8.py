@@ -27,7 +27,7 @@ for _fp in [
     '/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc',
     '/usr/share/fonts/noto-cjk/NotoSansCJK-Regular.ttc',
 ]:
-    if _fp.exists():
+    if Path(_fp).exists():
         fm.fontManager.addfont(str(_fp))
         _CN_FONT_NAME = fm.FontProperties(fname=str(_fp)).get_name()
         break
