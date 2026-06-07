@@ -1744,11 +1744,13 @@ def main():
       <div class="progress-track"><div class="progress-fill" style="width:{pct}%"></div></div>
     </div>""", unsafe_allow_html=True)
 
-    # ══ Tabs ══
-    tabs = st.tabs(["🎯 下一场预测", "📋 历史定价", "🔍 对手分析", "🏆 积分榜", "📊 H2策略", "🔥 座位热力图"])
+    # ══ 按需渲染 (避免 WebSocket 消息超限) ══
+    tab_names = ["🎯 下一场预测", "📋 历史定价", "🔍 对手分析", "🏆 积分榜", "📊 H2策略", "🔥 座位热力图"]
+    active_tab = st.radio("导航", tab_names, horizontal=True, label_visibility="collapsed",
+                          key="main_tab")
 
     # ── Tab 0: 下一场预测 ──
-    with tabs[0]:
+    if active_tab == tab_names[0]:
         if next_match and not next_match["is_home"]:
             st.info(f"📅 下一场 {next_match['date']} @ {next_match['opponent']} 为客场")
             if next_home:
@@ -1759,8 +1761,8 @@ def main():
             st.info("无未来主场")
         st.caption("💡 详细场景切换 + 瀑布图 → **H2策略** TAB")
 
-    # ── Tab 2: 历史定价 ──
-    with tabs[1]:
+    # ── Tab 1: 历史定价 ──
+    if active_tab == tab_names[1]:
         # 累计KPI
         opt_kpi = get_optimizer()
         cum_scene_qty = 0; cum_delta_qty = 0; cum_scene_rev = 0; cum_delta_rev = 0
@@ -1806,20 +1808,20 @@ def main():
         render_mae_chart(home_preds)
         render_history_expanders(home_preds, guoan_matches)
 
-    # ── Tab 3: 对手分析 ──
-    with tabs[2]:
+    # ── Tab 2: 对手分析 ──
+    if active_tab == tab_names[2]:
         render_opponent_analysis(all_matches)
 
-    # ── Tab 4: 积分榜 ──
-    with tabs[3]:
+    # ── Tab 3: 积分榜 ──
+    if active_tab == tab_names[3]:
         render_standings_table(guoan_matches, standings, guoan_ded)
 
-    # ── Tab 5: H2策略 ──
-    with tabs[4]:
+    # ── Tab 4: H2策略 ──
+    if active_tab == tab_names[4]:
         render_h2_strategy(guoan_matches, standings)
 
-    # ── Tab 6: 座位热力图 ──
-    with tabs[5]:
+    # ── Tab 5: 座位热力图 ──
+    if active_tab == tab_names[5]:
         render_heatmap_tab(guoan_matches)
 
     st.caption("V8.1 · 国安绿品牌 · 决策工作台")
