@@ -222,7 +222,7 @@ def build_rule_labels(pred_args):
 def get_optimizer():
     return DynamicPricingOptimizer(revenue_weight=0.6)
 
-@st.cache_data(ttl=600)
+@st.cache_data(ttl=7200)
 def load_data():
     all_matches, rounds, deductions = load_csl_data()
     guoan = get_guoan_matches(all_matches)
