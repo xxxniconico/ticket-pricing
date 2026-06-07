@@ -124,13 +124,13 @@ def detect_ctx(match: dict, guoan_all: list[dict], standings: dict) -> dict:
 
     # away_winless / away_winless_losses: 2+ away in last3, 0 away wins
     # V5.4: 拆分为含平局(0.98)和全败(0.82)两档
-    # 最少5场完赛门槛: 赛季初的连客负(如R1-R2)不等于球迷绝望, 样本不足
+    # 全败档仅当赛季≥5场完赛时激活: 赛季初样本不足, 连败≠绝望
     away3 = [m for m in last3 if not m["is_home"]]
-    if len(away3) >= 2 and len(prev) >= 5 and sum(1 for m in away3 if (
+    if len(away3) >= 2 and sum(1 for m in away3 if (
         (m["is_home"] and m["hg"] > m["ag"]) or (not m["is_home"] and m["ag"] > m["hg"])
     )) == 0:
         away_losses = sum(1 for m in away3 if not m["is_home"] and m["ag"] < m["hg"])
-        if away_losses == len(away3):
+        if away_losses == len(away3) and len(prev) >= 5:
             ctx["away_winless_losses"] = True
         else:
             ctx["away_winless"] = True
