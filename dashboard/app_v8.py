@@ -183,9 +183,10 @@ def build_pred_args(match, ctx, overrides=None):
     args = {
         'derby': opp in DERBY_RIVALS,
         'saturday': dt.weekday() == 5,
-        'late_season': dt.month >= 10,
         'midweek': dt.weekday() in [1, 2, 3],
-        'season_opener': False,
+        'summer': dt.month in [7, 8],
+        'midseason_restart': ctx.get('midseason_restart', False),
+        'season_opener': ctx.get('season_opener', False),
         'match_year': match["date"][:4],
         'away_winless': ctx.get('away_winless', False),
         'lost_bottom': ctx.get('lost_bottom', False),
@@ -331,9 +332,10 @@ def compute_home_predictions(home_done, guoan_matches):
         p = rule_predict(
             m["opponent"],
             derby=m["opponent"] in DERBY_RIVALS,
-            saturday=md.weekday() == 5, late_season=md.month >= 10,
+            saturday=md.weekday() == 5,
             midweek=md.weekday() in [1, 2, 3], summer=md.month in [7, 8],
-            season_opener=(m == home_done[0]), match_year=m["date"][:4],
+            season_opener=(m == home_done[0]), midseason_restart=ctx.get('midseason_restart', False),
+            match_year=m["date"][:4],
             **{k: ctx.get(k, False) for k in ['away_winless', 'lost_bottom', 'heavy_home_loss', 'short_rest', 'unbeaten_3', 'away_winless_losses', 'consecutive_home_losses']}
         )
         results.append((m, p, a, ctx))
