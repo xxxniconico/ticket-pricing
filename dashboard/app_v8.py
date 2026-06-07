@@ -193,8 +193,6 @@ def build_pred_args(match, ctx, overrides=None):
         'heavy_home_loss': ctx.get('heavy_home_loss', False),
         'short_rest': ctx.get('short_rest', False),
         'unbeaten_3': ctx.get('unbeaten_3', False),
-        'away_winless_losses': ctx.get('away_winless_losses', False),
-        'consecutive_home_losses': ctx.get('consecutive_home_losses', False),
     }
 
     if overrides:
@@ -336,7 +334,7 @@ def compute_home_predictions(home_done, guoan_matches):
             midweek=md.weekday() in [1, 2, 3], summer=md.month in [7, 8],
             season_opener=(m == home_done[0]), midseason_restart=ctx.get('midseason_restart', False),
             match_year=m["date"][:4],
-            **{k: ctx.get(k, False) for k in ['away_winless', 'lost_bottom', 'heavy_home_loss', 'short_rest', 'unbeaten_3', 'away_winless_losses', 'consecutive_home_losses']}
+            **{k: ctx.get(k, False) for k in ['away_winless', 'lost_bottom', 'heavy_home_loss', 'short_rest', 'unbeaten_3']}
         )
         results.append((m, p, a, ctx))
     return results
@@ -719,7 +717,6 @@ def render_tab1(target_match, home_preds, guoan_matches, standings, mae):
     lb = ctx.get("lost_bottom", False)
     hh = ctx.get("heavy_home_loss", False)
     aw = ctx.get("away_winless", False)
-    awl = ctx.get("away_winless_losses", False)
     sr = ctx.get("short_rest", False)
     mr = ctx.get("midseason_restart", False)
     ub3 = ctx.get("unbeaten_3", False)

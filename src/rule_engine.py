@@ -29,8 +29,7 @@ MULTIPLIERS = {
     "derby": 1.25, "derby_B": 1.05,
     "lost_bottom": 0.65, "heavy_home_loss": 0.85,
     "consecutive_home_losses": 0.82,
-    "away_winless": 0.98, "away_winless_losses": 0.82,
-    "saturday": 1.02,
+    "away_winless": 0.98, "saturday": 1.02,
     "season_opener": 1.17,
     "short_rest": 0.78, "midweek": 0.86,
     "summer": 1.13,
@@ -56,7 +55,7 @@ def predict(opponent, derby=False, lost_bottom=False, heavy_home_loss=False,
             consecutive_home_losses=False,
             away_winless=False, saturday=False, season_opener=False,
             short_rest=False, midweek=False, summer=False,
-            away_winless_losses=False, midseason_restart=False,
+            midseason_restart=False,
             match_year=None, **__) -> float:
     tier = classify_opponent_tier(opponent)
     base = TIER_BASE.get(tier, 8100)
@@ -70,9 +69,7 @@ def predict(opponent, derby=False, lost_bottom=False, heavy_home_loss=False,
     if lost_bottom: mult *= 0.78 if tier in ("S","A") else MULTIPLIERS["lost_bottom"]
     elif consecutive_home_losses: mult *= MULTIPLIERS["consecutive_home_losses"]
     elif heavy_home_loss: mult *= MULTIPLIERS["heavy_home_loss"]
-    if away_winless_losses:
-        mult *= MULTIPLIERS["away_winless_losses"]
-    elif away_winless:
+    if away_winless:
         mult *= MULTIPLIERS["away_winless"]
     if saturday: mult *= MULTIPLIERS["saturday"]
     if season_opener: mult *= MULTIPLIERS["season_opener"]

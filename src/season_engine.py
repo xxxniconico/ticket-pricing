@@ -87,7 +87,7 @@ class SeasonEngine:
             "midseason_restart": False,
             "season_opener": False,
             "lost_bottom": False, "heavy_home_loss": False,
-            "away_winless": False, "away_winless_losses": False,
+            "away_winless": False,
             "short_rest": False,
         }
 
@@ -156,14 +156,10 @@ class SeasonEngine:
                     if not gr.empty:
                         ctx["guoan_rank"] = int(gr["rank"].iloc[0])
 
-            # away_winless / away_winless_losses: 近3场中2+客场且全不胜
+            # away_winless: 近3场中2+客场且全不胜
             away3 = last3[last3["is_home"] == False]
             if len(away3) >= 2 and (away3["result"] == "W").sum() == 0:
-                away_losses = (away3["result"] == "L").sum()
-                if away_losses == len(away3):
-                    ctx["away_winless_losses"] = True
-                else:
-                    ctx["away_winless"] = True
+                ctx["away_winless"] = True
 
             # short_rest: ≤4 days since last home match
             hp = prev[prev["is_home"] == True]

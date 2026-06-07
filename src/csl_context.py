@@ -122,18 +122,12 @@ def detect_ctx(match: dict, guoan_all: list[dict], standings: dict) -> dict:
     prev = [m for m in guoan_all if m.get("completed") and pd.Timestamp(m["date"]) < md]
     last3 = prev[-3:] if len(prev) >= 3 else prev
 
-    # away_winless / away_winless_losses: 2+ away in last3, 0 away wins
-    # V5.4: 拆分为含平局(0.98)和全败(0.82)两档
-    # 全败档仅当赛季≥5场完赛时激活: 赛季初样本不足, 连败≠绝望
+    # away_winless: 2+ away in last3, 0 away wins
     away3 = [m for m in last3 if not m["is_home"]]
     if len(away3) >= 2 and sum(1 for m in away3 if (
         (m["is_home"] and m["hg"] > m["ag"]) or (not m["is_home"] and m["ag"] > m["hg"])
     )) == 0:
-        away_losses = sum(1 for m in away3 if not m["is_home"] and m["ag"] < m["hg"])
-        if away_losses == len(away3) and len(prev) >= 5:
-            ctx["away_winless_losses"] = True
-        else:
-            ctx["away_winless"] = True
+        ctx["away_winless"] = True
 
     # lost_bottom: 近3场输给C级弱队(升班马等) 或 B级排名≥12
     for m in last3:
@@ -197,8 +191,8 @@ def predict_with_context(opponent: str, match_date: str,
 
     dt = pd.Timestamp(match_date)
     ctx_kwargs = {k: ctx.get(k, False) for k in [
-        "away_winless", "away_winless_losses", "lost_bottom",
-        "heavy_home_loss", "short_rest", "midseason_restart", "season_opener",
+        "away_winless", "lost_bottom", "heavy_home_loss",
+        "short_rest", "midseason_restart", "season_opener",
     ]}
     return predict(
         opponent,
