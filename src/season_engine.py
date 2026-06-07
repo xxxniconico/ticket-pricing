@@ -1,11 +1,7 @@
 """
-赛季滚动预测引擎
+赛季滚动预测引擎 — V5.4 同步
 
-每轮比赛是一个预测节点：
-  赛前 → 基于历史+本赛季已累积规则预测
-  赛后 → 更新参数, 滚动到下一轮
-
-优化目标: 全赛季累积MAE最小化
+委托 rule_engine.predict() 做基预测, 自身维护 EMA 分级校准 + 赛季状态持久化。
 """
 from __future__ import annotations
 
@@ -18,26 +14,18 @@ import pandas as pd
 
 from src.classify import classify_opponent_tier, DERBY_RIVALS
 
-# ── 规则基值 ──
-TIER_BASE: dict[str, float] = {"S": 11100, "A": 10100, "B": 8600, "C1": 5100, "C2": 6500}
-DEFAULT_MULTIPLIERS = {
-    "derby": 1.25, "lost_bottom": 0.55, "heavy_home_loss": 0.70,
-    "away_winless": 0.78, "saturday": 1.12,
-    "late_season": 0.60, "big_win_prev": 0.82,
-}
-PENALTY_FLOOR = 0.35
-CAL_ALPHA = 0.20
-
 # ── 赛季状态 ──
 _STATE_FILE = os.path.join(os.path.dirname(__file__), "..", "data", "processed", "season_state.json")
 
+CAL_ALPHA = 0.20
+
 
 class SeasonEngine:
-    """赛季滚动预测引擎。
+    """赛季滚动预测引擎 — 委托 rule_engine 做基预测, 自身维护 EMA 校准。
 
     用法:
         engine = SeasonEngine(season="2026")
-        engine.init_from_prior_season("2025")  # 从历史赛季初始化
+        engine.init_from_prior_season("2025")  # 从历史赛季初始化校准因子
 
         for match in season_schedule:
             pred = engine.predict(match)        # 赛前预测
@@ -47,17 +35,14 @@ class SeasonEngine:
 
     def __init__(self, season: str = "2026"):
         self.season = season
-        self.multipliers = dict(DEFAULT_MULTIPLIERS)
-        self.tier_base = dict(TIER_BASE)
-        self.tier_cal = {"S": 1.0, "A": 1.0, "B": 1.0, "C1": 1.0, "C2": 1.0}
+        self.tier_cal = {"S": 1.0, "A": 1.0, "B": 1.0, "C": 1.0}
         self.history: list[dict] = []
         self.completed = 0
         self.cumulative_mae = 0.0
-        self._form_buffer: list[dict] = []  # 本赛季已赛结果
 
     # ── 初始化 ──
     def init_from_prior_season(self, prior_season: str):
-        """从历史赛季数据学习初始参数。"""
+        """从历史赛季数据学习初始 EMA 校准因子。"""
         parquet = os.path.join(os.path.dirname(__file__), "..", "data", "processed", "all_unified.parquet")
         if not os.path.exists(parquet):
             return
@@ -72,14 +57,21 @@ class SeasonEngine:
         if csl.empty:
             return
 
-        # 学习级别基准
+        from src.rule_engine import predict as rule_predict
         for t in ["S", "A", "B", "C"]:
             sub = csl[csl["match_id"].apply(lambda m: classify_opponent_tier(m.split(" ")[-1]) == t)]
-            if len(sub) > 0:
-                self.tier_base[t] = round(sub.groupby("match_id")["数量"].sum().median(), -2)
-
-        # 学习乘数 (简化: 用回归残差)
-        # 此处保留默认值作为先验，后续赛季运行中自适应
+            if len(sub) == 0:
+                continue
+            ratios = []
+            for mid in sub["match_id"].unique():
+                m = sub[sub["match_id"] == mid]
+                actual = m["数量"].sum()
+                opp = m["opponent"].iloc[0]
+                raw = rule_predict(opp, match_year=prior_season)
+                if raw > 0:
+                    ratios.append(actual / raw)
+            if ratios:
+                self.tier_cal[t] = round(np.mean(ratios), 4)
 
     # ── 情境检测 ──
     def detect_context(self, match_date, opponent: str) -> dict:
@@ -90,10 +82,13 @@ class SeasonEngine:
         ctx = {
             "derby": opponent in DERBY_RIVALS,
             "saturday": md.weekday() == 5,
-            "late_season": md.month >= 10,
+            "midweek": md.weekday() in (1, 2, 3),
+            "summer": md.month in (7, 8),
+            "midseason_restart": False,
+            "season_opener": False,
             "lost_bottom": False, "heavy_home_loss": False,
-            "away_winless": False, "returning_home": False,
-            "big_win_prev": False,
+            "away_winless": False, "away_winless_losses": False,
+            "short_rest": False,
         }
 
         try:
@@ -161,20 +156,29 @@ class SeasonEngine:
                     if not gr.empty:
                         ctx["guoan_rank"] = int(gr["rank"].iloc[0])
 
-            # away_winless: 近3场中2+客场且全不胜
+            # away_winless / away_winless_losses: 近3场中2+客场且全不胜
             away3 = last3[last3["is_home"] == False]
             if len(away3) >= 2 and (away3["result"] == "W").sum() == 0:
-                ctx["away_winless"] = True
+                away_losses = (away3["result"] == "L").sum()
+                if away_losses == len(away3):
+                    ctx["away_winless_losses"] = True
+                else:
+                    ctx["away_winless"] = True
 
-            # returning_home: 上一场是客场
-            if len(last3) > 0 and not last3.iloc[-1]["is_home"]:
-                ctx["returning_home"] = True
+            # short_rest: ≤4 days since last home match
+            hp = prev[prev["is_home"] == True]
+            if not hp.empty and (md - hp["md"].max()).days <= 4:
+                ctx["short_rest"] = True
 
-            # big_win_prev: 上场净胜3+
-            if len(prev) > 0 and prev.iloc[-1]["result"] == "W":
-                last = prev.iloc[-1]
-                if (last["gf"] - last["ga"]) >= 3:
-                    ctx["big_win_prev"] = True
+            # midseason_restart: >=28 days since last match, months 6-7
+            if not prev.empty and md.month in (6, 7):
+                if (md - prev["md"].max()).days >= 28:
+                    ctx["midseason_restart"] = True
+
+            # season_opener: first HOME match of calendar year
+            same_year_home = prev[(prev["md"].dt.year == md.year) & (prev["is_home"] == True)]
+            if same_year_home.empty:
+                ctx["season_opener"] = True
 
         except Exception:
             pass
@@ -183,35 +187,16 @@ class SeasonEngine:
 
     # ── 预测 ──
     def predict(self, opponent: str, match_date, **override_ctx) -> float:
-        """赛前预测单场上座（乘法叠加 + EMA校准）。"""
-        md = pd.Timestamp(match_date)
+        """赛前预测：委托 rule_engine 做基预测, 叠加自身 EMA 校准。"""
+        from src.rule_engine import predict as rule_predict
+
         ctx = self.detect_context(match_date, opponent)
         ctx.update(override_ctx)
 
+        raw = rule_predict(opponent, **ctx)
         tier = classify_opponent_tier(opponent)
-        base = self.tier_base[tier]
-        mult = 1.0
-
-        if ctx.get("derby") and tier != "S":
-            mult *= self.multipliers["derby"]
-        if ctx.get("lost_bottom"):
-            mult *= self.multipliers["lost_bottom"]
-        elif ctx.get("heavy_home_loss"):
-            mult *= self.multipliers["heavy_home_loss"]
-        if ctx.get("away_winless"):
-            mult *= self.multipliers["away_winless"]
-        if ctx.get("big_win_prev"):
-            mult *= self.multipliers["big_win_prev"]
-        if ctx.get("saturday"):
-            mult *= self.multipliers["saturday"]
-        if ctx.get("late_season"):
-            mult *= self.multipliers["late_season"]
-
-        if mult < PENALTY_FLOOR:
-            mult = PENALTY_FLOOR
-
         cal = self.tier_cal.get(tier, 1.0)
-        return min(base * mult * cal, 20000.0)
+        return min(raw * cal, 20000.0)
 
     # ── 赛后更新 ──
     def update(self, opponent: str, match_date, actual: int, **override_ctx):
@@ -262,7 +247,7 @@ class SeasonEngine:
             DataFrame with round-by-round predictions and errors
         """
         # 重置
-        self.tier_cal = {"S": 1.0, "A": 1.0, "B": 1.0, "C1": 1.0, "C2": 1.0}
+        self.tier_cal = {"S": 1.0, "A": 1.0, "B": 1.0, "C": 1.0}
         self.history = []
         self.completed = 0
         self.cumulative_mae = 0.0
@@ -281,9 +266,7 @@ class SeasonEngine:
                 "season": self.season, "completed": self.completed,
                 "cumulative_mae": self.cumulative_mae,
                 "tier_cal": self.tier_cal,
-                "tier_base": self.tier_base,
-                "multipliers": self.multipliers,
-                "history": self.history[-20:],  # 只保留最近20场
+                "history": self.history[-20:],
             }, f, indent=2, ensure_ascii=False)
 
     def load(self):
@@ -294,8 +277,6 @@ class SeasonEngine:
             self.completed = state.get("completed", 0)
             self.cumulative_mae = state.get("cumulative_mae", 0)
             self.tier_cal = state.get("tier_cal", self.tier_cal)
-            self.tier_base = state.get("tier_base", self.tier_base)
-            self.multipliers = state.get("multipliers", self.multipliers)
             self.history = state.get("history", [])
 
     def summary(self) -> str:

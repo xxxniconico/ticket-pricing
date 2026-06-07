@@ -122,12 +122,17 @@ def detect_ctx(match: dict, guoan_all: list[dict], standings: dict) -> dict:
     prev = [m for m in guoan_all if m.get("completed") and pd.Timestamp(m["date"]) < md]
     last3 = prev[-3:] if len(prev) >= 3 else prev
 
-    # away_winless: 2+ away in last3, 0 away wins
+    # away_winless / away_winless_losses: 2+ away in last3, 0 away wins
+    # V5.4: 拆分为含平局(0.98)和全败(0.82)两档
     away3 = [m for m in last3 if not m["is_home"]]
     if len(away3) >= 2 and sum(1 for m in away3 if (
         (m["is_home"] and m["hg"] > m["ag"]) or (not m["is_home"] and m["ag"] > m["hg"])
     )) == 0:
-        ctx["away_winless"] = True
+        away_losses = sum(1 for m in away3 if not m["is_home"] and m["ag"] < m["hg"])
+        if away_losses == len(away3):
+            ctx["away_winless_losses"] = True
+        else:
+            ctx["away_winless"] = True
 
     # lost_bottom: 近3场输给C级弱队(升班马等) 或 B级排名≥12
     for m in last3:
@@ -152,6 +157,15 @@ def detect_ctx(match: dict, guoan_all: list[dict], standings: dict) -> dict:
     hp = [m for m in prev if m["is_home"]]
     if hp and (md - pd.Timestamp(hp[-1]["date"])).days <= 4:
         ctx["short_rest"] = True
+    # midseason_restart: >=28 days since last match, months 6-7, not season opener
+    # V5.4: 盛夏重启效应 — 长休后球迷回流 (B级均值1.22x, 标定1.10)
+    if prev and md.month in (6, 7):
+        if (md - pd.Timestamp(prev[-1]["date"])).days >= 28:
+            ctx["midseason_restart"] = True
+    # season_opener: 该自然年首场主场比赛
+    same_year_home = [m for m in prev if m["is_home"] and pd.Timestamp(m["date"]).year == md.year]
+    if not same_year_home:
+        ctx["season_opener"] = True
     # unbeaten_3: 近3场不败 → 球迷乐观溢价（完整30轮验证 +13%）
     if len(last3) >= 3:
         if all((g["is_home"] and g["hg"] > g["ag"]) or (not g["is_home"] and g["ag"] > g["hg"]) or g["hg"] == g["ag"] for g in last3):
@@ -181,13 +195,16 @@ def predict_with_context(opponent: str, match_date: str,
     ctx = detect_ctx(match, guoan_all, standings)
 
     dt = pd.Timestamp(match_date)
+    ctx_kwargs = {k: ctx.get(k, False) for k in [
+        "away_winless", "away_winless_losses", "lost_bottom",
+        "heavy_home_loss", "short_rest", "midseason_restart", "season_opener",
+    ]}
     return predict(
         opponent,
         derby=opponent in DERBY_RIVALS,
         saturday=dt.weekday() == 5,
-        late_season=dt.month >= 10,
         midweek=dt.weekday() in (1, 2, 3),
         summer=dt.month in (7, 8),
         match_year=match_date[:4],
-        **{k: ctx.get(k, False) for k in ["away_winless", "lost_bottom", "heavy_home_loss", "short_rest"]},
+        **ctx_kwargs,
     )

@@ -194,6 +194,9 @@ class DynamicPricingOptimizer:
         base_revenue = 0.0
         base_attendance = 0.0
 
+        # H2 强需求信号: 允许 volume tier 微涨 + T5/T6 更激进
+        strong_demand = context.get("midseason_restart", False) or context.get("summer", False)
+
         for zt in ZONE_TIERS:
             p0 = base_prices[zt]
             q0 = base_demand[zt]
@@ -219,7 +222,7 @@ class DynamicPricingOptimizer:
                     upper_bound_hint = base_prices["T4"] / 1.18
 
                 p_opt, q_opt = self._optimize_tier(
-                    p0, q0, eps, cap, opp_level, zt, lower_price, rw, aw, upper_bound_hint, strategy_mode
+                    p0, q0, eps, cap, opp_level, zt, lower_price, rw, aw, upper_bound_hint, strategy_mode, strong_demand
                 )
 
             rev = p_opt * q_opt
@@ -240,11 +243,16 @@ class DynamicPricingOptimizer:
             base_attendance += min(q0, cap)  # capped baseline (realistic comparison)
 
         # 6. 收入策略安全阀：预测偏低或掉量>3% → 降级均衡
-        # V8.1: S/A级对手豁免（票价高/容量有限，预测天花板低，如申花~12,852）
+        # V5.4: pred_floor 基于实际数据中位数重标定 (B~9000, C~5500)
+        # 情境修正: midseason_restart×0.80, summer×0.85 (暑假需求置信度高)
         if strategy_mode == 'revenue':
             att_loss_pct = (base_attendance - total_attendance) / base_attendance if base_attendance > 0 else 0
-            tier_pred_floor = {"S": 11000, "A": 10500, "B": 13000, "C": 13000}
-            pred_floor = tier_pred_floor.get(opp_tier, 13000)
+            tier_pred_floor = {"S": 11000, "A": 10500, "B": 9000, "C": 6000}
+            pred_floor = tier_pred_floor.get(opp_tier, 10000)
+            if context.get("midseason_restart"):
+                pred_floor = int(pred_floor * 0.80)
+            elif context.get("summer"):
+                pred_floor = int(pred_floor * 0.85)
             if predicted_total < pred_floor or att_loss_pct > 0.03:
                 return self.optimize(opponent, match_date=match_date,
                                      min_revenue=min_revenue, strategy='balanced', **context)
@@ -337,7 +345,7 @@ class DynamicPricingOptimizer:
         self, p0: float, q0: float, eps: float, cap: float,
         opp_level: str, zt: str, lower_price: float | None = None,
         rw: float = 0.6, aw: float = 0.4, upper_bound_hint: float | None = None,
-        strategy_mode: str = 'revenue'
+        strategy_mode: str = 'revenue', strong_demand: bool = False
     ) -> tuple[float, float]:
         """对单个zone tier搜索最优价格（动态权重）。"""
         # Zone差异化边界
@@ -403,14 +411,15 @@ class DynamicPricingOptimizer:
 
             if strategy_mode == 'balanced':
                 # 平衡策略：降幅与弹性挂钩，高弹性多降、低弹性少降
+                # V5.4: 最大降幅从22%收紧至15% (22%=清仓逻辑, 偏离"平衡"本意)
                 if tier_role == 'volume':
                     # T1,T2: 弹性驱动降价 (eps越大越敏感,降越多)
-                    cut_pct = min(0.22, abs(eps) * 1.0)  # eps=0.20→20%, eps=0.10→10%
+                    cut_pct = min(0.15, abs(eps) * 0.85)  # eps=0.25→21%→cap@15%, eps=0.10→8.5%
                     p_opt = max(p_min, p0 * (1 - cut_pct))
                     p_opt = min(p_opt, p0)  # 不涨
                 elif tier_role == 'elastic' and zt == 'T3':
                     # T3: 弹性驱动,降幅略小于volume
-                    cut_pct = min(0.18, abs(eps) * 0.85)
+                    cut_pct = min(0.12, abs(eps) * 0.65)
                     p_opt = max(p_min, p0 * (1 - cut_pct))
                     p_opt = min(p_opt, p0)
                 elif tier_role == 'elastic' and zt == 'T4':
@@ -447,8 +456,10 @@ class DynamicPricingOptimizer:
                         p_opt = max(p_opt, target)  # floor: 不降
                         p_opt = min(p_opt, round(p0 * cap_up / 10) * 10)  # ceiling: 动态上限
                     else:
-                        p_opt = max(target, rev_min)
-                        p_opt = min(p_opt, p0)
+                        # V5.4 H2: 保留scipy结果，target为底，vol_cap为顶
+                        vol_cap = p0 * 1.05 if strong_demand else p0
+                        p_opt = max(p_opt, max(target, rev_min))  # floor
+                        p_opt = min(p_opt, vol_cap)                # ceiling
 
                 elif tier_role == 'revenue':
                     if eps >= 0.30:
@@ -460,7 +471,10 @@ class DynamicPricingOptimizer:
                     if rw >= 0.7:
                         target = min(p0 * cap_up, p_max)
                     elif rw >= 0.4:
-                        target = min(p0 * min(cap_up - 0.05, 1.10), p_max)
+                        # V5.4 H2: 强需求场次 T5/T6 涨价上限放宽
+                        tier_ceil = 1.15 if strong_demand else 1.10
+                        target_mult = cap_up if strong_demand else cap_up - 0.05
+                        target = min(p0 * min(target_mult, tier_ceil), p_max)
                     else:
                         target = p0  # 弱队不涨
                     p_opt = max(target, p0)  # 不降

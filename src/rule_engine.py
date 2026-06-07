@@ -1,5 +1,5 @@
 """
-国安散票预测 — 规则引擎 V5.3（大麦+联票 + 暑假效应 + 客场连败拆分）
+国安散票预测 — 规则引擎 V5.4（盛夏重启效应）
 
 基值: 2023-2026 去情境化中位数 (53场)
   S=12600 A=10900 B=8200 C=5700
@@ -8,13 +8,13 @@
   away_winless=0.98 away_winless_losses=0.82 saturday=1.02
   season_opener=1.15 short_rest=0.78 midweek=0.92
   summer=1.15 (B/C级, 7-8月, 暑假运营活动)
+  midseason_restart=1.10 (>=28天间隔, 6-7月, 非赛季首场)
 年份因子: year_2023=1.45 (S级豁免)
 惩罚底线: 0.35  EMA: 0.20
 
-V5.3: away_winless 拆分为两档
-  - 含平局(n=5, ratio 1.07): 保持 0.98（轻罚）
-  - 全败  (n=1, ratio 0.78): 新增 0.82（保守标定，距最优 0.78 留 4% buffer）
-  逻辑: 连平=有竞争力, 连败=心态崩盘
+V5.4: +midseason_restart
+  - 盛夏重启: B级6月长休场次均值1.22x (n=2: 海港1.07 + 亚泰1.37), 标定1.10保守
+  - 去掉了对手级偏差(OPP_DEVIATION), 保持模型系统性
 """
 from __future__ import annotations
 import json, os
@@ -34,6 +34,7 @@ MULTIPLIERS = {
     "season_opener": 1.17,
     "short_rest": 0.78, "midweek": 0.86,
     "summer": 1.13,
+    "midseason_restart": 1.10,
 }
 
 YEAR_2023 = 1.45
@@ -55,7 +56,8 @@ def predict(opponent, derby=False, lost_bottom=False, heavy_home_loss=False,
             consecutive_home_losses=False,
             away_winless=False, saturday=False, season_opener=False,
             short_rest=False, midweek=False, summer=False,
-            away_winless_losses=False, match_year=None, **__) -> float:
+            away_winless_losses=False, midseason_restart=False,
+            match_year=None, **__) -> float:
     tier = classify_opponent_tier(opponent)
     base = TIER_BASE.get(tier, 8100)
     for key, val in OPP_DEVIATION.items():
@@ -74,6 +76,7 @@ def predict(opponent, derby=False, lost_bottom=False, heavy_home_loss=False,
         mult *= MULTIPLIERS["away_winless"]
     if saturday: mult *= MULTIPLIERS["saturday"]
     if season_opener: mult *= MULTIPLIERS["season_opener"]
+    if midseason_restart and not season_opener: mult *= MULTIPLIERS["midseason_restart"]
     if midweek and not lost_bottom: mult *= MULTIPLIERS["midweek"]
     if short_rest and not lost_bottom and not heavy_home_loss: mult *= MULTIPLIERS["short_rest"]
     if summer and tier in ("B","C"): mult *= MULTIPLIERS["summer"]
