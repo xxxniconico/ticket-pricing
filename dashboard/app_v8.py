@@ -60,6 +60,16 @@ from src.csl_context import load_csl_data, get_guoan_matches, detect_ctx
 
 st.set_page_config(page_title="国安票务 V8", page_icon="⚽", layout="wide")
 
+# 防白屏闪烁: Streamlit 加载 dark CSS 前抢先设黑底
+st.markdown("""
+<style>
+  @media (prefers-color-scheme: dark) {
+    body, .stApp, .main { background-color: #0c0d0f !important; }
+  }
+  .stApp { background-color: #0c0d0f; }
+</style>
+""", unsafe_allow_html=True)
+
 # ── Constants ───────────────────────────────────────────
 PT_LABELS = {
     "S_S": "S·德比定价", "S_A": "A·标准定价", "S_Aminus": "A·降价",
