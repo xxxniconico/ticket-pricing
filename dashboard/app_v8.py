@@ -1601,7 +1601,7 @@ def render_heatmap_tab(guoan_matches):
     match_label = f"{match_date}  vs  {opp}"
     heatmap_html = render_gongti_heatmap(section_fills, section_fills, match_label, total_fill)
     # iframe 高度由组件内 JS 按视口动态上报；此处仅作首屏占位（PC 偏大、手机偏小均可被覆盖）
-    st.components.v1.html(heatmap_html, height=380, scrolling=True)
+    st.html(heatmap_html)
 
     # ── 销售概况 ──
     if section_qty:
