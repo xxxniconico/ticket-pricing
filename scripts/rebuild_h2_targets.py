@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Rebuild H2 targets with latest model (rule_engine V5.3 + optimizer V8.2 + pricing V8.1)."""
+"""Rebuild H2 targets with latest model (rule_engine V5.4 + optimizer V8.2 + pricing V8.1)."""
 import sys
 sys.path.insert(0, '/home/xxxsuli/ticket-pricing')
 sys.path.insert(0, '/mnt/c/Users/xxxsu/.openclaw/workspace/csl_project_v2')
@@ -48,15 +48,16 @@ pm = build_price_matrix()
 targets = []
 total_r = 0
 total_q = 0
+simulated = []  # 累积已处理的 H2 mock，确保后续场次看到正确的比赛间隔
 
-ctx_keys = ['away_winless', 'lost_bottom', 'heavy_home_loss', 'short_rest', 'unbeaten_3', 'away_winless_losses']
+ctx_keys = ['away_winless', 'lost_bottom', 'heavy_home_loss', 'short_rest', 'midseason_restart', 'season_opener', 'unbeaten_3']
 
 for m in remaining:
-    mock = {**m, 'completed': True}
-    ctx = detect_ctx(mock, guoan_matches + [mock], _ctx_rounds)
+    mock = {**m, 'completed': True, 'hg': 0, 'ag': 0}  # 补全比分字段避免 detect_ctx None 比较
+    ctx = detect_ctx(mock, guoan_matches + simulated + [mock], _ctx_rounds)
+    simulated.append(mock)
     dt = pd.Timestamp(m['date'])
     opp = m['opponent']
-    so = (m == all_home[0])
     tier = classify_opponent_tier(opp)
     pt = get_pricing_tier(opp)
 
@@ -66,7 +67,6 @@ for m in remaining:
         late_season=dt.month >= 10,
         midweek=dt.weekday() in (1, 2, 3),
         summer=dt.month in (7, 8),
-        season_opener=so,
         match_year='2026',
         **{k: ctx.get(k, False) for k in ctx_keys}
     )
@@ -108,7 +108,7 @@ for m in remaining:
         'base_prices': {zt: prices[zt] for zt in ZONE_TIERS},
         'context': [k for k, v in ctx.items() if v],
         'risks': risks,
-        'model_version': 'V5.3+V8.2',
+        'model_version': 'V5.4+V8.2',
     })
     total_r += target_rev
     total_q += target_qty
@@ -121,7 +121,7 @@ vs_rev_pct = round((annual_rev / rev_2025 - 1) * 100, 1)
 vs_qty_pct = round((annual_qty / qty_2025 - 1) * 100, 1)
 
 output = {
-    'model_version': 'V5.3+V8.2',
+    'model_version': 'V5.4+V8.2',
     'updated': datetime.now().strftime('%Y-%m-%d %H:%M'),
     'completed': {
         'matches': 7,
@@ -138,7 +138,7 @@ output = {
     },
     'matches': targets,
     'notes': [
-        'rule_engine V5.3 + optimizer V8.2 + pricing V8.1: away_winless拆分(0.98/0.82), 弹性矩阵按对手区分, 策略门槛10000/8000/6000',
+        'rule_engine V5.4 + optimizer V8.2 + pricing V8.1: +midseason_restart(1.10x), away_winless(0.98), 弹性矩阵按对手区分, 策略门槛10000/8000/6000',
         '辽宁铁人/重庆铜梁龙按C级定价(保守), B级升级空间~2M',
         f'全年预估{annual_rev/1e4:.0f}万, 同比{vs_rev_pct:+.1f}%',
     ]
