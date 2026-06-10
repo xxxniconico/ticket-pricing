@@ -110,7 +110,10 @@ class DynamicPricingOptimizer:
         return {zt: int(v / 0.98) + 1 for zt, v in sellout.items()}
 
     def optimize(self, opponent: str, match_date: str | None = None,
-                 min_revenue: float = 0.0, strategy: str = 'auto', **context) -> OptimizeResult:
+                 min_revenue: float = 0.0, strategy: str = 'auto',
+                 pricing_tier_override: str | None = None,
+                 opponent_tier_override: str | None = None,
+                 **context) -> OptimizeResult:
         """
         为一场比赛优化6档定价。
 
@@ -122,7 +125,10 @@ class DynamicPricingOptimizer:
             **context: 传给 rule_engine.predict() 的情境参数
         """
         # 1. 规则引擎预测总量（硬编码基值，MAE=549）
-        predicted_total = predict_attendance(opponent, **context)
+        ctx_with_tier = dict(context)
+        if opponent_tier_override:
+            ctx_with_tier['opponent_tier_override'] = opponent_tier_override
+        predicted_total = predict_attendance(opponent, **ctx_with_tier)
 
         # 动态目标权重：四级分档 (V8.2: 门槛下调, 更平滑过渡)
         if predicted_total >= 10000:
@@ -138,7 +144,7 @@ class DynamicPricingOptimizer:
         # S级德比可以激进涨价，A级适度，B/C级保守
         # 防止 上海海港 类 case：预测上座高但实际价格弹性大 → 涨价驱客
         from src.classify import classify_opponent_tier
-        opp_tier = classify_opponent_tier(opponent)
+        opp_tier = opponent_tier_override or classify_opponent_tier(opponent)
         tier_rw_cap = {"S": 1.0, "A": 0.75, "B": 0.50, "C": 0.35}
         if rw > tier_rw_cap.get(opp_tier, 1.0):
             rw = tier_rw_cap[opp_tier]
@@ -150,8 +156,8 @@ class DynamicPricingOptimizer:
         else:
             strategy_mode = 'revenue'
 
-        # 2. 对手定价级别（含derby提升/A-/C-降价）
-        opp_level = get_pricing_tier(opponent)
+        # 2. 对手定价级别（含derby提升/A-/C-降价）。pricing_tier_override 用于升班马B级模拟
+        opp_level = pricing_tier_override or get_pricing_tier(opponent)
 
         # 3. 获取该级别的基准价
         base_prices = self.price_matrix[opp_level]

@@ -34,6 +34,7 @@ MULTIPLIERS = {
     "short_rest": 0.78, "midweek": 0.86,
     "summer": 1.13,
     "midseason_restart": 1.10,
+    "top3_form": 1.08,
 }
 
 YEAR_2023 = 1.45
@@ -55,9 +56,10 @@ def predict(opponent, derby=False, lost_bottom=False, heavy_home_loss=False,
             consecutive_home_losses=False,
             away_winless=False, saturday=False, season_opener=False,
             short_rest=False, midweek=False, summer=False,
-            midseason_restart=False,
+            midseason_restart=False, top3_form=False,
+            opponent_tier_override=None,
             match_year=None, **__) -> float:
-    tier = classify_opponent_tier(opponent)
+    tier = opponent_tier_override or classify_opponent_tier(opponent)
     base = TIER_BASE.get(tier, 8100)
     for key, val in OPP_DEVIATION.items():
         if key in opponent or opponent in key: base *= val; break
@@ -77,6 +79,7 @@ def predict(opponent, derby=False, lost_bottom=False, heavy_home_loss=False,
     if midweek and not lost_bottom: mult *= MULTIPLIERS["midweek"]
     if short_rest and not lost_bottom and not heavy_home_loss: mult *= MULTIPLIERS["short_rest"]
     if summer and tier in ("B","C"): mult *= MULTIPLIERS["summer"]
+    if top3_form and tier in ("B","C"): mult *= MULTIPLIERS["top3_form"]
     if mult < PENALTY_FLOOR: mult = PENALTY_FLOOR
     return min(base * mult, 20000.0)
 

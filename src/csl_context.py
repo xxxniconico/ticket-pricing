@@ -161,10 +161,42 @@ def detect_ctx(match: dict, guoan_all: list[dict], standings: dict) -> dict:
     same_year_home = [m for m in prev if m["is_home"] and pd.Timestamp(m["date"]).year == md.year]
     if not same_year_home:
         ctx["season_opener"] = True
-    # unbeaten_3: 近3场不败 → 球迷乐观溢价（完整30轮验证 +13%）
+    # unbeaten_3: 近3场不败 → 球迷乐观溢价
     if len(last3) >= 3:
         if all((g["is_home"] and g["hg"] > g["ag"]) or (not g["is_home"] and g["ag"] > g["hg"]) or g["hg"] == g["ag"] for g in last3):
             ctx["unbeaten_3"] = True
+    # top3_form: 国安排名前三 → 争冠/亚冠预期溢价 (V5.6)
+    # 2025年6-8月国安排名前3时B级比值均值1.32x vs 非前3的1.12x，溢价~18%
+    # 保守标定1.08，仅对B/C级生效（S/A级已含高质量对手溢价）
+    if prev and standings:
+        guoan_rank = None
+        yr = str(md.year)
+        # standings keys 可能是 '2025_01' (复合键) 或 '第15轮' (字符串) 或 15 (数字)
+        # 统一转为 (year, round_num) 排序
+        parsed = []
+        for k in standings.keys():
+            s = str(k)
+            # 检测复合键: '2025_01'
+            if '_' in s and s[:4].isdigit():
+                parsed.append((int(s[:4]), int(s.split('_')[1]), k))
+            elif '第' in s and '轮' in s:
+                n = int(s.replace('第','').replace('轮',''))
+                parsed.append((9999, n, k))  # 无年份信息，放最后
+            else:
+                digits = ''.join(filter(str.isdigit, s))
+                if digits:
+                    parsed.append((9999, int(digits), k))
+        parsed.sort(key=lambda x: (x[0], x[1]), reverse=True)
+        # 找到比赛日期所属赛季的最新轮次
+        for py, pn, pk in parsed:
+            if py != 9999 and py != int(yr):
+                continue
+            if '北京国安' in standings[pk]:
+                guoan_rank = standings[pk]['北京国安']
+                break
+        if guoan_rank is not None and guoan_rank <= 3:
+            ctx["top3_form"] = True
+            ctx["guoan_rank"] = guoan_rank
 
     return ctx
 
@@ -193,6 +225,7 @@ def predict_with_context(opponent: str, match_date: str,
     ctx_kwargs = {k: ctx.get(k, False) for k in [
         "away_winless", "lost_bottom", "heavy_home_loss",
         "short_rest", "midseason_restart", "season_opener",
+        "top3_form",
     ]}
     return predict(
         opponent,

@@ -10,7 +10,8 @@ from collections import defaultdict
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import pandas as pd, numpy as np
 import streamlit as st
-from dashboard.seating_chart import render_gongti_seating, render_gongti_heatmap, _fill_color
+import streamlit.components.v1 as components
+from dashboard.seating_heatmap import norm_section_id, show_heatmap_in_streamlit
 import matplotlib, matplotlib.pyplot as plt
 import matplotlib.font_manager as fm
 
@@ -167,14 +168,6 @@ def csl_logo_b64() -> str:
         else:
             _CSL_LOGO_B64 = ""
     return _CSL_LOGO_B64
-WATERFALL_DATA = [
-    ("2025\n实际", 4591),
-    ("赛程\n结构", -650),
-    ("升班马\nC级", -200),
-    ("其他\n因素", -348),
-    ("2026\n预估", 3935),
-]
-
 # Global: cross-season rounds dict for detect_ctx
 _ctx_rounds = {}
 
@@ -203,6 +196,7 @@ def build_pred_args(match, ctx, overrides=None):
         'heavy_home_loss': ctx.get('heavy_home_loss', False),
         'short_rest': ctx.get('short_rest', False),
         'unbeaten_3': ctx.get('unbeaten_3', False),
+        'top3_form': ctx.get('top3_form', False),
     }
 
     if overrides:
@@ -344,7 +338,7 @@ def compute_home_predictions(home_done, guoan_matches):
             midweek=md.weekday() in [1, 2, 3], summer=md.month in [7, 8],
             season_opener=(m == home_done[0]), midseason_restart=ctx.get('midseason_restart', False),
             match_year=m["date"][:4],
-            **{k: ctx.get(k, False) for k in ['away_winless', 'lost_bottom', 'heavy_home_loss', 'short_rest', 'unbeaten_3']}
+            **{k: ctx.get(k, False) for k in ['away_winless', 'lost_bottom', 'heavy_home_loss', 'short_rest', 'unbeaten_3', 'top3_form']}
         )
         results.append((m, p, a, ctx))
     return results
@@ -626,13 +620,15 @@ def render_what_if(r, opp):
     with col1:
         for zt in ["T1", "T2", "T3"]:
             base = r.tiers[zt].base_price
+            lo, hi = max(40, int(base * 0.6 / 10) * 10), int(base * 1.3 / 10) * 10
             val = int(base * mult / 10) * 10 if scenario != "自定义" else int(base / 10) * 10
-            sliders[zt] = st.slider(f"{zt} 价格", 40, 400, max(40, val), 10, key=f"wiz_{zt}_{opp}")
+            sliders[zt] = st.slider(f"{zt} 价格", lo, hi, max(lo, min(hi, val)), 10, key=f"wiz_{zt}_{opp}")
     with col2:
         for zt in ["T4", "T5", "T6"]:
             base = r.tiers[zt].base_price
+            lo, hi = max(30, int(base * 0.6 / 10) * 10), int(base * 1.3 / 10) * 10
             val = int(base * mult / 10) * 10 if scenario != "自定义" else int(base / 10) * 10
-            sliders[zt] = st.slider(f"{zt} 价格", 30, 250, max(30, val), 10, key=f"wiz_{zt}_{opp}")
+            sliders[zt] = st.slider(f"{zt} 价格", lo, hi, max(lo, min(hi, val)), 10, key=f"wiz_{zt}_{opp}")
 
     # Recalc with optimizer's elasticity matrix
     opp_level = r.opponent_level
@@ -642,16 +638,20 @@ def render_what_if(r, opp):
     rows = ""
     total_rev, total_qty = 0, 0
     base_total_rev, base_total_qty = 0, 0
+    # 场景乘数同时作用于价格起始值（上方 slider）和基础需求（此处 bq）
+    qty_mult = mult if scenario != "自定义" else 1.0
     for zt in ZONE_TIERS:
         tr = r.tiers[zt]
         bp, bq = tr.base_price, tr.base_qty
         mp = sliders[zt]
+        # 悲观→需求下降，乐观→需求上升
+        adj_bq = bq * qty_mult
         ep = eps.get(zt, 0.25)
         price_ratio = mp / bp if bp > 0 else 1
-        mq = bq * (price_ratio ** (-ep)) if abs(ep) >= 0.001 else bq
+        mq = adj_bq * (price_ratio ** (-ep)) if abs(ep) >= 0.001 else adj_bq
         mq = max(0, min(mq, optimizer.capacities[zt]))
         if mp < bp:
-            mq = max(mq, bq)
+            mq = max(mq, adj_bq)
         mrev = mp * mq
         brev = bp * bq
         total_rev += mrev; total_qty += mq
@@ -697,6 +697,108 @@ def render_what_if(r, opp):
       <span style="color:#f7f8f8;font-weight:590">基准 ¥{rev_total:.0f}万</span> →
       <span style="color:#ff6b6b">乐观 ¥{rev_high:.0f}万</span>
     </div>""", unsafe_allow_html=True)
+
+    return sliders
+
+
+def load_pricing_decisions():
+    """加载所有定价决策。"""
+    f = Path(__file__).resolve().parent.parent / 'data' / 'processed' / 'pricing_decisions.json'
+    if f.exists():
+        with open(f) as fh:
+            return json.load(fh)
+    return {'decisions': []}
+
+
+def save_pricing_decision(match_date, opponent, prices, note, model_version="V5.4+V8.2"):
+    """持久化定价决策 — 同场覆盖，不重复。"""
+    data = load_pricing_decisions()
+    entry = {
+        'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M'),
+        'model_version': model_version,
+        'match': {'date': match_date, 'opponent': opponent},
+        'prices': {zt: int(prices[zt]) for zt in ZONE_TIERS},
+        'note': note,
+    }
+    # 覆盖同场旧记录
+    idx = next((i for i, d in enumerate(data['decisions'])
+                if d['match']['date'] == match_date and d['match']['opponent'] == opponent), None)
+    if idx is not None:
+        data['decisions'][idx] = entry
+    else:
+        data['decisions'].append(entry)
+    decision_file = Path(__file__).resolve().parent.parent / 'data' / 'processed' / 'pricing_decisions.json'
+    decision_file.parent.mkdir(parents=True, exist_ok=True)
+    with open(decision_file, 'w') as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+
+
+def save_snapshot(match_date, opponent, pred, pred_args, result, model_version="V5.4+V8.2"):
+    """保存赛前预测快照 — 同场覆盖。"""
+    snap_dir = Path(__file__).resolve().parent.parent / 'data' / 'snapshots'
+    snap_dir.mkdir(parents=True, exist_ok=True)
+    snapshot = {
+        'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M'),
+        'model_version': model_version,
+        'match': {'date': match_date, 'opponent': opponent},
+        'prediction': {
+            'predicted_quantity': int(pred),
+            'tier': classify_opponent_tier(opponent),
+        },
+        'context': {k: v for k, v in pred_args.items() if v},
+        'optimization': {
+            'revenue_weight': round(result.revenue_weight, 2),
+            'target_revenue': int(result.total_revenue),
+            'target_quantity': int(result.total_attendance),
+            'prices': {zt: int(result.tiers[zt].base_price) for zt in ZONE_TIERS},
+        },
+    }
+    snap_path = snap_dir / f'pre_{match_date}_{opponent}.json'
+    with open(snap_path, 'w') as f:
+        json.dump(snapshot, f, ensure_ascii=False, indent=2, default=str)
+    return snap_path
+
+
+def render_pricing_confirm(r, opp, match_date, pred, pred_args, sandbox_sliders):
+    """定价确认 + 快照：复用沙盒滑块值，持久化决策和预测状态。"""
+    st.divider()
+    st.markdown("**定价确认 · 快照**")
+
+    prices = {}
+    for zt in ZONE_TIERS:
+        prices[zt] = sandbox_sliders.get(zt, int(r.tiers[zt].base_price))
+
+    # 读取已有决策
+    data = load_pricing_decisions()
+    existing = next((d for d in data['decisions']
+                     if d['match']['date'] == match_date and d['match']['opponent'] == opp), None)
+
+    if existing:
+        st.caption(f"已有决策: {existing['timestamp']} | 备注: {existing.get('note', '无')}")
+        default_note = existing.get('note', '')
+    else:
+        default_note = ''
+
+    note = st.text_input("备注（调价理由）", key=f"confirm_note_{opp}",
+                         value=default_note,
+                         placeholder="例如：重启效应预期偏高，T6保守")
+
+    c1, c2 = st.columns(2)
+    with c1:
+        label = "更新定价决策" if existing else "确认定价 · 记录决策"
+        if st.button(label, key=f"btn_confirm_{opp}", use_container_width=True):
+            save_pricing_decision(match_date, opp, prices, note)
+            st.success(f"已{'更新' if existing else '记录'} {opp} 定价决策")
+            st.rerun()
+    with c2:
+        snap_path = Path(__file__).resolve().parent.parent / 'data' / 'snapshots' / f'pre_{match_date}_{opp}.json'
+        label = "更新快照" if snap_path.exists() else "保存快照 · 锁定状态"
+        if st.button(label, key=f"btn_snapshot_{opp}", use_container_width=True):
+            save_snapshot(match_date, opp, pred, pred_args, r)
+            st.success(f"快照已{'更新' if snap_path.exists() else '保存'}: {snap_path.name}")
+
+    price_tags = " · ".join(f"{zt} ¥{prices[zt]:,}" for zt in ZONE_TIERS)
+    st.caption(f"当前生效: {price_tags}")
 
 
 def render_tab1(target_match, home_preds, guoan_matches, standings, mae):
@@ -836,7 +938,8 @@ def render_tab1(target_match, home_preds, guoan_matches, standings, mae):
 
     render_strategy_card(r, pred_args)
     render_pricing_table(r)
-    render_what_if(r, opp)
+    sandbox_sliders = render_what_if(r, opp)
+    render_pricing_confirm(r, opp, target_match['date'], pred, pred_args, sandbox_sliders)
 
 
 # ══════════════════════════════════════════════════════════
@@ -1208,6 +1311,778 @@ def render_opponent_analysis(all_matches):
 #  Tab 6: H2策略驾驶舱
 # ══════════════════════════════════════════════════════════
 
+@st.cache_data(ttl=3600)
+def compute_waterfall_decomposition(h2_json_str, guoan_matches_ser, _version=20):
+    """动态计算收入缺口瀑布的五/六因子分解。_version递增强制缓存刷新。"""
+    h2 = json.loads(h2_json_str)
+    guoan_matches = list(guoan_matches_ser)
+    matches = h2["matches"]
+    summary = h2["summary"]
+
+    REV_2025 = 42_035_000  # 2025 CSL 散票全年收入（15场，剔除足协杯+亚冠）
+    rev_2025_wan = REV_2025 / 1e4
+    projection_2026 = summary["annual_projection_revenue"]
+    total_gap = projection_2026 - REV_2025  # negative = shortfall
+
+    optimizer = get_optimizer()
+    pm = build_price_matrix()
+
+    from src.classify import classify_opponent_tier as _ct, DERBY_RIVALS as _dr
+    from src.pricing_v5 import get_pricing_tier as _gpt
+
+    # 加载 standings，用 year_round 复合键避免跨赛季覆盖
+    _ctx_standings = {}
+    for yr in ['2025', '2026']:
+        st_path = Path(__file__).resolve().parent.parent / 'data' / 'processed' / f'standings_{yr}_by_round.parquet'
+        if st_path.exists():
+            st_df = pd.read_parquet(st_path)
+            for rnd in st_df['round'].unique():
+                rnd_data = st_df[st_df['round'] == rnd]
+                key = f'{yr}_{int(rnd):02d}'
+                if key not in _ctx_standings:
+                    _ctx_standings[key] = {}
+                for _, row in rnd_data.iterrows():
+                    _ctx_standings[key][row['team']] = int(row['rank'])
+
+    # ── 对手结构：用2025 CSL已知分布 + parquet实际同级收入 ──
+    # 2025 CSL 主场比赛15场：S×1(申花) A×3(成都/山东/天津) B×9 C×2
+    csl = _get_csl_parquet()
+    tier_rev_2025 = {"S": 0.0, "A": 0.0, "B": 0.0, "C": 0.0}
+    tier_n_2025 = {"S": 0, "A": 0, "B": 0, "C": 0}
+    KNOWN_CSL = {"上海申花","成都蓉城","山东泰山","天津津门虎","上海海港","武汉三镇",
+                 "浙江","云南玉昆","深圳新鹏城","青岛西海岸","河南","长春亚泰","梅州客家",
+                 "青岛海牛","大连英博","南通支云","沧州雄狮","辽宁铁人","重庆铜梁龙",
+                 "浙江俱乐部绿城","河南俱乐部酒祖杜康","大连英博海发","河南队","深圳队","大连人",
+                 "浙江队","武汉三镇","成都蓉城","云南玉昆","青岛西海岸","深圳新鹏城","辽宁铁人",
+                 "重庆铜梁龙","青岛海牛","大连英博海发","梅州客家","长春亚泰","沧州雄狮","南通支云"}
+    tier_n_2026 = {"S": 0, "A": 0, "B": 0, "C": 0}
+    # 从parquet取2025实际收入 + 各级别场次
+    seen_dates = set()
+    if csl is not None:
+        for mid in csl["match_id"].unique():
+            md = csl[csl["match_id"] == mid]
+            opp_name = md["opponent"].iloc[0] if "opponent" in md.columns else ""
+            if not opp_name or opp_name not in KNOWN_CSL:
+                continue
+            yr = str(md["match_date"].iloc[0])[:4]
+            dt_str = str(md["match_date"].iloc[0])[:10]
+            if dt_str in seen_dates:
+                continue
+            seen_dates.add(dt_str)
+            t = _ct(opp_name)
+            if yr == "2025":
+                tier_rev_2025[t] += float(md["实际支付价格"].sum())
+                tier_n_2025[t] += 1
+            elif yr == "2026":
+                tier_n_2026[t] += 1
+
+    # H2 8场补入2026各级别
+    for m in matches:
+        tier_n_2026[_ct(m["opponent"])] += 1
+
+    tier_avg_2025 = {t: tier_rev_2025[t] / tier_n_2025[t] if tier_n_2025[t] > 0 else 0
+                     for t in ["S", "A", "B", "C"]}
+    cf_2026_tiers = sum(tier_avg_2025[t] * tier_n_2026[t] for t in ["S", "A", "B", "C"])
+    opponent_mix = cf_2026_tiers - REV_2025
+
+    # 构建全量比赛列表供 detect_ctx 使用（含比分）
+    _all_guoan = [m for m in guoan_matches]
+    _existing_dates = {m['date'] for m in _all_guoan}
+    _csl2025p = Path(__file__).resolve().parent.parent / 'data' / 'raw' / 'csl_2025_all_matches.json'
+    if _csl2025p.exists():
+        with open(_csl2025p) as f:
+            _csl2025d = json.load(f)
+        for m in _csl2025d:
+            if '国安' not in m.get('home','') and '国安' not in m.get('away',''):
+                continue
+            if m['date'] in _existing_dates:
+                continue
+            _existing_dates.add(m['date'])
+            is_h = '国安' in m['home']
+            opp = m['away'] if is_h else m['home']
+            hg = m.get('home_goals', 0) or 0
+            ag = m.get('away_goals', 0) or 0
+            _all_guoan.append({
+                'date': m['date'], 'opponent': opp, 'is_home': is_h,
+                'completed': True,
+                'hg': hg if is_h else ag,
+                'ag': ag if is_h else hg,
+                'round': f'第{m.get("round",0)}轮',
+            })
+
+    # ── 模型级分解：2026全年 vs 2025全年 ──
+    schedule_2026, schedule_2025 = 0.0, 0.0
+    performance_2026, performance_2025 = 0.0, 0.0
+    top3_2026, top3_2025 = 0.0, 0.0
+    pricing_delta = 0.0
+    promoted_delta = 0.0
+
+    def _run_decomposition(match_list, season_year, is_h2_check):
+        """对一批比赛跑分解，返回 (schedule, perf, top3, pricing, promoted, total_rev)。"""
+        s, p, t3, pr, pm = 0.0, 0.0, 0.0, 0.0, 0.0
+        total_model_rev = 0.0
+        for m in match_list:
+            opp = m["opponent"]
+            date = m["date"]
+            dt = pd.Timestamp(date)
+            mock = {"date": date, "opponent": opp, "is_home": True,
+                    "completed": m.get("completed", True)}
+            ctx = detect_ctx(mock, _all_guoan, _ctx_standings)
+            # H2比赛尚未发生，强制关闭负向表现情境
+            if is_h2_check and any(m2["date"] == date and m2["opponent"] == opp for m2 in matches):
+                for bad_key in ("heavy_home_loss", "away_winless", "lost_bottom"):
+                    ctx.pop(bad_key, None)
+            args = dict(
+                derby=opp in _dr, saturday=dt.weekday() == 5,
+                midweek=dt.weekday() in (1, 2, 3), summer=dt.month in (7, 8),
+                late_season=dt.month >= 10,
+                midseason_restart=ctx.get("midseason_restart", False),
+                away_winless=ctx.get("away_winless", False),
+                lost_bottom=ctx.get("lost_bottom", False),
+                heavy_home_loss=ctx.get("heavy_home_loss", False),
+                short_rest=ctx.get("short_rest", False),
+                season_opener=ctx.get("season_opener", False),
+                top3_form=ctx.get("top3_form", False),
+                match_year=season_year,
+            )
+            try:
+                opt_actual = optimizer.optimize(opp, **args)
+                total_model_rev += opt_actual.total_revenue
+            except Exception:
+                continue
+            # 赛程效应
+            try:
+                opt_sched = optimizer.optimize(opp, **{**args,
+                    "saturday": False, "midweek": False,
+                    "summer": False, "midseason_restart": False})
+                s += opt_actual.total_revenue - opt_sched.total_revenue
+            except Exception:
+                pass
+            # 表现效应
+            try:
+                opt_perf = optimizer.optimize(opp, **{**args,
+                    "away_winless": False, "lost_bottom": False,
+                    "heavy_home_loss": False})
+                p += opt_actual.total_revenue - opt_perf.total_revenue
+            except Exception:
+                pass
+            # 榜首效应：国安排名前3 → B/C级溢价
+            if args.get("top3_form"):
+                try:
+                    opt_no_top3 = optimizer.optimize(opp, **{**args, "top3_form": False})
+                    t3 += opt_actual.total_revenue - opt_no_top3.total_revenue
+                except Exception:
+                    pass
+            # 定价优化（仅H2）
+            if is_h2_check and any(m2["date"] == date and m2["opponent"] == opp for m2 in matches):
+                pr += opt_actual.total_revenue - opt_actual.base_revenue
+            # 升班马（仅H2）
+            if is_h2_check and opp in ("辽宁铁人", "重庆铜梁龙"):
+                try:
+                    opt_b = optimizer.optimize(opp, pricing_tier_override="S_B",
+                                               opponent_tier_override="B", **args)
+                    pm += opt_actual.total_revenue - opt_b.total_revenue
+                except Exception:
+                    pass
+        return s, p, t3, pr, pm, total_model_rev
+
+    # 2025 H1 主场（同期对比2026 H1）：取前7场，6月底前
+    h_2025 = []
+    h_2025_full = []  # 全年保留给对手结构用
+    _csl2025_path = Path(__file__).resolve().parent.parent / 'data' / 'raw' / 'csl_2025_all_matches.json'
+    if _csl2025_path.exists():
+        with open(_csl2025_path) as f:
+            _csl2025 = json.load(f)
+        for m in _csl2025:
+            if '国安' not in m.get('home','') and '国安' not in m.get('away',''):
+                continue
+            is_home = '国安' in m['home']
+            if not is_home:
+                continue  # 仅主场
+            opp = m['away']
+            hg = m.get('home_goals', 0) or 0
+            ag = m.get('away_goals', 0) or 0
+            h_2025.append({
+                'date': m['date'], 'opponent': opp, 'is_home': is_home,
+                'completed': True,
+                'hg': hg if is_home else ag,
+                'ag': ag if is_home else hg,
+                'round': f'第{m.get("round",0)}轮',
+            })
+    h_2025.sort(key=lambda x: x['date'])
+
+    h1_home = [m for m in guoan_matches if m.get("is_home") and m.get("completed") and m["date"].startswith("2026")]
+    # 2026 H1 + H2
+    all_2026_home = sorted(h1_home + [{"date": m["date"], "opponent": m["opponent"],
+        "is_home": True, "completed": False} for m in matches], key=lambda x: x["date"])
+    schedule_2026, _, top3_2026, pricing_delta, promoted_delta, model_rev_2026 = _run_decomposition(all_2026_home, "2026", True)
+
+    # 球队表现：同一对手2026 vs 2025实际收入差，折算全年
+    # 构建2025对手→收入映射（精确到队，不算级别均值）
+    opp_rev_2025 = {}
+    if csl is not None:
+        for mid in csl['match_id'].unique():
+            md = csl[csl['match_id'] == mid]
+            if not str(md['match_date'].iloc[0]).startswith('2025'):
+                continue
+            opp = md['opponent'].iloc[0] if 'opponent' in md.columns else ''
+            dt = str(md['match_date'].iloc[0])[:10]
+            if opp in KNOWN_CSL and dt not in opp_rev_2025:
+                opp_rev_2025[opp] = float(md['实际支付价格'].sum())
+    h1_perf_gap = 0.0; perf_n = 0
+    for m in h1_home:
+        opp = m['opponent']
+        rev26 = 0.0
+        if csl is not None:
+            for mid in csl['match_id'].unique():
+                md = csl[csl['match_id'] == mid]
+                if len(md) > 0 and str(md['match_date'].iloc[0])[:10] == m['date']:
+                    rev26 = float(md['实际支付价格'].sum())
+                    break
+        rev25 = opp_rev_2025.get(opp)
+        if rev25 and rev25 > 0:
+            h1_perf_gap += rev26 - rev25
+            perf_n += 1
+    team_perf = h1_perf_gap / perf_n * 15 if perf_n > 0 else 0.0
+
+    # ── 组装 bars：四因子 + 残差补齐 ──
+    bars = [
+        ("2025\n实际", round(REV_2025 / 1e4), "#5b9bd5"),
+        ("对手\n结构", round(opponent_mix / 1e4), "#ff6b6b"),
+        ("球队\n表现", round(team_perf / 1e4), "#ff6b6b"),
+        ("定价\n优化", round(pricing_delta / 1e4), "#51cf66"),
+        ("升班马\n保守", round(promoted_delta / 1e4), "#ff6b6b"),
+    ]
+    modeled = opponent_mix + team_perf + pricing_delta + promoted_delta
+    residual = total_gap - modeled
+    bars.append(("其他\n因素", round(residual / 1e4), "#8a8f98"))
+
+    bars.append(("2026\n预估", round(projection_2026 / 1e4),
+        "#51cf66" if projection_2026 >= REV_2025 else "#ff6b6b"))
+
+    captions = {
+        "对手结构": f"2025: S/A/B/C = {tier_n_2025['S']}/{tier_n_2025['A']}/{tier_n_2025['B']}/{tier_n_2025['C']}场 → 2026: {tier_n_2026['S']}/{tier_n_2026['A']}/{tier_n_2026['B']}/{tier_n_2026['C']}场。按2025各级别场均收入折算。",
+        "球队表现": f"同一对手2026 vs 2025 H1收入差（{perf_n}队可比）：少收¥{abs(h1_perf_gap)/1e4:.0f}万，折算全年15场。控制对手后的纯成绩效应。",
+        "定价优化": f"优化器V8.2调价 vs 基准价，仅H2八场。{'正值=策略增收' if pricing_delta>0 else '负值=降价拉量'}。",
+        "升班马保守": f"辽宁铁人/重庆铜梁龙按C级(S_C)定价，升级B级(S_B)可增收约¥{abs(promoted_delta)/1e4:.0f}万。",
+        "其他因素": f"含赛程时间差异、球队表现差异、票价水平变化、宏观因素等。跨赛季因素不可直接对比（2025有榜首加持），不单独列出。残差=总缺口-三因子之和。",
+    }
+
+    return {
+        "bars": bars,
+        "captions": captions,
+        "rev_2025": REV_2025,
+        "projection_2026": projection_2026,
+    }
+
+
+def compute_h1_waterfall(guoan_matches_ser, _version=1):
+    """H1收入缺口瀑布 — 纯实际数据，无预估。
+
+    2025 H1 vs 2026 H1，按对手分级（S/A/B/C）分解缺口。
+    所有数据来自已完场比赛。
+    """
+    from src.classify import classify_opponent_tier as _ct, DERBY_RIVALS as _dr
+    from src.classify import B_TIER as _B_TIER_LIST
+
+    csl = _get_csl_parquet()
+
+    # ── 收集 H1 主场比赛（≤6月30日）──
+    h1_2025 = {}  # date → {opponent, revenue, tier}
+    h1_2026 = {}
+    if csl is not None:
+        for mid in csl["match_id"].unique():
+            md = csl[csl["match_id"] == mid]
+            if "is_home" not in md.columns or not md["is_home"].iloc[0]:
+                continue
+            opp = str(md["opponent"].iloc[0]) if "opponent" in md.columns else ""
+            if not opp:
+                continue
+            d = str(md["match_date"].iloc[0])[:10]
+            yr = d[:4]
+            rev = float(md["实际支付价格"].sum())
+            tier = _ct(opp)
+            if yr == "2025" and d < "2025-07-01":
+                if d not in h1_2025:
+                    h1_2025[d] = {"opponent": opp, "revenue": rev, "tier": tier}
+            elif yr == "2026" and d < "2026-07-01":
+                if d not in h1_2026:
+                    h1_2026[d] = {"opponent": opp, "revenue": rev, "tier": tier}
+
+    rev_2025_h1 = sum(m["revenue"] for m in h1_2025.values())
+    rev_2026_h1 = sum(m["revenue"] for m in h1_2026.values())
+    n_2025 = len(h1_2025)
+    n_2026 = len(h1_2026)
+    total_gap = rev_2026_h1 - rev_2025_h1
+
+    # ── 2025 各级别均价（仅主场，排除非CSL对手+杯赛重复）──
+    tier_rev = {"S": 0.0, "A": 0.0, "B": 0.0, "C": 0.0}
+    tier_n = {"S": 0, "A": 0, "B": 0, "C": 0}
+    seen_dates = set()
+    seen_opponents_2025 = set()
+    if csl is not None:
+        for mid in csl["match_id"].unique():
+            md = csl[csl["match_id"] == mid]
+            if "is_home" not in md.columns or not md["is_home"].iloc[0]:
+                continue
+            opp = str(md["opponent"].iloc[0]) if "opponent" in md.columns else ""
+            if not opp:
+                continue
+            d = str(md["match_date"].iloc[0])[:10]
+            if not d.startswith("2025") or d in seen_dates:
+                continue
+            if opp in seen_opponents_2025:
+                continue
+            t = _ct(opp)
+            if t == "B" and not any(x in opp or opp in x for x in _B_TIER_LIST):
+                continue
+            seen_dates.add(d)
+            seen_opponents_2025.add(opp)
+            tier_rev[t] += float(md["实际支付价格"].sum())
+            tier_n[t] += 1
+
+    tier_avg = {t: tier_rev[t] / tier_n[t] if tier_n[t] > 0 else 0
+                for t in ["S", "A", "B", "C"]}
+
+    # ── 对手结构 ──
+    tier_n_2026 = {"S": 0, "A": 0, "B": 0, "C": 0}
+    expected_2026 = 0.0
+    for d, m in sorted(h1_2026.items()):
+        t = m["tier"]
+        tier_n_2026[t] += 1
+        expected_2026 += tier_avg[t]
+
+    tier_n_2025 = {"S": 0, "A": 0, "B": 0, "C": 0}
+    for m in h1_2025.values():
+        tier_n_2025[m["tier"]] += 1
+
+    per_match_2025 = rev_2025_h1 / n_2025 if n_2025 > 0 else 0
+    match_count_effect = per_match_2025 * (n_2026 - n_2025)
+    opponent_mix = expected_2026 - per_match_2025 * n_2026
+    performance = rev_2026_h1 - expected_2026
+
+    # ── 拆分战绩效应 ──
+    # 用 optimizer 估算 top3_form / unbeaten / away_winless / lost_bottom / heavy_home_loss 的收入影响
+    PERF_FLAGS = ("top3_form", "unbeaten_3", "away_winless", "lost_bottom", "heavy_home_loss")
+    optimizer = get_optimizer()
+
+    # 构建 standings 和 all_guoan 供 detect_ctx 使用
+    _ctx_standings = {}
+    for yr in ['2025', '2026']:
+        st_path = Path(__file__).resolve().parent.parent / 'data' / 'processed' / f'standings_{yr}_by_round.parquet'
+        if st_path.exists():
+            st_df = pd.read_parquet(st_path)
+            for rnd in st_df['round'].unique():
+                rnd_data = st_df[st_df['round'] == rnd]
+                key = f'{yr}_{int(rnd):02d}'
+                if key not in _ctx_standings:
+                    _ctx_standings[key] = {}
+                for _, row in rnd_data.iterrows():
+                    _ctx_standings[key][row['team']] = int(row['rank'])
+
+    guoan_matches = list(guoan_matches_ser)
+    _all_guoan = [m for m in guoan_matches]
+    _existing_dates = {m['date'] for m in _all_guoan}
+    _csl2025p = Path(__file__).resolve().parent.parent / 'data' / 'raw' / 'csl_2025_all_matches.json'
+    if _csl2025p.exists():
+        with open(_csl2025p) as f:
+            _csl2025d = json.load(f)
+        for m in _csl2025d:
+            if '国安' not in m.get('home', '') and '国安' not in m.get('away', ''):
+                continue
+            if m['date'] in _existing_dates:
+                continue
+            _existing_dates.add(m['date'])
+            is_h = '国安' in m['home']
+            opp = m['away'] if is_h else m['home']
+            hg = m.get('home_goals', 0) or 0
+            ag = m.get('away_goals', 0) or 0
+            _all_guoan.append({
+                'date': m['date'], 'opponent': opp, 'is_home': is_h,
+                'completed': True,
+                'hg': hg if is_h else ag,
+                'ag': ag if is_h else hg,
+                'round': f'第{m.get("round",0)}轮',
+            })
+
+    def _perf_effect(d, opp, yr):
+        """单场战绩效应：optimizer(with perf flags) - optimizer(without perf flags)"""
+        dt = pd.Timestamp(d)
+        mock = {"date": d, "opponent": opp, "is_home": True, "completed": True}
+        ctx = detect_ctx(mock, _all_guoan, _ctx_standings)
+        # 清除跨赛季污染：detect_ctx 不区分赛季，2025末的主场大败会污染2026初
+        # 检测 heavy_home_loss 触发源是否来自上一赛季
+        if ctx.get("heavy_home_loss") and yr == "2026":
+            prev_home_2026 = [g for g in _all_guoan
+                              if g.get("is_home") and g["date"] < d and g["date"][:4] == "2026"]
+            has_2026_loss = any(g["hg"] - g["ag"] <= -2 for g in prev_home_2026)
+            if not has_2026_loss:
+                ctx.pop("heavy_home_loss")
+        base_args = dict(
+            derby=opp in _dr, saturday=dt.weekday() == 5,
+            midweek=dt.weekday() in (1, 2, 3), summer=dt.month in (7, 8),
+            late_season=dt.month >= 10,
+            midseason_restart=ctx.get("midseason_restart", False),
+            short_rest=ctx.get("short_rest", False),
+            season_opener=ctx.get("season_opener", False),
+            match_year=yr,
+        )
+        # 带战绩 flag
+        perf_on = {f: ctx.get(f, False) for f in PERF_FLAGS}
+        try:
+            rev_with = optimizer.optimize(opp, **{**base_args, **perf_on}).total_revenue
+            rev_without = optimizer.optimize(opp, **{**base_args,
+                "top3_form": False, "unbeaten_3": False,
+                "away_winless": False, "lost_bottom": False,
+                "heavy_home_loss": False}).total_revenue
+            return rev_with - rev_without
+        except Exception:
+            return 0.0
+
+    perf_2025 = 0.0
+    perf_2026 = 0.0
+    perf_detail_2025 = []
+    perf_detail_2026 = []
+    for d, m in h1_2025.items():
+        eff = _perf_effect(d, m["opponent"], "2025")
+        perf_2025 += eff
+        if abs(eff) > 1000:
+            perf_detail_2025.append(f"{m['opponent']}:{eff/1e4:+.0f}万")
+    for d, m in h1_2026.items():
+        eff = _perf_effect(d, m["opponent"], "2026")
+        perf_2026 += eff
+        if abs(eff) > 1000:
+            perf_detail_2026.append(f"{m['opponent']}:{eff/1e4:+.0f}万")
+
+    record_effect = perf_2026 - perf_2025  # 正值=2026战绩好于2025
+    other_perf = performance - record_effect
+    residual = total_gap - (match_count_effect + opponent_mix + record_effect + other_perf)
+
+    # ── 组装 bars ──
+    bars = [
+        ("2025 H1\n实际", round(rev_2025_h1 / 1e4), "#5b9bd5"),
+        ("场次\n差异", round(match_count_effect / 1e4), "#8a8f98"),
+        ("对手\n结构", round(opponent_mix / 1e4), "#ff6b6b"),
+        ("球队\n战绩", round(record_effect / 1e4), "#51cf66" if record_effect >= 0 else "#ff6b6b"),
+        ("其他\n表现", round(other_perf / 1e4), "#51cf66" if other_perf >= 0 else "#ff6b6b"),
+    ]
+    if abs(residual) > 50:
+        bars.append(("残差", round(residual / 1e4), "#8a8f98"))
+    bars.append(("2026 H1\n实际", round(rev_2026_h1 / 1e4),
+                "#51cf66" if rev_2026_h1 >= rev_2025_h1 else "#ff6b6b"))
+
+    # ── 同对手明细 ──
+    def _same_opp(a, b):
+        if _ct(a) != _ct(b):
+            return False
+        return (len(a) >= 2 and a in b) or (len(b) >= 2 and b in a)
+    same_opp_lines = []
+    matched_2025 = set()
+    for d26, m26 in sorted(h1_2026.items()):
+        opp26 = m26["opponent"]
+        rev26 = m26["revenue"]
+        for d25, m25 in sorted(h1_2025.items()):
+            if d25 in matched_2025:
+                continue
+            if _same_opp(opp26, m25["opponent"]):
+                delta = rev26 - m25["revenue"]
+                same_opp_lines.append(
+                    f"{opp26}: 2025 ¥{m25['revenue']/1e4:.0f}万 → 2026 ¥{rev26/1e4:.0f}万 "
+                    f"({'增收' if delta>=0 else '少收'}¥{abs(delta)/1e4:.0f}万)")
+                matched_2025.add(d25)
+                break
+    same_opp_detail = "；".join(same_opp_lines) if same_opp_lines else "无同对手可比"
+
+    captions = {
+        "场次差异": f"H1 2025 {n_2025}场 → H1 2026 {n_2026}场，按2025 H1场均¥{per_match_2025/1e4:.0f}万折算",
+        "对手结构": f"2025 H1: S/A/B/C={tier_n_2025['S']}/{tier_n_2025['A']}/{tier_n_2025['B']}/{tier_n_2025['C']} → 2026 H1: {tier_n_2026['S']}/{tier_n_2026['A']}/{tier_n_2026['B']}/{tier_n_2026['C']}。2025各级别均价: S=¥{tier_avg['S']/1e4:.0f}万 A=¥{tier_avg['A']/1e4:.0f}万 B=¥{tier_avg['B']/1e4:.0f}万 C=¥{tier_avg['C']/1e4:.0f}万",
+        "球队战绩": f"optimizer估算战绩flag(top3/不败/客场不胜/输垫底/主场大败)的收入效应。2025 H1: ¥{perf_2025/1e4:+.0f}万 ({'; '.join(perf_detail_2025) or '无显著效应'}) → 2026 H1: ¥{perf_2026/1e4:+.0f}万 ({'; '.join(perf_detail_2026) or '无显著效应'})。净值={'正值=2026战绩更好带动增收' if record_effect>=0 else '负值=2026战绩不及2025拖累收入'}。",
+        "其他表现": f"扣除战绩效应后的剩余表现差。含票价水平变化、赛程安排、宏观消费力等。同对手对比: {same_opp_detail}",
+        "残差": "数值舍入误差，无经济含义。",
+    }
+
+    return {
+        "bars": bars,
+        "captions": captions,
+        "rev_2025_h1": rev_2025_h1,
+        "rev_2026_h1": rev_2026_h1,
+        "tier_avg": tier_avg,
+        "tier_n_2025": tier_n_2025,
+        "tier_n_2026": tier_n_2026,
+    }
+
+
+def compute_h2_waterfall(h2_json_str, guoan_matches_ser, _version=1):
+    """H2收入缺口瀑布 — 2026 H2预测 vs 2025 H2实际。
+
+    H2比赛尚未进行，仅分解对手结构和价格优化效应。
+    """
+    from src.classify import classify_opponent_tier as _ct, DERBY_RIVALS as _dr
+    from src.classify import B_TIER as _B_TIER_LIST
+
+    h2 = json.loads(h2_json_str)
+    matches = h2["matches"]
+    csl = _get_csl_parquet()
+
+    # ── 收集 2025 H2 主场比赛（≥7月1日）──
+    # 注：同个对手一赛季只来一次主场，重复出现的为杯赛（如2025-08-20云南玉昆是足协杯）
+    h2_2025 = {}
+    h1_opponents_2025 = set()
+    if csl is not None:
+        # 先收集H1对手名
+        for mid in csl["match_id"].unique():
+            md = csl[csl["match_id"] == mid]
+            if "is_home" not in md.columns or not md["is_home"].iloc[0]:
+                continue
+            opp = str(md["opponent"].iloc[0]) if "opponent" in md.columns else ""
+            d = str(md["match_date"].iloc[0])[:10]
+            if d.startswith("2025") and d < "2025-07-01":
+                h1_opponents_2025.add(opp)
+        # 再收集H2，排除H1已出现的对手（杯赛）
+        for mid in csl["match_id"].unique():
+            md = csl[csl["match_id"] == mid]
+            if "is_home" not in md.columns or not md["is_home"].iloc[0]:
+                continue
+            opp = str(md["opponent"].iloc[0]) if "opponent" in md.columns else ""
+            if not opp:
+                continue
+            d = str(md["match_date"].iloc[0])[:10]
+            if not d.startswith("2025") or d < "2025-07-01":
+                continue
+            if d in h2_2025:
+                continue
+            if opp in h1_opponents_2025:
+                continue  # 杯赛，非CSL
+            t = _ct(opp)
+            if t == "B" and not any(x in opp or opp in x for x in _B_TIER_LIST):
+                continue
+            h2_2025[d] = {"opponent": opp, "revenue": float(md["实际支付价格"].sum()), "tier": t}
+
+    rev_2025_h2 = sum(m["revenue"] for m in h2_2025.values())
+    n_2025 = len(h2_2025)
+    n_2026 = len(matches)
+
+    # ── 2025 各级别均价（排除杯赛：同对手只取首次主场）──
+    tier_rev = {"S": 0.0, "A": 0.0, "B": 0.0, "C": 0.0}
+    tier_n = {"S": 0, "A": 0, "B": 0, "C": 0}
+    seen_dates = set()
+    seen_opponents = set()
+    if csl is not None:
+        for mid in csl["match_id"].unique():
+            md = csl[csl["match_id"] == mid]
+            if "is_home" not in md.columns or not md["is_home"].iloc[0]:
+                continue
+            opp = str(md["opponent"].iloc[0]) if "opponent" in md.columns else ""
+            if not opp:
+                continue
+            d = str(md["match_date"].iloc[0])[:10]
+            if not d.startswith("2025") or d in seen_dates:
+                continue
+            if opp in seen_opponents:
+                continue  # 同对手再次出现=杯赛
+            t = _ct(opp)
+            if t == "B" and not any(x in opp or opp in x for x in _B_TIER_LIST):
+                continue
+            seen_dates.add(d)
+            seen_opponents.add(opp)
+            tier_rev[t] += float(md["实际支付价格"].sum())
+            tier_n[t] += 1
+
+    tier_avg = {t: tier_rev[t] / tier_n[t] if tier_n[t] > 0 else 0
+                for t in ["S", "A", "B", "C"]}
+
+    # ── 对手结构 ──
+    tier_n_2025 = {"S": 0, "A": 0, "B": 0, "C": 0}
+    for m in h2_2025.values():
+        tier_n_2025[m["tier"]] += 1
+
+    tier_n_2026 = {"S": 0, "A": 0, "B": 0, "C": 0}
+    expected_2026 = 0.0
+    for m in matches:
+        t = _ct(m["opponent"])
+        tier_n_2026[t] += 1
+        expected_2026 += tier_avg[t]
+
+    per_match_2025 = rev_2025_h2 / n_2025 if n_2025 > 0 else 0
+    match_count_effect = per_match_2025 * (n_2026 - n_2025)
+    opponent_mix = expected_2026 - per_match_2025 * n_2026
+
+    # ── 价格优化 + 升班马效应（用 optimizer 估算）──
+    optimizer = get_optimizer()
+    guoan_matches = list(guoan_matches_ser)
+
+    # 构建 standings + all_guoan（同 H1）
+    _ctx_standings = {}
+    for yr in ['2025', '2026']:
+        st_path = Path(__file__).resolve().parent.parent / 'data' / 'processed' / f'standings_{yr}_by_round.parquet'
+        if st_path.exists():
+            st_df = pd.read_parquet(st_path)
+            for rnd in st_df['round'].unique():
+                rnd_data = st_df[st_df['round'] == rnd]
+                key = f'{yr}_{int(rnd):02d}'
+                if key not in _ctx_standings:
+                    _ctx_standings[key] = {}
+                for _, row in rnd_data.iterrows():
+                    _ctx_standings[key][row['team']] = int(row['rank'])
+
+    _all_guoan = [m for m in guoan_matches]
+    _existing_dates = {m['date'] for m in _all_guoan}
+    _csl2025p = Path(__file__).resolve().parent.parent / 'data' / 'raw' / 'csl_2025_all_matches.json'
+    if _csl2025p.exists():
+        with open(_csl2025p) as f:
+            _csl2025d = json.load(f)
+        for m in _csl2025d:
+            if '国安' not in m.get('home', '') and '国安' not in m.get('away', ''):
+                continue
+            if m['date'] in _existing_dates:
+                continue
+            _existing_dates.add(m['date'])
+            is_h = '国安' in m['home']
+            opp = m['away'] if is_h else m['home']
+            hg = m.get('home_goals', 0) or 0
+            ag = m.get('away_goals', 0) or 0
+            _all_guoan.append({
+                'date': m['date'], 'opponent': opp, 'is_home': is_h,
+                'completed': True,
+                'hg': hg if is_h else ag,
+                'ag': ag if is_h else hg,
+                'round': f'第{m.get("round",0)}轮',
+            })
+
+    pricing_delta = 0.0
+    promoted_delta = 0.0
+    pricing_details = []
+    for m in matches:
+        opp = m["opponent"]
+        date = m["date"]
+        dt = pd.Timestamp(date)
+        mock = {"date": date, "opponent": opp, "is_home": True, "completed": False}
+        ctx = detect_ctx(mock, _all_guoan, _ctx_standings)
+        # H2未赛，清除所有战绩相关flag（不可预测），仅保留赛程类flag
+        for perf_key in ("top3_form", "unbeaten_3", "away_winless", "lost_bottom", "heavy_home_loss"):
+            ctx.pop(perf_key, None)
+        args = dict(
+            derby=opp in _dr, saturday=dt.weekday() == 5,
+            midweek=dt.weekday() in (1, 2, 3), summer=dt.month in (7, 8),
+            late_season=dt.month >= 10,
+            midseason_restart=ctx.get("midseason_restart", False),
+            short_rest=ctx.get("short_rest", False),
+            season_opener=ctx.get("season_opener", False),
+            top3_form=False, unbeaten_3=False,
+            away_winless=False, lost_bottom=False, heavy_home_loss=False,
+            match_year="2026",
+        )
+        try:
+            opt = optimizer.optimize(opp, **args)
+            pricing_delta += opt.total_revenue - opt.base_revenue
+            pricing_details.append(f"{opp}:+{(opt.total_revenue - opt.base_revenue)/1e4:.0f}万")
+        except Exception:
+            pass
+
+        # 升班马效应
+        if opp in ("辽宁铁人", "重庆铜梁龙"):
+            try:
+                opt_b = optimizer.optimize(opp, pricing_tier_override="S_B",
+                                           opponent_tier_override="B", **args)
+                promoted_delta += opt.total_revenue - opt_b.total_revenue
+            except Exception:
+                pass
+
+    total_gap = sum(m["target_revenue"] for m in matches) - rev_2025_h2
+    modeled = match_count_effect + opponent_mix + pricing_delta + promoted_delta
+    residual = total_gap - modeled
+
+    # ── 组装 bars ──
+    bars = [
+        ("2025 H2\n实际", round(rev_2025_h2 / 1e4), "#5b9bd5"),
+    ]
+    if abs(match_count_effect) > 10000:
+        bars.append(("场次\n差异", round(match_count_effect / 1e4), "#8a8f98"))
+    bars.append(("对手\n结构", round(opponent_mix / 1e4), "#ff6b6b"))
+    bars.append(("价格\n优化", round(pricing_delta / 1e4), "#51cf66"))
+    if abs(promoted_delta) > 10000:
+        bars.append(("升班马\n保守", round(promoted_delta / 1e4), "#ff6b6b"))
+    if abs(residual) > 50:
+        bars.append(("情景\n效应", round(residual / 1e4),
+                    "#51cf66" if residual >= 0 else "#ff6b6b"))
+    bars.append(("2026 H2\n预测", round(sum(m["target_revenue"] for m in matches) / 1e4),
+                "#51cf66" if sum(m["target_revenue"] for m in matches) >= rev_2025_h2 else "#ff6b6b"))
+
+    captions = {
+        "对手结构": f"2025 H2: S/A/B/C={tier_n_2025['S']}/{tier_n_2025['A']}/{tier_n_2025['B']}/{tier_n_2025['C']} → 2026 H2: {tier_n_2026['S']}/{tier_n_2026['A']}/{tier_n_2026['B']}/{tier_n_2026['C']}。2025各级别均价: S=¥{tier_avg['S']/1e4:.0f}万 A=¥{tier_avg['A']/1e4:.0f}万 B=¥{tier_avg['B']/1e4:.0f}万 C=¥{tier_avg['C']/1e4:.0f}万",
+        "价格优化": f"Optimizer V8.2调价 vs 基准价，8场合计¥{pricing_delta/1e4:+.0f}万。详情: {'; '.join(pricing_details)}",
+        "升班马保守": f"辽宁铁人/重庆铜梁龙按C级(S_C)定价，升级B级(S_B)可增收约¥{abs(promoted_delta)/1e4:.0f}万",
+        "情景效应": f"目标值内含的赛程/情景溢价（赛季重启、暑期、德比等）与简单分级均价之间的差额¥{abs(residual)/1e4:.0f}万。⚠️ 目标在H1末设定时假设了不败势头等乐观情景，实际可能高估。比赛开打后用实际收入回填会更准。",
+    }
+
+    return {
+        "bars": bars,
+        "captions": captions,
+        "rev_2025_h2": rev_2025_h2,
+        "rev_2026_h2": sum(m["target_revenue"] for m in matches),
+    }
+
+
+def draw_waterfall(bars):
+    """绘制瀑布图 — 修复标签定位bug。返回 matplotlib figure。"""
+    import matplotlib.pyplot as plt
+
+    categories = [c for c, _, _ in bars]
+    values = [v for _, v, _ in bars]
+    colors = [clr for _, _, clr in bars]
+    last_idx = len(values) - 1
+
+    fig, ax = plt.subplots(figsize=(5, 3.5))
+    fig.patch.set_facecolor("#0c0d0f")
+    ax.set_facecolor("#0c0d0f")
+    ax.tick_params(colors="#8a8f98", labelsize=7)
+    for spine in ax.spines.values():
+        spine.set_visible(False)
+
+    # ── 画柱 ──
+    running = 0
+    for i, (cat, val) in enumerate(zip(categories, values)):
+        if i == 0:
+            running = val
+            bottom, h = 0, val
+        elif i == last_idx:
+            bottom, h = 0, val
+        else:
+            h = abs(val)
+            if val >= 0:
+                bottom = running
+            else:
+                bottom = running + val
+            running += val
+        ax.bar(i, h, bottom=bottom, color=colors[i], width=0.5)
+
+    # ── 标数值（每个柱子独立计算位置，修复原 bug）──
+    cumulative = 0
+    for i, (cat, val) in enumerate(zip(categories, values)):
+        if i == 0:
+            cumulative = val
+            label_y = val
+        elif i == last_idx:
+            label_y = val  # 总柱从0开始
+        else:
+            if val >= 0:
+                label_y = cumulative + val
+            else:
+                label_y = cumulative + val
+            cumulative += val
+
+        offset = 80 if val >= 0 else -120
+        sign = "+" if val > 0 and 0 < i < last_idx else ""
+        ax.text(i, label_y + offset,
+                f"{sign}{abs(val)}万" if i > 0 and i < last_idx else f"{val}万",
+                ha="center", fontsize=7, color="#c8ccd4")
+
+    ax.set_xticks(range(len(categories)))
+    ax.set_xticklabels(categories, fontsize=6.5, color="#8a8f98")
+    ax.axhline(y=0, color="#ffffff22", linewidth=0.5)
+    return fig
+
+
 def render_h2_strategy(guoan_matches, standings):
     """策略驾驶舱：H2目标 × V5.3实时预测联动"""
     h2_path = ROOT / "data/targets/h2_2026_match_targets.json"
@@ -1243,8 +2118,10 @@ def render_h2_strategy(guoan_matches, standings):
 
     # ══ KPI Row ══
     c1, c2, c3, c4 = st.columns(4)
+    REV_2025_CSL = 42_035_000  # 2025 CSL散票全年（15场，剔除足协杯+亚冠）
+
     with c1:
-        vs_pct = summary.get("vs_2025_revenue_pct", 0)
+        vs_pct = (summary["annual_projection_revenue"] - REV_2025_CSL) / REV_2025_CSL * 100
         vs_color = "#51cf66" if vs_pct >= 0 else "#ff6b6b"
         st.markdown(f"""<div class="kpi-card">
           <div class="kpi-label">全年预估</div>
@@ -1258,7 +2135,7 @@ def render_h2_strategy(guoan_matches, standings):
           <div class="kpi-sub">{summary['total_target_quantity']:,}张</div>
         </div>""", unsafe_allow_html=True)
     with c3:
-        gap_2025 = summary["annual_projection_revenue"] - 45914055
+        gap_2025 = summary["annual_projection_revenue"] - REV_2025_CSL
         gap_color = "#51cf66" if gap_2025 >= 0 else "#ff6b6b"
         st.markdown(f"""<div class="kpi-card">
           <div class="kpi-label">收入缺口 vs 2025</div>
@@ -1356,61 +2233,62 @@ def render_h2_strategy(guoan_matches, standings):
       <thead><tr><th>日期</th><th>对手</th><th>级</th><th>策略</th><th>目标收入</th><th>预测</th><th>T1-T6</th><th>风险</th></tr></thead>
       <tbody>{rows}</tbody></table>""", unsafe_allow_html=True)
 
-    # ══ Waterfall + Tracking (side by side) ══
+    # ══ H1 + H2 Waterfall ══
     st.divider()
-    wf_col, tr_col = st.columns([1, 1])
 
-    with wf_col:
-        st.markdown("**收入缺口瀑布**")
-        fig, ax = plt.subplots(figsize=(5, 3.5))
-        fig.patch.set_facecolor("#0c0d0f"); ax.set_facecolor("#0c0d0f")
-        ax.tick_params(colors="#8a8f98", labelsize=7)
-        for spine in ax.spines.values(): spine.set_visible(False)
-
-        categories = [c for c, _ in WATERFALL_DATA]
-        values = [v for _, v in WATERFALL_DATA]
-        colors_wf = ["#5b9bd5", "#ff6b6b", "#f0c040", "#ff6b6b", "#51cf66"]
-        running = 0
-        for i, (cat, val) in enumerate(zip(categories, values)):
-            if i == 0:
-                running = val; bottom = 0; h = val
-            elif i == len(values) - 1:
-                bottom = 0; h = val
-            else:
-                bottom = running + min(val, 0) if val < 0 else running
-                h = abs(val)
-                running += val
-            ax.bar(i, h, bottom=bottom if i > 0 and i < len(values) - 1 else (0 if i in [0, len(values)-1] else bottom), color=colors_wf[i], width=0.5)
-        for i, (cat, val) in enumerate(zip(categories, values)):
-            y_pos = val if i == 0 else (running if i < len(values)-1 else val)
-            offset = 80 if val >= 0 else -120
-            ax.text(i, y_pos + offset, f"{abs(val)}万" if val < 0 and i < len(values)-1 else f"{val}万", ha="center", fontsize=7, color="#c8ccd4")
-        ax.set_xticks(range(len(categories))); ax.set_xticklabels(categories, fontsize=6.5, color="#8a8f98")
-        ax.axhline(y=0, color="#ffffff22", linewidth=0.5)
-        st.pyplot(fig); plt.close()
-
-    with tr_col:
-        st.markdown("**累计追踪**")
-        cum = 0
-        tro = ""
-        for m in matches:
-            cum += m["target_revenue"]
-            tro += (
-                f'<tr><td style="font-family:JetBrains Mono,ui-monospace;font-size:0.68rem">{m["date"][5:]}</td>'
-                f'<td style="font-weight:510;color:#f7f8f8;font-size:0.72rem">{m["opponent"]}</td>'
-                f'<td style="font-family:JetBrains Mono,ui-monospace;font-size:0.7rem">¥{m["target_revenue"]/1e4:.1f}万</td>'
-                f'<td style="font-family:JetBrains Mono,ui-monospace;font-size:0.7rem;color:#f7f8f8">¥{cum/1e4:.1f}万</td>'
-                f'<td style="font-family:JetBrains Mono,ui-monospace;font-size:0.7rem;color:#62666d">—</td></tr>'
-            )
-        tro += (
-            f'<tr style="border-top:1px solid rgba(255,255,255,0.08);font-weight:510">'
-            f'<td colspan="3" style="color:#8a8f98">已完+剩余合计</td>'
-            f'<td style="color:#f7f8f8">¥{cum/1e4:.1f}万</td><td></td></tr>'
+    with st.spinner("计算收入分解..."):
+        wf_h1 = compute_h1_waterfall(tuple(guoan_matches), _version=1)
+        wf_h2 = compute_h2_waterfall(
+            json.dumps(h2, ensure_ascii=False),
+            tuple(guoan_matches),
+            _version=1,
         )
-        st.markdown(f"""<table class="compact-table" style="font-size:0.7rem">
-          <thead><tr><th>日期</th><th>对手</th><th>目标</th><th>累计</th><th>实际</th></tr></thead>
-          <tbody>{tro}</tbody></table>""", unsafe_allow_html=True)
-        st.caption("实际列留空 · 赛后填入")
+
+    h1_col, h2_col = st.columns([1, 1])
+
+    with h1_col:
+        st.markdown("**H1 收入缺口瀑布**")
+        st.caption(f"2025 H1 ¥{wf_h1['rev_2025_h1']/1e4:.0f}万 → 2026 H1 ¥{wf_h1['rev_2026_h1']/1e4:.0f}万  "
+                   f"(缺口 ¥{(wf_h1['rev_2026_h1']-wf_h1['rev_2025_h1'])/1e4:+.0f}万)")
+        fig1 = draw_waterfall(wf_h1["bars"])
+        st.pyplot(fig1)
+        plt.close()
+        for key, cap in wf_h1["captions"].items():
+            st.caption(f"**{key}**: {cap}")
+
+    with h2_col:
+        st.markdown("**H2 收入缺口瀑布**")
+        st.caption(f"2025 H2 ¥{wf_h2['rev_2025_h2']/1e4:.0f}万 → 2026 H2 预测 ¥{wf_h2['rev_2026_h2']/1e4:.0f}万  "
+                   f"(缺口 ¥{(wf_h2['rev_2026_h2']-wf_h2['rev_2025_h2'])/1e4:+.0f}万)")
+        st.caption("⚠️ H2比赛尚未进行，仅含对手结构和价格优化效应")
+        fig2 = draw_waterfall(wf_h2["bars"])
+        st.pyplot(fig2)
+        plt.close()
+        for key, cap in wf_h2["captions"].items():
+            st.caption(f"**{key}**: {cap}")
+
+    # ── 累计追踪表 ──
+    st.markdown("**H2 累计追踪**")
+    cum = 0
+    tro = ""
+    for m in matches:
+        cum += m["target_revenue"]
+        tro += (
+            f'<tr><td style="font-family:JetBrains Mono,ui-monospace;font-size:0.68rem">{m["date"][5:]}</td>'
+            f'<td style="font-weight:510;color:#f7f8f8;font-size:0.72rem">{m["opponent"]}</td>'
+            f'<td style="font-family:JetBrains Mono,ui-monospace;font-size:0.7rem">¥{m["target_revenue"]/1e4:.1f}万</td>'
+            f'<td style="font-family:JetBrains Mono,ui-monospace;font-size:0.7rem;color:#f7f8f8">¥{cum/1e4:.1f}万</td>'
+            f'<td style="font-family:JetBrains Mono,ui-monospace;font-size:0.7rem;color:#62666d">—</td></tr>'
+        )
+    tro += (
+        f'<tr style="border-top:1px solid rgba(255,255,255,0.08);font-weight:510">'
+        f'<td colspan="3" style="color:#8a8f98">8场合计</td>'
+        f'<td style="color:#f7f8f8">¥{cum/1e4:.1f}万</td><td></td></tr>'
+    )
+    st.markdown(f"""<table class="compact-table" style="font-size:0.7rem">
+      <thead><tr><th>日期</th><th>对手</th><th>目标</th><th>累计</th><th>实际</th></tr></thead>
+      <tbody>{tro}</tbody></table>""", unsafe_allow_html=True)
+    st.caption("实际列留空 · 赛后填入")
 
     # ══ Circuit Breaker Lights ══
     st.divider()
@@ -1521,7 +2399,7 @@ def _get_section_capacities():
         csl_2026 = csl  # fallback
     per_match = csl_2026.groupby(["match_date", "section"])["数量"].sum().reset_index()
     caps = per_match.groupby("section")["数量"].max().to_dict()
-    return {str(s): int(v * 1.05) + 1 for s, v in caps.items()}
+    return {norm_section_id(s): int(v * 1.05) + 1 for s, v in caps.items()}
 
 
 def _compute_match_fill_rates(match_date: str):
@@ -1534,9 +2412,9 @@ def _compute_match_fill_rates(match_date: str):
     if md.empty:
         return {}, {}, 0.0
 
-    caps = _get_section_capacities()
+    caps = {norm_section_id(k): v for k, v in _get_section_capacities().items()}
     md_copy = md.copy()
-    md_copy["section"] = md_copy["section"].astype(str)
+    md_copy["section"] = md_copy["section"].map(norm_section_id)
     section_qty = md_copy.groupby("section")["数量"].sum()
 
     section_fills = {}
@@ -1548,7 +2426,7 @@ def _compute_match_fill_rates(match_date: str):
         qty=("数量", "sum"), rev=("实际支付价格", "sum")
     )
     for sec, row in md_rev.iterrows():
-        sec_str = str(sec)
+        sec_str = norm_section_id(sec)
         cap = caps.get(sec_str, row["qty"])
         section_fills[sec_str] = row["qty"] / max(cap, 1)
         total_sold += row["qty"]
@@ -1557,7 +2435,7 @@ def _compute_match_fill_rates(match_date: str):
 
     total_fill = total_sold / max(total_cap, 1)
     for sec, row in md_rev.iterrows():
-        sec_str = str(sec)
+        sec_str = norm_section_id(sec)
         section_rev_contrib[sec_str] = row["rev"] / max(total_rev, 1) if total_rev > 0 else 0
 
     return section_fills, dict(section_qty), total_fill, section_rev_contrib, total_rev
@@ -1597,11 +2475,9 @@ def render_heatmap_tab(guoan_matches):
     with c2:
         st.metric("总售出" if not bundle_note else f"总售出{bundle_note}", f"{adj_total:,}张")
 
-    # ── 热力图 (颜色=上座率) ──
+    # ── 热力图：components.html iframe（Streamlit 会剥离 markdown 里的 <svg>）──
     match_label = f"{match_date}  vs  {opp}"
-    heatmap_html = render_gongti_heatmap(section_fills, section_fills, match_label, total_fill)
-    # iframe 高度由组件内 JS 按视口动态上报；此处仅作首屏占位（PC 偏大、手机偏小均可被覆盖）
-    st.html(heatmap_html)
+    show_heatmap_in_streamlit(st, components, section_fills, match_label, total_fill)
 
     # ── 销售概况 ──
     if section_qty:
@@ -1647,6 +2523,232 @@ def render_heatmap_tab(guoan_matches):
                 f'<div class="kpi-label">💡 定价建议</div>'
                 f'<div style="font-size:0.72rem;color:#c0c4c8;line-height:1.6">{suggestion}</div>'
                 f'</div>', unsafe_allow_html=True)
+
+
+# ══════════════════════════════════════════════════════════
+#  Tab 8: 模型验证
+# ══════════════════════════════════════════════════════════
+
+def render_validation_tab(home_preds, guoan_matches, all_matches):
+    """策略验证：仅追踪已确认定价 + 已出实际数据的比赛。
+    驱动源: pricing_decisions.json + parquet 实际销量。
+    前面的比赛模型未参与决策，不纳入验证。
+    """
+    st.markdown("**策略验证 · 赛后追踪**")
+    st.caption("仅显示你确认了定价决策的场次。实际数据出来后自动计算策略贡献。")
+
+    # 加载定价决策
+    decision_file = Path(__file__).resolve().parent.parent / 'data' / 'processed' / 'pricing_decisions.json'
+    if not decision_file.exists():
+        st.info("暂无定价决策记录。在 Tab 1 中为比赛确认定价后，这里会出现。")
+        return
+
+    with open(decision_file) as f:
+        decisions_data = json.load(f)
+    decisions = decisions_data.get('decisions', [])
+    if not decisions:
+        st.info("暂无定价决策。")
+        return
+
+    csl = _get_csl_parquet()
+    pm = build_price_matrix()
+    optimizer = get_optimizer()
+    ZT = ZONE_TIERS
+
+    records = []
+    pending = []
+
+    for d in decisions:
+        match_date = d['match']['date']
+        opp = d['match']['opponent']
+        confirmed_prices = d['prices']
+        note = d.get('note', '')
+        ts = d.get('timestamp', '')
+
+        tier = classify_opponent_tier(opp)
+        pt = get_pricing_tier(opp)
+        baseline_prices = {zt: int(pm[pt][zt]) for zt in ZT}
+        confirmed = {zt: int(confirmed_prices.get(zt, baseline_prices.get(zt, 0))) for zt in ZT}
+
+        # 尝试匹配 parquet 实际数据
+        actual_match = None
+        if csl is not None:
+            for mid in csl['match_id'].unique():
+                md = csl[csl['match_id'] == mid]
+                if str(md['match_date'].iloc[0])[:10] == match_date:
+                    actual_match = md
+                    break
+
+        if actual_match is None:
+            # 还没出实际数据
+            pending.append({'date': match_date, 'opponent': opp, 'tier': tier,
+                           'confirmed': confirmed, 'baseline': baseline_prices, 'note': note})
+            continue
+
+        # 有实际数据：计算验证指标
+        actual_qty = int(actual_match['数量'].sum())
+        actual_rev = float(actual_match['实际支付价格'].sum())
+
+        # 从快照取预测值（如果存在）
+        snap_path = Path(__file__).resolve().parent.parent / 'data' / 'snapshots' / f'pre_{match_date}_{opp}.json'
+        pred_qty = None
+        if snap_path.exists():
+            with open(snap_path) as f:
+                snap = json.load(f)
+            pred_qty = snap.get('prediction', {}).get('predicted_quantity')
+
+        # 如果没有快照，用当前模型重跑
+        if pred_qty is None:
+            from src.csl_context import predict_with_context
+            pred_qty = predict_with_context(opp, match_date)
+
+        # 分档位反事实：如果按基准价卖
+        from src.pricing_v5 import get_zone_sections
+        year = match_date[:4]
+        zm = {str(s): zt for zt, secs in get_zone_sections(year).items() for s in secs}
+        cf_rev = 0.0
+        for zt in ZT:
+            bp = baseline_prices.get(zt, 0)
+            cp = confirmed.get(zt, bp)
+            if bp <= 0:
+                continue
+            # 获取该档位实际数据
+            zone_md = actual_match.copy()
+            zone_md['zt'] = zone_md['section'].astype(str).map(zm)
+            zmd = zone_md[zone_md['zt'] == zt]
+            aq = int(zmd['数量'].sum())
+            ar = float(zmd['实际支付价格'].sum())
+            if aq > 0:
+                ap = ar / aq
+                ep = optimizer.elasticity.get(tier, {}).get(zt, 0.25)
+                # 反事实：按基准价卖
+                cf_q = aq * ((ap / bp) ** ep) if ap > 0 else aq
+                cf_q = min(cf_q, optimizer.capacities.get(zt, 9999))
+                cf_rev += cf_q * bp
+
+        strategy_delta = actual_rev - cf_rev
+
+        # 判断是否有实际调价（确认价 vs 基准价）
+        has_adjustment = any(abs(confirmed[zt] - baseline_prices.get(zt, 0)) > 5 for zt in ZT)
+
+        records.append({
+            'date': match_date, 'opponent': opp, 'tier': tier,
+            'pred_qty': int(pred_qty), 'actual_qty': actual_qty,
+            'actual_rev': actual_rev, 'cf_rev': cf_rev,
+            'strategy_delta': strategy_delta,
+            'confirmed': confirmed, 'baseline': baseline_prices,
+            'has_adjustment': has_adjustment, 'note': note, 'ts': ts,
+        })
+
+    # ══ KPI 卡片 ══
+    if records:
+        total_actual_rev = sum(r['actual_rev'] for r in records)
+        total_cf_rev = sum(r['cf_rev'] for r in records)
+        total_delta = total_actual_rev - total_cf_rev
+        pred_errs = [abs(r['pred_qty'] - r['actual_qty']) for r in records]
+        mae = np.mean(pred_errs)
+        mape = np.mean([e / r['actual_qty'] * 100 for e, r in zip(pred_errs, records)]) if records else 0
+        has_adj = [r for r in records if r['has_adjustment']]
+        positive = sum(1 for r in has_adj if r['strategy_delta'] > 0)
+
+        c1, c2, c3, c4 = st.columns(4)
+        with c1:
+            st.markdown(f"""<div class="kpi-card">
+              <div class="kpi-label">策略追踪场次</div>
+              <div class="kpi-value">{len(records)}场</div>
+              <div style="font-size:0.7rem;color:#8a8f98">预测 MAE {mae:,.0f}张</div>
+            </div>""", unsafe_allow_html=True)
+        with c2:
+            st.markdown(f"""<div class="kpi-card">
+              <div class="kpi-label">实际调价场次</div>
+              <div class="kpi-value">{len(has_adj)}场</div>
+              <div style="font-size:0.7rem;color:#8a8f98">确认价≠基准价</div>
+            </div>""", unsafe_allow_html=True)
+        with c3:
+            delta_color = "#ff6b6b" if total_delta > 0 else "#51cf66"
+            st.markdown(f"""<div class="kpi-card">
+              <div class="kpi-label">策略净贡献</div>
+              <div class="kpi-value" style="color:{delta_color}">¥{total_delta/1e4:+.1f}万</div>
+              <div style="font-size:0.7rem;color:#8a8f98">vs 基准价反事实</div>
+            </div>""", unsafe_allow_html=True)
+        with c4:
+            st.markdown(f"""<div class="kpi-card">
+              <div class="kpi-label">增收场次</div>
+              <div class="kpi-value">{positive}/{len(has_adj) if has_adj else 1}</div>
+              <div style="font-size:0.7rem;color:#8a8f98">调价后增收占比</div>
+            </div>""", unsafe_allow_html=True)
+
+        # ══ 逐场验证表 ══
+        st.divider()
+        st.markdown("**已完成验证**")
+
+        rows = ""
+        for r in records:
+            err = r['pred_qty'] - r['actual_qty']
+            err_pct = err / r['actual_qty'] * 100 if r['actual_qty'] > 0 else 0
+            err_color = "#ff6b6b" if err > 0 else "#51cf66"
+            delta_color = "#ff6b6b" if r['strategy_delta'] > 0 else "#51cf66"
+            # 确认价 vs 基准价 摘要
+            price_changes = []
+            for zt in ZT:
+                cp = r['confirmed'].get(zt, 0)
+                bp = r['baseline'].get(zt, 0)
+                if abs(cp - bp) > 5:
+                    price_changes.append(f"{zt}{'↑' if cp > bp else '↓'}¥{abs(cp-bp)}")
+            change_str = " · ".join(price_changes) if price_changes else "未调价"
+            if not r['has_adjustment']:
+                change_str = "—"
+
+            rows += (
+                f'<tr>'
+                f'<td style="font-size:0.75rem;color:#8a8f98">{r["date"][5:]}</td>'
+                f'<td style="font-weight:510">{r["opponent"]}</td>'
+                f'<td>{r["tier"]}</td>'
+                f'<td>{r["pred_qty"]:,}</td>'
+                f'<td>{r["actual_qty"]:,}</td>'
+                f'<td style="color:{err_color}">{err:+d} ({err_pct:+.1f}%)</td>'
+                f'<td>{change_str}</td>'
+                f'<td style="color:{delta_color}">¥{r["strategy_delta"]/1e4:+.1f}万</td>'
+                f'</tr>'
+            )
+
+        st.markdown(f"""<table class="compact-table">
+          <thead><tr>
+            <th>日期</th><th>对手</th><th>级别</th>
+            <th>预测</th><th>实际</th><th>预测偏差</th>
+            <th>调价</th><th>策略贡献</th>
+          </tr></thead>
+          <tbody>{rows}</tbody>
+        </table>""", unsafe_allow_html=True)
+
+        st.caption("策略贡献 = 实际收入 - 反事实收入（同销量按基准价卖）。调价列显示实际执行的价差。")
+    else:
+        st.info("所有已确认场次均待赛后验证。")
+
+    # ══ 待验证 ══
+    if pending:
+        st.divider()
+        st.markdown("**待赛后验证**")
+        pending_rows = ""
+        for p in pending:
+            changes = []
+            for zt in ZT:
+                cp = p['confirmed'].get(zt, 0)
+                bp = p['baseline'].get(zt, 0)
+                if abs(cp - bp) > 5:
+                    changes.append(f"{zt} ¥{bp}→¥{cp}")
+            change_str = " · ".join(changes) if changes else "采用基准价"
+            pending_rows += (
+                f'<tr>'
+                f'<td>{p["date"]}</td><td style="font-weight:510">{p["opponent"]}</td>'
+                f'<td>{p["tier"]}</td><td>{change_str}</td>'
+                f'<td style="color:#8a8f98">{p.get("note","")}</td>'
+                f'</tr>'
+            )
+        st.markdown(f"""<table class="compact-table">
+          <thead><tr><th>日期</th><th>对手</th><th>级别</th><th>确认价调整</th><th>备注</th></tr></thead>
+          <tbody>{pending_rows}</tbody>
+        </table>""", unsafe_allow_html=True)
 
 
 # ══════════════════════════════════════════════════════════
@@ -1745,7 +2847,7 @@ def main():
     </div>""", unsafe_allow_html=True)
 
     # ══ 按需渲染 (避免 WebSocket 消息超限) ══
-    tab_names = ["🎯 下一场预测", "📋 历史定价", "🔍 对手分析", "🏆 积分榜", "📊 H2策略", "🔥 座位热力图"]
+    tab_names = ["🎯 下一场预测", "📋 历史定价", "🔍 对手分析", "🏆 积分榜", "📊 H2策略", "🔥 座位热力图", "📐 模型验证"]
     active_tab = st.radio("导航", tab_names, horizontal=True, label_visibility="collapsed",
                           key="main_tab")
 
@@ -1823,6 +2925,10 @@ def main():
     # ── Tab 5: 座位热力图 ──
     if active_tab == tab_names[5]:
         render_heatmap_tab(guoan_matches)
+
+    # ── Tab 6: 模型验证 ──
+    if active_tab == tab_names[6]:
+        render_validation_tab(home_preds, guoan_matches, all_matches)
 
     st.caption("V8.1 · 国安绿品牌 · 决策工作台")
 
