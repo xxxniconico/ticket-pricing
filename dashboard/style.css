@@ -224,13 +224,23 @@ table.history-table tbody tr:hover { background: rgba(255,255,255,0.02); }
 .up { color: #ff6b6b; }
 .down { color: #51cf66; }
 .flat { color: #8a8f98; }
-.W { color: #ff6b6b; font-weight: 590; }
-.D { color: #f0c040; font-weight: 590; }
-.L { color: #51cf66; font-weight: 590; }
+.result-W, .W { color: #ff6b6b; font-weight: 590; }
+.result-D, .D { color: #f0c040; font-weight: 590; }
+.result-L, .L { color: #51cf66; font-weight: 590; }
 .pts { color: #c2ef4e; font-weight: 510; }
 .rank-up { color: #ff6b6b; }
 .rank-down { color: #51cf66; }
 .muted { color: #4a4d55; }
+
+/* 宽表格横向滚动容器 */
+.table-scroll {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: 4px 0;
+}
+.table-scroll table { min-width: 520px; }
 
 /* Cards */
 .card-row { display: flex; gap: 6px; }
@@ -415,6 +425,80 @@ tr.guoan-row td { color: var(--guoan-green) !important; font-weight: 590; }
 .stMetric label { color: #62666d !important; }
 .stMetric [data-testid="stMetricValue"] { color: #f7f8f8 !important; }
 
+/* ══ 座位热力图（内联 SVG，无 iframe） ══ */
+.seat-heatmap {
+    width: 100%;
+    max-width: 100%;
+    margin: 6px 0 4px;
+    overflow: visible;
+}
+.seat-heatmap-title {
+    text-align: center;
+    padding: 4px 0 6px;
+    line-height: 1.35;
+}
+.seat-heatmap-match {
+    color: #f0f2f5;
+    font-size: clamp(0.78rem, 3.2vw, 1.1rem);
+    font-weight: 600;
+}
+.seat-heatmap-sub {
+    display: block;
+    color: #8a8f98;
+    font-size: clamp(0.68rem, 2.8vw, 0.88rem);
+    margin-top: 2px;
+}
+.seat-heatmap-chart {
+    width: 100%;
+    max-width: 100%;
+    line-height: 0;
+    overflow: visible;
+}
+.seat-heatmap-img,
+.seat-heatmap-chart svg {
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+    max-width: 100% !important;
+}
+.seat-heatmap-legend {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 6px 12px;
+    padding: 8px 4px 2px;
+}
+.seat-heatmap-legend-title {
+    color: #8a8f98;
+    font-size: clamp(0.62rem, 2vw, 0.75rem);
+    font-weight: 600;
+    margin-right: 2px;
+}
+.seat-heatmap-legend-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: #a0a4a8;
+    font-size: clamp(0.58rem, 1.8vw, 0.7rem);
+    white-space: nowrap;
+}
+.seat-heatmap-legend-chip i {
+    display: inline-block;
+    width: 10px;
+    height: 8px;
+    border-radius: 2px;
+    opacity: 0.9;
+}
+
+@media (min-width: 480px) {
+    .seat-heatmap-sub {
+        display: inline;
+        margin-top: 0;
+        margin-left: 8px;
+    }
+}
+
 /* ══ 移动端适配 ══ */
 @media (max-width: 768px) {
     h1 { font-size: 1.15rem !important; border-left-width: 2px !important; padding-left: 8px !important; }
@@ -429,14 +513,20 @@ tr.guoan-row td { color: var(--guoan-green) !important; font-weight: 590; }
     .kpi-card .kpi-value { font-size: 1rem !important; }
     .kpi-card .kpi-sub { font-size: 0.62rem !important; }
     .season-row { font-size: 0.68rem !important; padding: 2px 4px !important; }
+    [data-testid="stMarkdownContainer"]:has(table.compact-table),
+    [data-testid="stMarkdownContainer"]:has(table.history-table) {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
 }
 
 @media (max-width: 480px) {
     h1 { font-size: 1rem !important; }
     .stTabs [data-baseweb="tab"] { padding: 4px 6px !important; font-size: 0.65rem !important; }
-    /* 座位热力图 iframe：禁止横向溢出 */
-    iframe[title="streamlit_components_v1.html"] {
-        max-width: 100% !important;
+    /* 热力图：确保 Streamlit 主容器不裁切 SVG */
+    .main .block-container { overflow-x: visible !important; }
+    [data-testid="stMarkdownContainer"] .seat-heatmap {
         width: 100% !important;
+        max-width: 100% !important;
     }
 }

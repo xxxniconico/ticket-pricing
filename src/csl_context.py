@@ -3,11 +3,43 @@ from __future__ import annotations
 
 import json
 from collections import defaultdict
+from datetime import date
 from pathlib import Path
 
 import pandas as pd
 
 from src.classify import classify_opponent_tier, DERBY_RIVALS
+
+# 队名别名 — 合并 CSL 数据源中同一俱乐部的不同写法（如 大连英博 / 大连英博海发）
+_CLUB_ALIASES = {
+    "浙江队": "浙江",
+    "浙江俱乐部绿城": "浙江",
+    "河南队": "河南",
+    "河南俱乐部彩陶坊": "河南",
+    "大连英博": "大连英博海发",
+    "辽宁铁人楠波湾": "辽宁铁人",
+}
+
+
+def _normalize_club_name(name: str) -> str:
+    s = str(name).strip()
+    if s in _CLUB_ALIASES.values():
+        return s
+    return _CLUB_ALIASES.get(s, s)
+
+
+def _match_has_score(m: dict) -> bool:
+    s = m.get("score", {})
+    if not isinstance(s, dict):
+        return False
+    return s.get("home") is not None and s.get("away") is not None
+
+
+def _match_dedup_priority(m: dict) -> tuple:
+    """去重时优先保留已完赛、有比分的记录。"""
+    has_score = _match_has_score(m)
+    finished = m.get("status") not in (None, "scheduled") and has_score
+    return (1 if finished else 0, 1 if has_score else 0, len(m.get("events") or []))
 
 # CSL 数据源：本地优先，云端回退
 _CSL_PATH = "/mnt/c/Users/xxxsu/.openclaw/workspace/csl_project_v2/data/csl_final_production_ready.json"
@@ -38,19 +70,22 @@ def load_csl_data(csl_path: str = _CSL_PATH, deductions_path: str = _DEDUCTIONS_
         ded_config = resp2.json()
         deductions = ded_config.get("deductions_by_club", {})
 
-    all_raw = []
-    seen_ids = set()
-    seen_combos = set()
+    by_combo: dict[tuple, dict] = {}
+    seen_ids: set[str] = set()
     for lg in data.get("leagues", []):
         for m in lg.get("matches", []):
             mid = m.get("match_id", f"{m['date']}_{m['home_club']}_{m['away_club']}")
-            combo = (m["date"][:10], m["home_club"], m["away_club"])
-            if mid in seen_ids or combo in seen_combos:
+            if mid in seen_ids:
                 continue
             seen_ids.add(mid)
-            seen_combos.add(combo)
-            all_raw.append(m)
-    all_raw.sort(key=lambda x: x["date"])
+            combo = (
+                m["date"][:10],
+                _normalize_club_name(m["home_club"]),
+                _normalize_club_name(m["away_club"]),
+            )
+            if combo not in by_combo or _match_dedup_priority(m) > _match_dedup_priority(by_combo[combo]):
+                by_combo[combo] = m
+    all_raw = sorted(by_combo.values(), key=lambda x: x["date"])
 
     def _safe_score(val):
         if val is None: return None
@@ -68,8 +103,8 @@ def load_csl_data(csl_path: str = _CSL_PATH, deductions_path: str = _DEDUCTIONS_
         matches.append({
             "date": m["date"][:10],
             "round": rd,
-            "home": m["home_club"],
-            "away": m["away_club"],
+            "home": _normalize_club_name(m["home_club"]),
+            "away": _normalize_club_name(m["away_club"]),
             "hg": hg, "ag": ag,
             "completed": ok,
             "source": m.get("source", ""),
@@ -106,54 +141,109 @@ def get_guoan_matches(matches):
     return guoan
 
 
-def detect_ctx(match: dict, guoan_all: list[dict], standings: dict) -> dict:
-    """检测单场比赛的情境上下文。
+def get_next_guoan_match(guoan_matches: list[dict], *, home_only: bool = False) -> dict | None:
+    """下一场未赛国安比赛。跳过已过期但仍标 scheduled 的脏数据。"""
+    today = pd.Timestamp(date.today())
+    for m in guoan_matches:
+        if not str(m.get("date", "")).startswith("2026"):
+            continue
+        if m.get("completed"):
+            continue
+        if home_only and not m.get("is_home"):
+            continue
+        if pd.Timestamp(m["date"]) < today:
+            continue
+        return m
+    return None
 
-    Args:
-        match: 当前比赛 {'date', 'opponent', 'is_home', ...}
-        guoan_all: 国安所有比赛（含历史+当前）
-        standings: rounds[rnd] = {team: rank}
+
+def finalize_guoan_schedule(guoan_matches: list[dict]) -> list[dict]:
+    """国安赛程后处理：同日同主客去重（保留已赛），丢弃过期 scheduled 脏行。"""
+    today = pd.Timestamp(date.today())
+    by_key: dict[tuple, dict] = {}
+    for m in guoan_matches:
+        key = (m["date"], m.get("is_home"))
+        prev = by_key.get(key)
+        if prev is None:
+            by_key[key] = m
+        elif m.get("completed") and not prev.get("completed"):
+            by_key[key] = m
+        elif m.get("completed") and prev.get("completed") and m.get("hg") is not None:
+            by_key[key] = m
+    out = sorted(by_key.values(), key=lambda x: x["date"])
+    return [
+        m for m in out
+        if m.get("completed") or pd.Timestamp(m["date"]) >= today
+    ]
+
+
+def resolve_next_matches(guoan_matches: list[dict]) -> tuple[dict | None, dict | None, dict | None]:
+    """返回 (next_match, next_home, target_match)。"""
+    next_match = get_next_guoan_match(guoan_matches)
+    next_home = get_next_guoan_match(guoan_matches, home_only=True)
+    if next_match and next_match.get("is_home"):
+        target = next_match
+    elif next_home:
+        target = next_home
+    else:
+        target = None
+    return next_match, next_home, target
+
+
+def detect_ctx(match: dict, guoan_all: list[dict], standings: dict) -> dict:
+    """检测单场比赛的情境上下文（V5.6 对齐 rule_engine.predict）。
 
     Returns:
-        {'away_winless', 'lost_bottom', 'heavy_home_loss', 'short_rest'} 中触发的键
+        可能包含的键: away_winless, away_winless_losses, consecutive_home_losses,
+        heavy_home_loss, short_rest, midseason_restart, season_opener, top3_form
     """
     ctx = {}
     md = pd.Timestamp(match["date"])
     prev = [m for m in guoan_all if m.get("completed") and pd.Timestamp(m["date"]) < md]
     last3 = prev[-3:] if len(prev) >= 3 else prev
 
-    # away_winless: 2+ away in last3, 0 away wins
+    # away_winless / away_winless_losses: 近3场中≥2客且0胜
     away3 = [m for m in last3 if not m["is_home"]]
     if len(away3) >= 2 and sum(1 for m in away3 if (
         (m["is_home"] and m["hg"] > m["ag"]) or (not m["is_home"] and m["ag"] > m["hg"])
     )) == 0:
-        ctx["away_winless"] = True
+        all_losses = all(
+            (m["hg"] < m["ag"]) if m["is_home"] else (m["ag"] < m["hg"])
+            for m in away3
+        )
+        if all_losses:
+            ctx["away_winless_losses"] = True
+        else:
+            ctx["away_winless"] = True
 
-    # lost_bottom: 近3场输给C级弱队(升班马等) 或 B级排名≥12
-    for m in last3:
-        is_loss = (m["is_home"] and m["hg"] < m["ag"]) or (not m["is_home"] and m["ag"] < m["hg"])
-        if not is_loss: continue
-        opp_tier = classify_opponent_tier(m["opponent"])
-        opp_rank = standings.get(m["round"], {}).get(m["opponent"], 8)
-        if opp_tier == "C" or (opp_tier == "B" and opp_rank >= 12):
-            ctx["lost_bottom"] = True
+    # consecutive_home_losses: 最近两主场均失利（V5.5，优先级高于惨败/输保级）
+    home_prev = [m for m in prev if m["is_home"]]
+    if len(home_prev) >= 2:
+        last_two = home_prev[-2:]
+        if all(
+            m["hg"] is not None and m["ag"] is not None and m["hg"] < m["ag"]
+            for m in last_two
+        ):
+            ctx["consecutive_home_losses"] = True
 
     # heavy_home_loss: home loss by 2+, no subsequent win to "wash" it
-    for i, m in enumerate(last3):
-        if not m["is_home"]: continue
-        if m["hg"] is None or m["ag"] is None: continue
-        if m["hg"] < m["ag"] and abs(m["hg"] - m["ag"]) >= 2:
-            later = last3[i + 1:]
-            if not any((lm["is_home"] and lm["hg"] > lm["ag"]) or
-                       (not lm["is_home"] and lm["ag"] > lm["hg"]) for lm in later):
-                ctx["heavy_home_loss"] = True
+    if not ctx.get("consecutive_home_losses"):
+        for i, m in enumerate(last3):
+            if not m["is_home"]:
+                continue
+            if m["hg"] is None or m["ag"] is None:
+                continue
+            if m["hg"] < m["ag"] and abs(m["hg"] - m["ag"]) >= 2:
+                later = last3[i + 1:]
+                if not any((lm["is_home"] and lm["hg"] > lm["ag"]) or
+                           (not lm["is_home"] and lm["ag"] > lm["hg"]) for lm in later):
+                    ctx["heavy_home_loss"] = True
 
     # short_rest: ≤4 days since last home match (双赛周=7天内两个主场，5天不算)
     hp = [m for m in prev if m["is_home"]]
     if hp and (md - pd.Timestamp(hp[-1]["date"])).days <= 4:
         ctx["short_rest"] = True
     # midseason_restart: >=28 days since last match, months 6-7, not season opener
-    # V5.4: 盛夏重启效应 — 长休后球迷回流 (B级均值1.22x, 标定1.10)
     if prev and md.month in (6, 7):
         if (md - pd.Timestamp(prev[-1]["date"])).days >= 28:
             ctx["midseason_restart"] = True
@@ -161,10 +251,6 @@ def detect_ctx(match: dict, guoan_all: list[dict], standings: dict) -> dict:
     same_year_home = [m for m in prev if m["is_home"] and pd.Timestamp(m["date"]).year == md.year]
     if not same_year_home:
         ctx["season_opener"] = True
-    # unbeaten_3: 近3场不败 → 球迷乐观溢价
-    if len(last3) >= 3:
-        if all((g["is_home"] and g["hg"] > g["ag"]) or (not g["is_home"] and g["ag"] > g["hg"]) or g["hg"] == g["ag"] for g in last3):
-            ctx["unbeaten_3"] = True
     # top3_form: 国安排名前三 → 争冠/亚冠预期溢价 (V5.6)
     # 2025年6-8月国安排名前3时B级比值均值1.32x vs 非前3的1.12x，溢价~18%
     # 保守标定1.08，仅对B/C级生效（S/A级已含高质量对手溢价）
@@ -223,7 +309,7 @@ def predict_with_context(opponent: str, match_date: str,
 
     dt = pd.Timestamp(match_date)
     ctx_kwargs = {k: ctx.get(k, False) for k in [
-        "away_winless", "lost_bottom", "heavy_home_loss",
+        "away_winless", "away_winless_losses", "consecutive_home_losses", "heavy_home_loss",
         "short_rest", "midseason_restart", "season_opener",
         "top3_form",
     ]}
