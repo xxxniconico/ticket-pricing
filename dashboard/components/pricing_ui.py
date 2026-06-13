@@ -13,7 +13,6 @@ from dashboard.common.data_cache import get_optimizer
 from dashboard.components.ctx_builder import build_rule_labels
 from src.classify import DERBY_RIVALS, classify_opponent_tier
 from src.pricing_v5 import ZONE_TIERS, get_pricing_tier
-from dashboard.common.engine_compat import PENALTY_FLOOR
 
 ROOT = Path(__file__).resolve().parent.parent.parent
 
@@ -140,6 +139,7 @@ def render_rule_pills(rules_triggered):
     st.markdown(f'<div style="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0">{"".join(pills)}</div>', unsafe_allow_html=True)
 
 def render_cumulative_bar(base, final_mult, pred, tier, _cal_factor):
+    from src.rule_engine import PENALTY_FLOOR as penalty_floor
     bar_pct = min(pred / 20000 * 100, 100)
     _cal_note = f" · EMA校准 ×{_cal_factor:.4f}" if abs(_cal_factor - 1.0) > 0.001 else ""
     st.markdown(f"""<div style="padding:8px 12px;margin:6px 0;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:6px">
@@ -150,7 +150,7 @@ def render_cumulative_bar(base, final_mult, pred, tier, _cal_factor):
       <div style="margin-top:4px;height:3px;background:rgba(255,255,255,0.06);border-radius:2px">
         <div style="width:{bar_pct}%;height:3px;background:#ff6b6b;border-radius:2px"></div>
       </div>
-      <div style="font-size:0.6rem;color:#62666d;margin-top:2px">惩罚底线 ×{PENALTY_FLOOR} · 上限 20,000张</div>
+      <div style="font-size:0.6rem;color:#62666d;margin-top:2px">惩罚底线 ×{penalty_floor} · 上限 20,000张</div>
     </div>""", unsafe_allow_html=True)
 
 def render_confidence_bar(pred, mae):
