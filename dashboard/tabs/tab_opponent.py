@@ -5,7 +5,8 @@ import streamlit as st
 from dashboard.common.brand import team_crest_html
 from dashboard.common.constants import DEDUCTIONS, TIER_COLORS
 from src.classify import classify_opponent_tier
-from src.rule_engine import TIER_BASE, get_effective_calibration
+from dashboard.common.engine_compat import get_effective_calibration
+from src.rule_engine import TIER_BASE
 from src.csl_context import get_guoan_matches
 
 def render_opponent_analysis(all_matches):

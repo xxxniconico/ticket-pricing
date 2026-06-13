@@ -16,7 +16,7 @@ from dashboard.components.waterfall import compute_h1_waterfall, compute_h2_wate
 from src.classify import DERBY_RIVALS, classify_opponent_tier
 from src.csl_context import detect_ctx, get_next_guoan_match
 from src.pricing_v5 import build_price_matrix, get_pricing_tier
-from src.rule_engine import predict_calibrated as rule_predict
+from dashboard.common.engine_compat import predict_calibrated_safe as rule_predict
 
 ROOT = Path(__file__).resolve().parent.parent.parent
 

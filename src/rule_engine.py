@@ -5,14 +5,14 @@
   S=12600 A=10900 B=8200 C=5700
 乘数: 53场网格搜索
   derby=1.25 derby_B=1.05 lost_bottom=0.65 heavy_home_loss=0.85
-  away_winless=0.98 away_winless_losses=0.82 saturday=1.02
+  away_winless=0.94 away_winless_losses=0.82(S/A=0.77) saturday=1.02
   season_opener=1.15 short_rest=0.78 midweek=0.92
   summer=1.15 (B/C级, 7-8月, 暑假运营活动)
   midseason_restart=1.10 (>=28天间隔, 6-7月, 非赛季首场)
 年份因子: year_2023=1.45 (S级豁免)
 惩罚底线: 0.35  EMA: 0.20
 
-V5.4: +midseason_restart
+V5.5: 客场态势拆分 — 含平局×0.94 / 近2客全败 B-C×0.82 S-A×0.77（成都场标定）
   - 盛夏重启: B级6月长休场次均值1.22x (n=2: 海港1.07 + 亚泰1.37), 标定1.10保守
   - 去掉了对手级偏差(OPP_DEVIATION), 保持模型系统性
 """
@@ -29,7 +29,8 @@ MULTIPLIERS = {
     "derby": 1.25, "derby_B": 1.05,
     "lost_bottom": 0.65, "heavy_home_loss": 0.85,
     "consecutive_home_losses": 0.82,
-    "away_winless": 0.98, "saturday": 1.02,
+    "away_winless": 0.94, "away_winless_losses": 0.82,
+    "saturday": 1.02,
     "season_opener": 1.17,
     "short_rest": 0.78, "midweek": 0.86,
     "summer": 1.13,
@@ -42,6 +43,22 @@ YEAR_2023 = 1.45
 PENALTY_FLOOR = 0.35
 _CAL_FILE = os.path.join(os.path.dirname(__file__), "..", "data", "processed", "calibration.json")
 _ALPHA = 0.20
+_EMA_MIN_SAMPLES = 8
+
+def _tier_sample_count(tier: str, year_prefix: str = "2026") -> int:
+    """统计 calibration history 中某级别、某赛季的已赛样本数。"""
+    return sum(
+        1 for h in _load_cal().get("history", [])
+        if h.get("tier") == tier and str(h.get("match_id", "")).startswith(year_prefix)
+    )
+
+def get_effective_calibration(tier: str, enable_ema: bool = False) -> float:
+    """EMA 校准因子。默认关闭；开启时样本 < 8 场强制 1.0。"""
+    if not enable_ema:
+        return 1.0
+    if _tier_sample_count(tier) < _EMA_MIN_SAMPLES:
+        return 1.0
+    return _load_cal()["tier"].get(tier, 1.0)
 
 def _load_cal() -> dict:
     if not os.path.exists(_CAL_FILE):
@@ -54,7 +71,8 @@ def _save_cal(cal: dict):
 
 def predict(opponent, derby=False, lost_bottom=False, heavy_home_loss=False,
             consecutive_home_losses=False,
-            away_winless=False, saturday=False, season_opener=False,
+            away_winless=False, away_winless_losses=False,
+            saturday=False, season_opener=False,
             short_rest=False, midweek=False, summer=False,
             midseason_restart=False, top3_form=False,
             opponent_tier_override=None,
@@ -71,7 +89,9 @@ def predict(opponent, derby=False, lost_bottom=False, heavy_home_loss=False,
     if lost_bottom: mult *= 0.78 if tier in ("S","A") else MULTIPLIERS["lost_bottom"]
     elif consecutive_home_losses: mult *= MULTIPLIERS["consecutive_home_losses"]
     elif heavy_home_loss: mult *= MULTIPLIERS["heavy_home_loss"]
-    if away_winless:
+    if away_winless_losses:
+        mult *= 0.77 if tier in ("S", "A") else MULTIPLIERS["away_winless_losses"]
+    elif away_winless:
         mult *= MULTIPLIERS["away_winless"]
     if saturday: mult *= MULTIPLIERS["saturday"]
     if season_opener: mult *= MULTIPLIERS["season_opener"]
@@ -83,9 +103,10 @@ def predict(opponent, derby=False, lost_bottom=False, heavy_home_loss=False,
     if mult < PENALTY_FLOOR: mult = PENALTY_FLOOR
     return min(base * mult, 20000.0)
 
-def predict_calibrated(opponent, **kwargs):
+def predict_calibrated(opponent, enable_ema=False, **kwargs):
     raw = predict(opponent, **kwargs)
-    return raw * _load_cal()["tier"].get(classify_opponent_tier(opponent), 1.0)
+    tier = classify_opponent_tier(opponent)
+    return raw * get_effective_calibration(tier, enable_ema=enable_ema)
 
 def update(match_id, opponent, actual, **ctx):
     cal = _load_cal()

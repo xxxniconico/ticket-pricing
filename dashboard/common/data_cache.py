@@ -18,7 +18,7 @@ from src.csl_context import (
 )
 from src.dynamic_optimizer import DynamicPricingOptimizer
 from src.pricing_v5 import ZONE_TIERS
-from src.rule_engine import predict_calibrated as rule_predict
+from dashboard.common.engine_compat import predict_calibrated_safe as rule_predict
 
 ROOT = Path(__file__).resolve().parent.parent.parent
 

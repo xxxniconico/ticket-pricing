@@ -15,7 +15,8 @@ from dashboard.components.pricing_ui import (
 )
 from src.classify import DERBY_RIVALS, classify_opponent_tier
 from src.csl_context import detect_ctx
-from src.rule_engine import MULTIPLIERS, PENALTY_FLOOR, TIER_BASE, get_effective_calibration
+from dashboard.common.engine_compat import get_effective_calibration
+from src.rule_engine import MULTIPLIERS, PENALTY_FLOOR, TIER_BASE
 
 
 def build_rules_triggered(target_match, ctx, guoan_matches):

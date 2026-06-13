@@ -10,6 +10,7 @@ from dashboard.components.ctx_builder import build_pred_args
 from dashboard.components.pricing_ui import render_pricing_table, render_strategy_card
 from src.classify import DERBY_RIVALS, classify_opponent_tier
 from src.pricing_v5 import ZONE_TIERS, build_price_matrix, get_pricing_tier
+from src.rule_engine import update as rule_update
 
 # ══════════════════════════════════════════════════════════
 #  Tab 2: 历史定价
