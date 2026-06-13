@@ -13,6 +13,7 @@ from dashboard.common.data_cache import get_optimizer
 from dashboard.components.ctx_builder import build_rule_labels
 from src.classify import DERBY_RIVALS, classify_opponent_tier
 from src.pricing_v5 import ZONE_TIERS, get_pricing_tier
+from dashboard.common.engine_compat import PENALTY_FLOOR
 
 ROOT = Path(__file__).resolve().parent.parent.parent
 
