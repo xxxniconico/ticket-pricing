@@ -106,10 +106,11 @@ def compute_waterfall_decomposition(h2_json_str, guoan_matches_ser, _version=20)
             _all_guoan.append({
                 'date': m['date'], 'opponent': opp, 'is_home': is_h,
                 'completed': True,
-                'hg': hg if is_h else ag,
-                'ag': ag if is_h else hg,
+                'hg': hg,
+                'ag': ag,
                 'round': f'第{m.get("round",0)}轮',
             })
+    _all_guoan.sort(key=lambda m: m['date'])
 
     # ── 模型级分解：2026全年 vs 2025全年 ──
     schedule_2026, schedule_2025 = 0.0, 0.0
@@ -131,7 +132,7 @@ def compute_waterfall_decomposition(h2_json_str, guoan_matches_ser, _version=20)
             ctx = detect_ctx(mock, _all_guoan, _ctx_standings)
             # H2比赛尚未发生，强制关闭负向表现情境
             if is_h2_check and any(m2["date"] == date and m2["opponent"] == opp for m2 in matches):
-                for bad_key in ("heavy_home_loss", "away_winless", "consecutive_home_losses"):
+                for bad_key in ("heavy_home_loss", "away_winless", "away_winless_losses", "consecutive_home_losses", "poor_home_form"):
                     ctx.pop(bad_key, None)
             args = dict(
                 derby=opp in _dr, saturday=dt.weekday() == 5,
@@ -139,7 +140,9 @@ def compute_waterfall_decomposition(h2_json_str, guoan_matches_ser, _version=20)
                 late_season=dt.month >= 10,
                 midseason_restart=ctx.get("midseason_restart", False),
                 away_winless=ctx.get("away_winless", False),
+                away_winless_losses=ctx.get("away_winless_losses", False),
                 consecutive_home_losses=ctx.get("consecutive_home_losses", False),
+                poor_home_form=ctx.get("poor_home_form", False),
                 heavy_home_loss=ctx.get("heavy_home_loss", False),
                 short_rest=ctx.get("short_rest", False),
                 season_opener=ctx.get("season_opener", False),
@@ -163,7 +166,9 @@ def compute_waterfall_decomposition(h2_json_str, guoan_matches_ser, _version=20)
             try:
                 opt_perf = optimizer.optimize(opp, **{**args,
                     "away_winless": False,
+                    "away_winless_losses": False,
                     "consecutive_home_losses": False,
+                    "poor_home_form": False,
                     "heavy_home_loss": False})
                 p += opt_actual.total_revenue - opt_perf.total_revenue
             except Exception:
@@ -365,7 +370,7 @@ def compute_h1_waterfall(guoan_matches_ser, _version=1):
 
     # ── 拆分战绩效应 ──
     # 用 optimizer 估算 top3_form / away_winless / consecutive_home_losses / heavy_home_loss 的收入影响
-    PERF_FLAGS = ("top3_form", "away_winless", "consecutive_home_losses", "heavy_home_loss")
+    PERF_FLAGS = ("top3_form", "away_winless", "away_winless_losses", "consecutive_home_losses", "poor_home_form", "heavy_home_loss")
     optimizer = get_optimizer()
 
     # 构建 standings 和 all_guoan 供 detect_ctx 使用
@@ -402,10 +407,11 @@ def compute_h1_waterfall(guoan_matches_ser, _version=1):
             _all_guoan.append({
                 'date': m['date'], 'opponent': opp, 'is_home': is_h,
                 'completed': True,
-                'hg': hg if is_h else ag,
-                'ag': ag if is_h else hg,
+                'hg': hg,
+                'ag': ag,
                 'round': f'第{m.get("round",0)}轮',
             })
+    _all_guoan.sort(key=lambda m: m['date'])
 
     def _perf_effect(d, opp, yr):
         """单场战绩效应：optimizer(with perf flags) - optimizer(without perf flags)"""
@@ -436,7 +442,9 @@ def compute_h1_waterfall(guoan_matches_ser, _version=1):
             rev_without = optimizer.optimize(opp, **{**base_args,
                 "top3_form": False,
                 "away_winless": False,
+                "away_winless_losses": False,
                 "consecutive_home_losses": False,
+                "poor_home_form": False,
                 "heavy_home_loss": False}).total_revenue
             return rev_with - rev_without
         except Exception:
@@ -647,10 +655,11 @@ def compute_h2_waterfall(h2_json_str, guoan_matches_ser, _version=1):
             _all_guoan.append({
                 'date': m['date'], 'opponent': opp, 'is_home': is_h,
                 'completed': True,
-                'hg': hg if is_h else ag,
-                'ag': ag if is_h else hg,
+                'hg': hg,
+                'ag': ag,
                 'round': f'第{m.get("round",0)}轮',
             })
+    _all_guoan.sort(key=lambda m: m['date'])
 
     pricing_delta = 0.0
     promoted_delta = 0.0
@@ -662,7 +671,7 @@ def compute_h2_waterfall(h2_json_str, guoan_matches_ser, _version=1):
         mock = {"date": date, "opponent": opp, "is_home": True, "completed": False}
         ctx = detect_ctx(mock, _all_guoan, _ctx_standings)
         # H2未赛，清除所有战绩相关flag（不可预测），仅保留赛程类flag
-        for perf_key in ("top3_form", "away_winless", "consecutive_home_losses", "heavy_home_loss"):
+        for perf_key in ("top3_form", "away_winless", "away_winless_losses", "consecutive_home_losses", "poor_home_form", "heavy_home_loss"):
             ctx.pop(perf_key, None)
         args = dict(
             derby=opp in _dr, saturday=dt.weekday() == 5,
@@ -672,7 +681,9 @@ def compute_h2_waterfall(h2_json_str, guoan_matches_ser, _version=1):
             short_rest=ctx.get("short_rest", False),
             season_opener=ctx.get("season_opener", False),
             top3_form=False, away_winless=False,
-            consecutive_home_losses=False, heavy_home_loss=False,
+            away_winless_losses=False,
+            consecutive_home_losses=False, poor_home_form=False,
+            heavy_home_loss=False,
             match_year="2026",
         )
         try:

@@ -5,6 +5,7 @@ _CTX_KEYS = (
     "away_winless",
     "away_winless_losses",
     "consecutive_home_losses",
+    "poor_home_form",
     "heavy_home_loss",
     "short_rest",
     "midseason_restart",
@@ -59,6 +60,8 @@ def build_rule_labels(pred_args):
         labels.append("赛季末")
     if pred_args.get("consecutive_home_losses"):
         labels.append("主场连败")
+    elif pred_args.get("poor_home_form"):
+        labels.append("主场低迷")
     elif pred_args.get("heavy_home_loss"):
         labels.append("主场惨败")
     if pred_args.get("away_winless_losses"):

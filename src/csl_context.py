@@ -195,7 +195,7 @@ def detect_ctx(match: dict, guoan_all: list[dict], standings: dict) -> dict:
 
     Returns:
         可能包含的键: away_winless, away_winless_losses, consecutive_home_losses,
-        heavy_home_loss, short_rest, midseason_restart, season_opener, top3_form
+        poor_home_form, heavy_home_loss, short_rest, midseason_restart, season_opener, top3_form
     """
     ctx = {}
     md = pd.Timestamp(match["date"])
@@ -226,14 +226,28 @@ def detect_ctx(match: dict, guoan_all: list[dict], standings: dict) -> dict:
         ):
             ctx["consecutive_home_losses"] = True
 
+    # poor_home_form: 近3主场≥2负（V5.7，与consecutive_home_losses互斥，更宽泛）
+    # 标定: S/A档×0.77, B/C档×0.82 — 2025梅州(B)21.5%→0.4%, 2026海港(A+poor_form)29.3%→0.4%
+    if not ctx.get("consecutive_home_losses") and len(home_prev) >= 3:
+        last_three = home_prev[-3:]
+        losses = sum(
+            1 for m in last_three
+            if m["hg"] is not None and m["ag"] is not None and m["hg"] < m["ag"]
+        )
+        if losses >= 2:
+            ctx["poor_home_form"] = True
+
     # heavy_home_loss: home loss by 2+, no subsequent win to "wash" it
-    if not ctx.get("consecutive_home_losses"):
+    if not ctx.get("consecutive_home_losses") and not ctx.get("poor_home_form"):
         for i, m in enumerate(last3):
             if not m["is_home"]:
                 continue
             if m["hg"] is None or m["ag"] is None:
                 continue
             if m["hg"] < m["ag"] and abs(m["hg"] - m["ag"]) >= 2:
+                # 德比对手的大败不触发惨败惩罚 — 输给宿敌是情感对决而非实力崩盘
+                if m.get("opponent") in DERBY_RIVALS:
+                    continue
                 later = last3[i + 1:]
                 if not any((lm["is_home"] and lm["hg"] > lm["ag"]) or
                            (not lm["is_home"] and lm["ag"] > lm["hg"]) for lm in later):

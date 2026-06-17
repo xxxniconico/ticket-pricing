@@ -29,6 +29,7 @@ MULTIPLIERS = {
     "derby": 1.25, "derby_B": 1.05,
     "lost_bottom": 0.65, "heavy_home_loss": 0.85,
     "consecutive_home_losses": 0.82,
+    "poor_home_form": 0.82,
     "away_winless": 0.94, "away_winless_losses": 0.82,
     "saturday": 1.02,
     "season_opener": 1.17,
@@ -70,7 +71,7 @@ def _save_cal(cal: dict):
     with open(_CAL_FILE, "w") as f: json.dump(cal, f, indent=2, ensure_ascii=False)
 
 def predict(opponent, derby=False, lost_bottom=False, heavy_home_loss=False,
-            consecutive_home_losses=False,
+            consecutive_home_losses=False, poor_home_form=False,
             away_winless=False, away_winless_losses=False,
             saturday=False, season_opener=False,
             short_rest=False, midweek=False, summer=False,
@@ -88,6 +89,7 @@ def predict(opponent, derby=False, lost_bottom=False, heavy_home_loss=False,
         mult *= MULTIPLIERS["derby_B"] if tier == "A" else MULTIPLIERS["derby"]
     if lost_bottom: mult *= 0.78 if tier in ("S","A") else MULTIPLIERS["lost_bottom"]
     elif consecutive_home_losses: mult *= MULTIPLIERS["consecutive_home_losses"]
+    elif poor_home_form: mult *= 0.77 if tier in ("S", "A") else MULTIPLIERS["poor_home_form"]
     elif heavy_home_loss: mult *= MULTIPLIERS["heavy_home_loss"]
     if away_winless_losses:
         mult *= 0.77 if tier in ("S", "A") else MULTIPLIERS["away_winless_losses"]
