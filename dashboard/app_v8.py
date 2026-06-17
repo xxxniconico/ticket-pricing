@@ -31,7 +31,6 @@ from dashboard.tabs.tab_heatmap import render_heatmap_tab
 from dashboard.tabs.tab_validation import render_validation_tab
 
 import numpy as np
-import pandas as pd
 import streamlit as st
 from src.pricing_v5 import ZONE_TIERS
 
@@ -138,9 +137,7 @@ def main():
         opt_kpi = get_optimizer()
         cum_scene_qty = cum_delta_qty = cum_scene_rev = cum_delta_rev = 0
         for m, pred, actual, ctx in home_preds:
-            dt_m = pd.Timestamp(m["date"])
-            is_first = (m == home_preds[0][0])
-            pred_args = build_pred_args(m, ctx, {"season_opener": is_first, "summer": dt_m.month in [7, 8], "match_year": m["date"][:4]})
+            pred_args = build_pred_args(m, ctx)
             r_h = opt_kpi.optimize(m["opponent"], **pred_args)
             zone_rev = _get_zone_actual_revenue(m)
             total_actual_rev = sum(zone_rev.values())
