@@ -197,6 +197,26 @@ def flag_img(iso_code: str, fallback: str = "🏳️") -> str:
     )
 
 
+def emoji_flag(iso_code: str) -> str:
+    """ISO 3166-1 alpha-2 code → emoji regional indicator 序列.
+    用于 streamlit button label (不能用 HTML, 必须用纯文本).
+
+    每个字母转成对应的 regional indicator symbol (A=🇦 ... Z=🇿).
+    例: 'mx' → 🇲🇽, 'gb-eng' → 🏴󠁧󠁢󠁥󠁮󠁧󠁿 (fallback for non-ISO codes).
+    """
+    if not iso_code:
+        return "🏳️"
+    iso = iso_code.lower()
+    # 非标准 ISO code (Scotland / England 等)
+    special = {"gb-sct": "🏴󠁧󠁢󠁳󠁣󠁴󠁿", "gb-eng": "🏴󠁧󠁢󠁥󠁮󠁧󠁿"}
+    if iso in special:
+        return special[iso]
+    # 标准 ISO 3166-1 alpha-2: 2 字母
+    if len(iso) == 2 and iso.isalpha():
+        return chr(0x1F1E6 + ord(iso[0]) - ord("a")) + chr(0x1F1E6 + ord(iso[1]) - ord("a"))
+    return "🏳️"
+
+
 # === 页面配置 ===
 st.set_page_config(
     page_title="FIFA 2026 赔率看板",
@@ -465,6 +485,7 @@ def render_finished_section(finished: list[dict]) -> None:
         st.session_state.expanded_groups = set()
 
     # 标题 + 全局展开/折叠按钮 (Tab2 内部)
+    # === 标题 + 全局展开/折叠按钮 ===
     st.markdown("### ✅ 已赛 32 场 · 按小组")
     cs1, cs2 = st.columns([1, 1])
     with cs1:
@@ -481,9 +502,8 @@ def render_finished_section(finished: list[dict]) -> None:
     # 收集有比赛的 group (按 A-L 顺序)
     active_groups = [g for g in "ABCDEFGHIJKL" if g in by_group]
 
-    # 收集所有 Group 锚 HTML, 后面用 grid 一次性渲染
-    group_cells: list[str] = []
-
+    # === 12 个 Group, 每个 1 行, 整行可点击展开/折叠 ===
+    # 用 streamlit button + 视觉跟 cell 一样
     for grp in active_groups:
         matches = by_group[grp]
         # 收集该组 4 队
@@ -497,61 +517,111 @@ def render_finished_section(finished: list[dict]) -> None:
         flags = "".join(flag_img(cn(t)[1]) for t in teams[:4])
 
         done = len(matches)
-        # 计算状态 (CSS class + label)
         is_expanded = grp in st.session_state.expanded_groups or "ALL" in st.session_state.expanded_groups
-        state_cls = "expanded" if is_expanded else "collapsed"
-        state_label = "已展开 ▼" if is_expanded else "已折叠"
 
-        # Group 锚 cell (2 列 grid 内的单个 card)
-        anchor_html = f"""
-        <div class="group-anchor-cell {state_cls}" data-group="{grp}">
-          <span class="group-chip">Group {grp}</span>
-          <span class="group-flags">{flags}</span>
-          <span class="group-progress"><strong>{done}</strong> / 6</span>
-          <span class="group-state">{state_label}</span>
-        </div>
-        """
-        group_cells.append(anchor_html)
+        # Button label 只用纯文本 (streamlit button 不解析 HTML)
+        # 用 emoji 国旗 + 文本组合
+        state_arrow = "▼" if is_expanded else "▶"
+        emoji_flags = " ".join(emoji_flag(cn(t)[1]) for t in teams[:4])
+        btn_label = f"{state_arrow}  Group {grp}   {emoji_flags}   {done}/6"
 
-    # 一次性渲染所有 Group 锚 (2 列 grid)
-    render_html(
-        f'<div class="group-grid">{("".join(group_cells))}</div>',
-    )
+        if st.button(btn_label, key=f"toggle_{grp}", use_container_width=True):
+            if grp in st.session_state.expanded_groups:
+                st.session_state.expanded_groups.remove(grp)
+            else:
+                st.session_state.expanded_groups.add(grp)
+            st.rerun()
 
-    # 单独按钮组 (在 grid 下面, 网格对每个 group 一个按钮)
-    # 用 streamlit columns 不能在 markdown grid 内嵌按钮, 所以按钮放外面
-    # 简化: 一个 "全部展开/全部折叠" + 每组独立一行小按钮
-
-    # 每个组的展开按钮 - 横向排列
-    render_html('<div style="margin: 8px 0;"></div>')
-    btn_cols = st.columns(12, gap="small")
-    for idx, grp in enumerate(active_groups):
-        with btn_cols[idx]:
-            is_exp = grp in st.session_state.expanded_groups or "ALL" in st.session_state.expanded_groups
-            btn_label = f"▼{grp}" if is_exp else f"▶{grp}"
-            if st.button(btn_label, key=f"toggle_{grp}"):
-                if grp in st.session_state.expanded_groups:
-                    st.session_state.expanded_groups.remove(grp)
-                else:
-                    st.session_state.expanded_groups.add(grp)
-                st.rerun()
-
-    # 展开状态: 渲染该组比赛 (全宽)
+    # === 展开区域: 显示每个展开组的 (1) 积分榜 + (2) 比赛结果 ===
     for grp in active_groups:
         if (grp in st.session_state.expanded_groups) or ("ALL" in st.session_state.expanded_groups):
             matches = by_group[grp]
+            # 算积分 + 净胜球
+            standings = _compute_standings(matches)
+            # 渲染积分榜
+            render_standings(standings, grp)
+            # 渲染比赛结果
             rows_html = "".join(_finished_row_html(m) for m in matches)
-            # 取第一场比赛的国家作为旗帜
-            first_match = matches[0]
-            flags = "".join(flag_img(cn(t)[1]) for t in [first_match["home_en"], first_match["away_en"]] if t)
-            render_html(
-                f'<div class="match-list expanded expanded-section">'
-                f'<div class="group-anchor expanded">'
-                f'<span class="group-chip">Group {grp}</span>'
-                f'<span class="group-flags">{flags}</span>'
-                f'<span class="group-progress"><strong>{len(matches)}</strong> / 6 已赛 (展开)</span>'
-                f'</div>{rows_html}</div>',
-            )
+            render_html(f'<div class="match-list expanded expanded-section">{rows_html}</div>')
+
+
+def _compute_standings(matches: list[dict]) -> list[dict]:
+    """从已赛比赛算积分 + 净胜球. FIFA 规则: 胜=3 平=1 负=0"""
+    stats: dict[str, dict] = defaultdict(lambda: {
+        "pts": 0, "mp": 0, "w": 0, "d": 0, "l": 0, "gf": 0, "ga": 0,
+    })
+    for m in matches:
+        score = (m.get("score") or "").replace("–", "-").replace("—", "-").replace("−", "-")
+        if "-" not in score:
+            continue
+        try:
+            h, a = score.split("-")
+            h, a = int(h.strip()), int(a.strip())
+        except (ValueError, AttributeError):
+            continue
+        h_team, a_team = m.get("home_en", ""), m.get("away_en", "")
+        if not h_team or not a_team:
+            continue
+        # 累加
+        for team in (h_team, a_team):
+            stats[team]["mp"] += 1
+        stats[h_team]["gf"] += h
+        stats[h_team]["ga"] += a
+        stats[a_team]["gf"] += a
+        stats[a_team]["ga"] += h
+        if h > a:
+            stats[h_team]["pts"] += 3; stats[h_team]["w"] += 1; stats[a_team]["l"] += 1
+        elif h < a:
+            stats[a_team]["pts"] += 3; stats[a_team]["w"] += 1; stats[h_team]["l"] += 1
+        else:
+            stats[h_team]["pts"] += 1; stats[h_team]["d"] += 1
+            stats[a_team]["pts"] += 1; stats[a_team]["d"] += 1
+    # 排序: 积分降序, 净胜球降序, 进球数降序
+    sorted_standings = sorted(
+        stats.items(),
+        key=lambda kv: (-kv[1]["pts"], -(kv[1]["gf"] - kv[1]["ga"]), -kv[1]["gf"]),
+    )
+    return [{"team_en": team, **stats} for team, stats in sorted_standings]
+
+
+def render_standings(standings: list[dict], grp: str) -> None:
+    """渲染 Group 积分榜 (排名 + 队名 + 国旗 + 积分 + 净胜球)"""
+    rows = []
+    for idx, s in enumerate(standings, 1):
+        team_en = s["team_en"]
+        team_cn, team_iso = cn(team_en)
+        flag = flag_img(team_iso)
+        gd = s["gf"] - s["ga"]
+        # 排名 1-4, 用排名 marker (1️⃣2️⃣3️⃣4️⃣)
+        rank_icon = ["1️⃣", "2️⃣", "3️⃣", "4️⃣"][idx - 1] if idx <= 4 else f"{idx}."
+        # 净胜球带 + / - 符号
+        gd_str = f"+{gd}" if gd > 0 else str(gd)
+        row = (
+            f'<div class="standing-row">'
+            f'<span class="standing-rank">{rank_icon}</span>'
+            f'<span class="standing-flag">{flag}</span>'
+            f'<span class="standing-name">{team_cn}</span>'
+            f'<span class="standing-mp">{s["mp"]}MP</span>'
+            f'<span class="standing-record">{s["w"]}W {s["d"]}D {s["l"]}L</span>'
+            f'<span class="standing-gd" data-pos="{gd > 0}">{gd_str}</span>'
+            f'<span class="standing-pts"><strong>{s["pts"]}</strong></span>'
+            f'</div>'
+        )
+        rows.append(row)
+    html = (
+        f'<div class="standings" data-group="{grp}">'
+        f'<div class="standings-header">'
+        f'<span class="sh-rank">#</span>'
+        f'<span class="sh-team">球队</span>'
+        f'<span class="sh-mp">场</span>'
+        f'<span class="sh-record">胜平负</span>'
+        f'<span class="sh-gd">净胜球</span>'
+        f'<span class="sh-pts">积分</span>'
+        f'</div>'
+        + "".join(rows)
+        + "</div>"
+    )
+    render_html(html)
 
 
 def _finished_row_html(m: dict) -> str:

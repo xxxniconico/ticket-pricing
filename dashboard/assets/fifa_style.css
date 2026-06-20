@@ -334,6 +334,128 @@ h4 { font-size: 0.9rem !important; }
     letter-spacing: 0.04em;
 }
 
+/* ==== 积分榜 (Group Standings) ==== */
+.standings {
+    margin: 8px 0 16px 0;
+    padding: 12px 16px;
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 6px;
+    font-family: var(--font-sans);
+}
+.standings-header {
+    display: grid;
+    grid-template-columns: 32px 28px 1fr 40px 90px 56px 50px;
+    gap: 10px;
+    padding: 6px 0 10px 0;
+    border-bottom: 1px solid var(--card-border);
+    margin-bottom: 6px;
+    font-size: 0.65rem;
+    color: var(--ink-on-dark-4);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 500;
+}
+.standings-header .sh-pts,
+.standings-header .sh-gd {
+    text-align: right;
+}
+.standings-header .sh-mp,
+.standings-header .sh-record {
+    text-align: center;
+}
+.standing-row {
+    display: grid;
+    grid-template-columns: 32px 28px 1fr 40px 90px 56px 50px;
+    gap: 10px;
+    padding: 8px 0;
+    align-items: center;
+    font-size: 0.85rem;
+    border-bottom: 1px solid var(--card-border);
+}
+.standing-row:last-child {
+    border-bottom: none;
+}
+.standing-row .standing-rank {
+    font-size: 1rem;
+    text-align: center;
+}
+.standing-row .standing-flag {
+    width: 22px;
+    height: 22px;
+}
+.standing-row .standing-flag .flag-img,
+.standing-row .standing-flag .flag-emoji {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    object-fit: cover;
+    display: block;
+}
+.standing-row .standing-name {
+    font-weight: 510;
+    color: var(--ink-on-dark);
+    letter-spacing: -0.01em;
+}
+.standing-row .standing-mp {
+    color: var(--ink-on-dark-3);
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    text-align: center;
+}
+.standing-row .standing-record {
+    color: var(--ink-on-dark-2);
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    text-align: center;
+    letter-spacing: 0.02em;
+}
+.standing-row .standing-gd {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-align: right;
+    color: var(--ink-on-dark-3);
+}
+.standing-row .standing-gd[data-pos="True"] {
+    color: var(--green-best);
+}
+.standing-row .standing-gd[data-pos="False"] {
+    color: #ef4444;
+}
+.standing-row .standing-pts {
+    font-family: var(--font-mono);
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--ink-on-dark);
+    text-align: right;
+}
+.standing-row .standing-pts strong {
+    font-size: 1.15rem;
+}
+
+/* 排名 1-4 第一名加左边竖条 */
+.standing-row .standing-rank:has(+ .standing-flag) {
+    /* placeholder for future styling */
+}
+
+@media (max-width: 640px) {
+    .standings-header,
+    .standing-row {
+        grid-template-columns: 24px 22px 1fr 32px 64px 48px 40px;
+        gap: 6px;
+        font-size: 0.78rem;
+    }
+    .standing-row .standing-mp,
+    .standing-row .standing-record {
+        display: none;  /* 隐藏 MP 和胜平负, 节省空间 */
+    }
+    .standings-header .sh-mp,
+    .standings-header .sh-record {
+        display: none;
+    }
+}
+
 /* 12 列按钮组 (每组一个展开按钮) */
 .group-buttons-grid {
     display: grid;
