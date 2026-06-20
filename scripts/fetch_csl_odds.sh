@@ -66,3 +66,20 @@ else
     rm -f "$WC_OUT.tmp"
     echo "[fetch_csl_odds] FIFA WC pull skipped (HTTP $HTTP_CODE or error)"
 fi
+
+# ── 拉 Wikipedia 12 个小组赛程 (用于已赛比分) ──
+echo "[fetch_csl_odds] pulling Wikipedia group pages..."
+TMP_WIKI="/tmp/wc_groups_$$"
+mkdir -p "$TMP_WIKI"
+for grp in A B C D E F G H I J K L; do
+  curl -s -A "Mozilla/5.0" --max-time 15 \
+    "https://en.wikipedia.org/wiki/2026_FIFA_World_Cup_Group_$grp" \
+    -o "$TMP_WIKI/grp_$grp.html" &
+done
+wait
+echo "[fetch_csl_odds] wiki pages pulled"
+
+# ── 解析 Wikipedia + merge odds, 生成 unified 数据 ──
+cd "$PROJECT_DIR"
+.venv/bin/python3.12 scripts/build_wc_unified.py --wiki-dir "$TMP_WIKI" 2>&1 | tail -3
+rm -rf "$TMP_WIKI"
