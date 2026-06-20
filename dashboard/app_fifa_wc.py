@@ -16,6 +16,7 @@ FIFA 世界杯赔率 + 战绩看板 V4
 from __future__ import annotations
 import json
 from datetime import datetime, timezone, timedelta
+from html import unescape
 from pathlib import Path
 
 import streamlit as st
@@ -59,7 +60,14 @@ TEAM_CN = {
 }
 
 def cn(name):
-    return TEAM_CN.get(name, (name, "🏳️"))
+    """球队名 → (中文, 国旗). 自动处理 HTML 实体和 's men's 写法"""
+    if not name:
+        return ("?", "🏳️")
+    # 1. unescape HTML entities (Wikipedia 解析后是 'Canada men&#39;s')
+    clean = unescape(name)
+    # 2. 归一化常见写法
+    clean = clean.replace(" men's", "").replace(" men's", "")  # Canada men's → Canada
+    return TEAM_CN.get(clean, TEAM_CN.get(name, (clean, "🏳️")))
 
 
 # === 页面配置 ===
