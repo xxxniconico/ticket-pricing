@@ -2,9 +2,9 @@
 FIFA 世界杯赔率 + 战绩看板 V1
 ==========================
 
-独立 Streamlit app, 端口 8507
+独立 Streamlit app, 端口 8507 (云端: ?app=fifa)
 - 拉取 The Odds API 世界杯单场赔率
-- (可选) 后续接入比分 API 显示实时战况
+- 球队名 + 字段全中文
 - 与 V5.6 中超赔率 tab 形成国际赛事补充
 
 作者: Hermes Agent
@@ -27,6 +27,93 @@ if str(ROOT) not in sys.path:
 
 WC_ODDS_DIR = ROOT / "data" / "raw" / "odds"
 
+# === 球队英文 → 中文映射 ===
+TEAM_CN = {
+    "Netherlands": "荷兰",
+    "Sweden": "瑞典",
+    "Germany": "德国",
+    "Ivory Coast": "科特迪瓦",
+    "Ecuador": "厄瓜多尔",
+    "Curaçao": "库拉索",
+    "Tunisia": "突尼斯",
+    "Japan": "日本",
+    "Spain": "西班牙",
+    "Saudi Arabia": "沙特阿拉伯",
+    "Belgium": "比利时",
+    "Iran": "伊朗",
+    "Uruguay": "乌拉圭",
+    "Cape Verde": "佛得角",
+    "New Zealand": "新西兰",
+    "Egypt": "埃及",
+    "Argentina": "阿根廷",
+    "Austria": "奥地利",
+    "France": "法国",
+    "Iraq": "伊拉克",
+    "Portugal": "葡萄牙",
+    "Uzbekistan": "乌兹别克斯坦",
+    "England": "英格兰",
+    "Ghana": "加纳",
+    "Scotland": "苏格兰",
+    "Brazil": "巴西",
+    "Norway": "挪威",
+    "Panama": "巴拿马",
+    "South Korea": "韩国",
+    "Mexico": "墨西哥",
+    "South Africa": "南非",
+    "Italy": "意大利",
+    "Qatar": "卡塔尔",
+    "Switzerland": "瑞士",
+    "Algeria": "阿尔及利亚",
+    "Croatia": "克罗地亚",
+    "Morocco": "摩洛哥",
+    "Canada": "加拿大",
+    "USA": "美国",
+    "Australia": "澳大利亚",
+    "Poland": "波兰",
+    "Senegal": "塞内加尔",
+    "Colombia": "哥伦比亚",
+    "Denmark": "丹麦",
+    "Czech Republic": "捷克",
+    "Turkey": "土耳其",
+    "Serbia": "塞尔维亚",
+    "Ukraine": "乌克兰",
+    "Costa Rica": "哥斯达黎加",
+    "Jamaica": "牙买加",
+    "Honduras": "洪都拉斯",
+    "Chile": "智利",
+    "Peru": "秘鲁",
+    "Nigeria": "尼日利亚",
+    "Cameroon": "喀麦隆",
+    "Gabon": "加蓬",
+    "Mali": "马里",
+    "Burkina Faso": "布基纳法索",
+    "DR Congo": "刚果民主共和国",
+    "Ivory Coast": "科特迪瓦",
+    "Greece": "希腊",
+    "Romania": "罗马尼亚",
+    "Slovakia": "斯洛伐克",
+    "Slovenia": "斯洛文尼亚",
+    "North Macedonia": "北马其顿",
+    "Albania": "阿尔巴尼亚",
+    "Hungary": "匈牙利",
+    "Iceland": "冰岛",
+    "Ireland": "爱尔兰",
+    "Wales": "威尔士",
+    "Israel": "以色列",
+    "UAE": "阿联酋",
+    "Qatar": "卡塔尔",
+    "Indonesia": "印度尼西亚",
+    "India": "印度",
+    "China": "中国",
+    "Thailand": "泰国",
+    "Vietnam": "越南",
+}
+
+def cn(name: str) -> str:
+    """球队英文名 → 中文 (回退英文)"""
+    return TEAM_CN.get(name, name)
+
+
 # === 页面配置 ===
 st.set_page_config(
     page_title="🌍 世界杯赔率看板",
@@ -38,9 +125,9 @@ st.set_page_config(
 st.markdown("""
 <div style="background: linear-gradient(90deg, #1e3a8a 0%, #3b82f6 100%);
             padding: 16px; border-radius: 8px; margin-bottom: 16px;">
-  <h2 style="color: white; margin: 0;">🌍 世界杯赔率看板 · FIFA World Cup 2026</h2>
+  <h2 style="color: white; margin: 0;">🌍 世界杯赔率看板 · 美加墨 2026</h2>
   <p style="color: #cbd5e1; margin: 4px 0 0 0;">
-    单场赔率 + 市场分歧度 + 关键比赛详情 · 数据源 The Odds API · 仅展示, 不进定价模型
+    单场赔率 · 市场分歧度 · 关键比赛详情 · 数据源 The Odds API · 仅展示, 不进定价模型
   </p>
 </div>
 """, unsafe_allow_html=True)
@@ -62,7 +149,7 @@ def _load_wc_data():
 
 
 def _match_metrics(m: dict) -> dict:
-    """计算比赛的隐含胜率均值/分歧度/赔率均值"""
+    """计算比赛的隐含胜率均值/分歧度/赔率均值, 剔除跑偏公司"""
     rows = []
     for bm in m.get("bookmakers", []):
         outcomes = bm["markets"][0].get("outcomes", [])
@@ -88,7 +175,7 @@ def _match_metrics(m: dict) -> dict:
     if not rows:
         return {}
     p_h_list = [r["p_h"] for r in rows]
-    # 剔除明显跑偏的(>3σ from median)
+    # 剔除明显跑偏的(>3 MAD from median)
     if len(p_h_list) >= 5:
         med = statistics.median(p_h_list)
         mad = statistics.median([abs(p - med) for p in p_h_list]) or 0.001
@@ -127,11 +214,13 @@ def render_overview(matches: list, metrics: dict):
             p_d = p_a = None
         rows.append({
             "北京日期": bj_dt.strftime("%m-%d %H:%M"),
-            "主队": m["home_team"],
-            "客队": m["away_team"],
-            "p_主胜": m_data.get("p_h_mean"),
-            "p_平局": p_d,
-            "p_客胜": p_a,
+            "主队": cn(m["home_team"]),
+            "客队": cn(m["away_team"]),
+            "主队(英)": m["home_team"],
+            "客队(英)": m["away_team"],
+            "主胜概率": m_data.get("p_h_mean"),
+            "平局概率": p_d,
+            "客胜概率": p_a,
             "主胜赔率": m_data.get("avg_h"),
             "平局赔率": m_data.get("avg_d"),
             "客胜赔率": m_data.get("avg_a"),
@@ -154,10 +243,14 @@ def render_overview(matches: list, metrics: dict):
             return "background-color: #fbbf2422"
         return ""
 
+    # 显示时隐藏英文列
+    cols_to_show = ["北京日期", "主队", "客队", "主胜概率", "平局概率", "客胜概率",
+                    "主胜赔率", "平局赔率", "客胜赔率", "分歧度", "公司数"]
+
     st.dataframe(
-        df_sorted.style
+        df_sorted[cols_to_show].style
         .format({
-            "p_主胜": "{:.1%}", "p_平局": "{:.1%}", "p_客胜": "{:.1%}",
+            "主胜概率": "{:.1%}", "平局概率": "{:.1%}", "客胜概率": "{:.1%}",
             "主胜赔率": "{:.2f}", "平局赔率": "{:.2f}", "客胜赔率": "{:.2f}",
             "分歧度": "{:.3f}",
         }, na_rep="-")
@@ -190,13 +283,16 @@ def render_strong_matches(matches: list, metrics: dict):
         team1_badge = "🔥" if is_tier1_home else ""
         team2_badge = "🔥" if is_tier1_away else ""
 
+        home_cn = cn(m["home_team"])
+        away_cn = cn(m["away_team"])
+
         st.markdown(f"##### {bj_dt.strftime('%m-%d %H:%M')} 北京 | "
-                    f"{team1_badge} **{m['home_team']}** vs "
-                    f"{team2_badge} **{m['away_team']}**")
+                    f"{team1_badge} **{home_cn}** vs "
+                    f"{team2_badge} **{away_cn}**")
 
         c1, c2, c3, c4, c5 = st.columns(5)
         with c1:
-            st.metric("p_主胜", f"{m_data.get('p_h_mean', 0):.1%}")
+            st.metric("主胜概率", f"{m_data.get('p_h_mean', 0):.1%}")
         with c2:
             st.metric("主胜赔率", f"{m_data.get('avg_h', 0):.2f}")
         with c3:
@@ -208,14 +304,27 @@ def render_strong_matches(matches: list, metrics: dict):
             level = "🔴 高" if std > 0.05 else ("🟡 中" if std > 0.02 else "🟢 低")
             st.metric("分歧度", f"{std:.3f} {level}")
 
-        # 公司明细(平铺,不折叠)
+        # 公司明细(平铺,不折叠) - 列名改中文
         rows = m_data.get("rows", [])
         if rows:
-            df_bm = pd.DataFrame(rows).sort_values("p_h", ascending=False)
+            df_bm = pd.DataFrame([
+                {
+                    "博彩公司": r["book"],
+                    "主胜赔率": r["h"],
+                    "平局赔率": r["d"],
+                    "客胜赔率": r["a"],
+                    "主胜概率": r["p_h"],
+                    "平局概率": r["p_d"],
+                    "客胜概率": r["p_a"],
+                    "利润(Vig)": r["vig"],
+                }
+                for r in rows
+            ]).sort_values("主胜概率", ascending=False)
             st.dataframe(
                 df_bm.style.format({
-                    "h": "{:.2f}", "d": "{:.2f}", "a": "{:.2f}",
-                    "p_h": "{:.1%}", "vig": "{:.2%}",
+                    "主胜赔率": "{:.2f}", "平局赔率": "{:.2f}", "客胜赔率": "{:.2f}",
+                    "主胜概率": "{:.1%}", "平局概率": "{:.1%}", "客胜概率": "{:.1%}",
+                    "利润(Vig)": "{:.2%}",
                 }),
                 hide_index=True,
                 width="stretch",
@@ -226,7 +335,7 @@ def render_strong_matches(matches: list, metrics: dict):
 def main():
     data, fname = _load_wc_data()
     if data is None:
-        st.warning("⚠️ 未找到世界杯赔率数据。请运行:")
+        st.warning("⚠️ 未找到世界杯赔率数据。请运行以下命令拉取:")
         st.code("curl -s 'https://api.the-odds-api.com/v4/sports/soccer_fifa_world_cup/odds/?regions=eu&markets=h2h&oddsFormat=decimal&apiKey=YOUR_KEY' > data/raw/odds/fifa_wc_YYYYMMDD.json")
         return
 
@@ -240,7 +349,6 @@ def main():
     with c2:
         st.metric("⚽ 总场次", f"{len(data)} 场")
     with c3:
-        # 今天(假设 UTC)开打的比赛
         today_utc = "2026-06-20"
         today_count = sum(1 for m in data if m["commence_time"].startswith(today_utc))
         st.metric("🏟️ 今日(UTC)开打", f"{today_count} 场")
@@ -253,11 +361,11 @@ def main():
 
     st.divider()
 
-    # === Tab 1: 全部总览 ===
+    # === 总览 ===
     df_sorted = render_overview(data, metrics)
     st.divider()
 
-    # === Tab 2: 强队出场详情 ===
+    # === 强队出场详情 ===
     render_strong_matches(data, metrics)
 
     st.divider()
@@ -267,14 +375,14 @@ def main():
     st.markdown("""
 | 字段 | 含义 |
 |---|---|
-| `p_主胜` | 市场对主队获胜的隐含概率(去 vig 后, 多家公司均值) |
-| `分歧度` (p_h std) | 各家公司对 p_主胜 的标准差 — **越大说明市场越分歧, 比赛悬念越大** |
-| `Vig` | 博彩公司利润率 (越低越好, 0% = 无利润纯市场) |
+| `主胜概率` | 市场对主队获胜的隐含概率(去 vig 后, 多家公司均值) |
+| `分歧度` | 各家公司对主胜概率的标准差 — **越大说明市场越分歧, 比赛悬念越大** |
+| `利润(Vig)` | 博彩公司利润率 (越低越好, 0% = 无利润纯市场) |
 | `公司数` | 提供赔率的博彩公司数量 (越多越准) |
 
 **关注度信号**: 黄色高亮的比赛 = 分歧度 ≥ 第 75 百分位 = **市场最不确定 = 关注度最高**
 
-**剔除跑偏**: 任何公司 p_主胜 偏离 median > 3×MAD 的会被剔除(防止异常值污染均值)
+**剔除跑偏**: 任何公司主胜概率偏离中位数 > 3×MAD 会被剔除(防止异常值污染均值)
 
 **局限**: 当前只能拿到 2026-06-20 之后的**未来**场次赔率, 已完赛比分需另外接 API(Football-Data.org / API-FOOTBALL 免费档)。
 """)
