@@ -265,14 +265,6 @@ h4 { font-size: 0.9rem !important; }
     margin-top: 24px;
 }
 
-/* 已赛网格 - 1 列平铺, 12 个 Group 每行 1 个 */
-.group-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 6px;
-    margin-top: 16px;
-}
-
 /* ==== Group Card (整行 + 右侧 button) ==== */
 .group-card {
     display: flex;
@@ -339,102 +331,20 @@ h4 { font-size: 0.9rem !important; }
     margin-left: 8px;
 }
 
-/* button 跟 card 同高 */
+/* button 跟 card 同高 (streamlit columns 内 button) */
 div[data-testid="column"] + div[data-testid="column"] button {
     height: 56px !important;
     font-size: 1.2rem !important;
-}
-
-/* ==== 关键: card + button 视觉完全合为一体 ==== */
-/* 让 button 跟 card 之间无任何 margin, 共享 border */
-.group-card + div[data-testid="stButton"] {
-    margin-top: -1px !important;
-}
-.group-card + div[data-testid="stButton"] button {
-    border-top-left-radius: 0 !important;
-    border-top-right-radius: 0 !important;
+    background: rgba(94, 106, 210, 0.06) !important;
     border-color: var(--card-border) !important;
-    border-top: 1px solid var(--card-border) !important;
-    background: rgba(94, 106, 210, 0.04) !important;  /* 轻微蓝色 */
 }
-.group-card + div[data-testid="stButton"] button:hover {
-    background: rgba(94, 106, 210, 0.10) !important;
-}
-
-/* 展开时 button 视觉变化 */
-.group-card.expanded + div[data-testid="stButton"] button {
-    background: rgba(94, 106, 210, 0.08) !important;
-    border-color: var(--fifa-blue) !important;
-    color: var(--fifa-blue) !important;
-}
-
-/* 展开内容 (积分榜 + 比赛) 紧贴 button, 视觉衔接 */
-.expanded-section {
-    margin-top: -1px !important;  /* 跟 button 衔接, 无缝 */
-    border-top: 1px dashed var(--card-border) !important;
-    border-top-left-radius: 0 !important;
-    border-top-right-radius: 0 !important;
+div[data-testid="column"] + div[data-testid="column"] button:hover {
+    background: rgba(94, 106, 210, 0.15) !important;
 }
 
 .group-anchor-cell {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    padding: 12px 18px;
-    background: var(--card-bg);
-    border: 1px solid var(--card-border);
-    border-radius: 6px;
-    transition: background 0.12s ease;
-    cursor: default;
-    min-height: 48px;
-}
-.group-anchor-cell.collapsed:hover {
-    background: var(--card-bg-hover);
-}
-.group-anchor-cell.expanded {
-    background: rgba(94, 106, 210, 0.08);
-    border-color: var(--fifa-blue);
-}
-.group-anchor-cell .group-chip {
-    font-size: 0.82rem;
-    padding: 4px 12px;
-    background: var(--fifa-blue);
-    color: white;
-    border-radius: 4px;
-    font-weight: 600;
-    flex-shrink: 0;
-    min-width: 64px;
-    text-align: center;
-}
-.group-anchor-cell .group-flags {
-    display: flex;
-    gap: 3px;
-    flex-shrink: 0;
-}
-.group-anchor-cell .group-flags .flag-img,
-.group-anchor-cell .group-flags .flag-emoji {
-    width: 22px;
-    height: 22px;
-    border-radius: 50%;
-    object-fit: cover;
-    font-size: 1.1rem;
-}
-.group-anchor-cell .group-progress {
-    margin-left: auto;
-    font-family: var(--font-mono);
-    font-size: 0.7rem;
-    color: var(--ink-on-dark-3);
-}
-.group-anchor-cell .group-progress strong {
-    color: var(--ink-on-dark);
-    font-weight: 600;
-}
-.group-anchor-cell .group-state {
-    font-size: 0.65rem;
-    color: var(--ink-on-dark-4);
-    margin-left: 4px;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
+    /* 旧版 dead code, 已改用 .group-card (看上面) */
+    display: none;
 }
 
 /* ==== 积分榜 (Group Standings) ==== */
@@ -1150,4 +1060,253 @@ div[data-testid="column"] + div[data-testid="column"] button {
     border-radius: 3px;
     font-family: var(--font-mono);
     font-size: 0.78rem;
+}
+
+/* ==== 13. Tab3: 价值下注 ==== */
+
+/* --- 13.1 下注建议表 --- */
+.bet-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.82rem;
+    margin-bottom: 16px;
+}
+.bet-table th {
+    text-align: left;
+    padding: 8px 8px;
+    font-size: 0.62rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ink-on-dark-4);
+    font-weight: 500;
+    border-bottom: 1px solid var(--card-border-strong);
+    white-space: nowrap;
+}
+.bet-table th.num { text-align: right; }
+.bet-table td {
+    padding: 9px 8px;
+    border-bottom: 1px solid var(--card-border);
+    vertical-align: middle;
+    color: var(--ink-on-dark-2);
+}
+.bet-table td.num {
+    text-align: right;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+}
+.bet-table tr:hover td { background: var(--card-bg-hover); }
+.bet-table tr.today td { background: rgba(94, 106, 210, 0.06); }
+.bet-table tr.won td { background: rgba(39, 166, 68, 0.04); }
+.bet-table tr.lost td { background: rgba(255, 87, 87, 0.03); }
+
+/* 比赛名 cell */
+.bet-table .bt-match {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 510;
+    color: var(--ink-on-dark);
+    letter-spacing: -0.01em;
+}
+.bet-table .bt-match .flag {
+    width: 20px; height: 20px;
+    display: inline-flex; align-items: center; justify-content: center;
+    border-radius: 50%; overflow: hidden; flex-shrink: 0;
+    background: var(--card-bg-hover);
+}
+.bet-table .bt-match .flag img { width: 100%; height: 100%; object-fit: cover; }
+.bet-table .bt-match .corr-mark {
+    color: var(--fifa-blue-light); font-size: 0.7rem; margin-left: 2px;
+}
+
+/* 选择 badge */
+.sel-badge {
+    display: inline-flex;
+    align-items: center; justify-content: center;
+    min-width: 24px; height: 20px;
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 0.72rem; font-weight: 600;
+}
+.sel-badge.sel-h { background: rgba(94, 106, 210, 0.2); color: var(--fifa-blue-light); }
+.sel-badge.sel-d { background: rgba(138, 143, 152, 0.18); color: var(--ink-on-dark-2); }
+.sel-badge.sel-a { background: rgba(255, 87, 87, 0.15); color: var(--red-live); }
+
+/* EV 色阶 */
+.ev-badge { font-family: var(--font-mono); font-size: 0.8rem; font-weight: 600; }
+.ev-badge.ev-top    { color: var(--green-best); }
+.ev-badge.ev-high   { color: #4ade80; }
+.ev-badge.ev-mid    { color: #86efac; }
+
+/* 仓位 bar */
+.stake-cell { display: flex; align-items: center; gap: 6px; justify-content: flex-end; }
+.stake-cell .bar-bg {
+    width: 50px; height: 5px;
+    background: var(--bg-dark); border-radius: 3px; overflow: hidden;
+    position: relative;
+}
+.stake-cell .bar-kelly {
+    position: absolute; top: 0; left: 0; height: 100%;
+    background: rgba(94, 106, 210, 0.25); border-radius: 3px;
+}
+.stake-cell .bar-opt {
+    position: absolute; top: 0; left: 0; height: 100%;
+    background: var(--fifa-blue); border-radius: 3px;
+}
+.stake-cell .stake-num { font-family: var(--font-mono); font-size: 0.75rem; color: var(--ink-on-dark-2); white-space: nowrap; }
+
+/* 状态 badge */
+.status-badge {
+    display: inline-flex; align-items: center; gap: 3px;
+    padding: 2px 7px; border-radius: 4px;
+    font-size: 0.7rem; font-weight: 600; font-family: var(--font-mono);
+    white-space: nowrap;
+}
+.status-badge.st-won     { background: rgba(39, 166, 68, 0.15); color: var(--green-best); }
+.status-badge.st-lost    { background: rgba(255, 87, 87, 0.12); color: var(--red-live); }
+.status-badge.st-pending { background: var(--card-bg-hover); color: var(--ink-on-dark-3); }
+
+/* --- 13.2 Kelly vs 优化 对比卡 --- */
+.compare-card {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 8px;
+    margin-bottom: 16px;
+    overflow: hidden;
+}
+.compare-card .cc-col { padding: 14px 18px; }
+.compare-card .cc-col + .cc-col { border-left: 1px solid var(--card-border); }
+.compare-card .cc-title {
+    font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--ink-on-dark-4); font-weight: 500; margin-bottom: 10px;
+}
+.compare-card .cc-row {
+    display: flex; justify-content: space-between; align-items: baseline;
+    padding: 3px 0;
+}
+.compare-card .cc-label { font-size: 0.78rem; color: var(--ink-on-dark-3); }
+.compare-card .cc-value {
+    font-family: var(--font-mono); font-size: 0.92rem; font-weight: 600;
+    color: var(--ink-on-dark);
+}
+.compare-card .cc-value.pos { color: var(--green-best); }
+.compare-card .cc-value.warn { color: #fbbf24; }
+.compare-card .cc-varbar {
+    width: 100%; height: 6px; background: var(--bg-dark);
+    border-radius: 3px; overflow: hidden; margin-top: 8px;
+}
+.compare-card .cc-varbar .fill { height: 100%; border-radius: 3px; }
+.compare-card .cc-varbar .fill.kelly { background: rgba(255, 87, 87, 0.4); }
+.compare-card .cc-varbar .fill.opt { background: var(--green-best); }
+.compare-card .cc-binding {
+    margin-top: 8px; font-size: 0.7rem; color: var(--ink-on-dark-3);
+}
+
+/* --- 13.3 追踪器 KPI --- */
+.tracker-strip {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 16px;
+}
+.tracker-strip .ts-cell {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 8px;
+    padding: 10px 14px;
+}
+.tracker-strip .ts-label {
+    font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.04em;
+    color: var(--ink-on-dark-4); font-weight: 500;
+}
+.tracker-strip .ts-value {
+    font-family: var(--font-mono); font-size: 1.1rem; font-weight: 600;
+    color: var(--ink-on-dark); margin-top: 2px; letter-spacing: -0.02em;
+}
+.tracker-strip .ts-value.pos { color: var(--green-best); }
+.tracker-strip .ts-value.neg { color: var(--red-live); }
+.tracker-strip .ts-sub { font-size: 0.68rem; color: var(--ink-on-dark-3); margin-top: 1px; }
+
+/* --- 13.4 每日汇总 --- */
+.daily-table {
+    width: 100%; border-collapse: collapse;
+    font-size: 0.8rem; margin-bottom: 16px;
+}
+.daily-table th {
+    text-align: right; padding: 6px 10px;
+    font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--ink-on-dark-4); font-weight: 500;
+    border-bottom: 1px solid var(--card-border);
+}
+.daily-table th:first-child { text-align: left; }
+.daily-table td {
+    padding: 7px 10px; border-bottom: 1px solid var(--card-border);
+    text-align: right; font-family: var(--font-mono); font-size: 0.78rem;
+    color: var(--ink-on-dark-2);
+}
+.daily-table td:first-child { text-align: left; font-family: var(--font-sans); color: var(--ink-on-dark); }
+.daily-table tr.total td { border-top: 1px solid var(--card-border-strong); font-weight: 600; color: var(--ink-on-dark); }
+.daily-table .cap-bar {
+    display: inline-flex; align-items: center; gap: 4px;
+}
+.daily-table .cap-bar .cb-bg {
+    width: 40px; height: 4px; background: var(--bg-dark); border-radius: 2px; overflow: hidden;
+}
+.daily-table .cap-bar .cb-fill { height: 100%; background: var(--fifa-blue); border-radius: 2px; }
+
+/* --- 13.5 相关性矩阵 --- */
+.corr-matrix {
+    display: grid;
+    grid-template-columns: 50px repeat(3, 1fr);
+    gap: 2px;
+    margin: 10px 0;
+}
+.corr-matrix .cm-cell {
+    padding: 5px 6px; text-align: center;
+    font-family: var(--font-mono); font-size: 0.72rem;
+    border-radius: 3px; background: var(--card-bg-hover);
+    color: var(--ink-on-dark-2);
+}
+.corr-matrix .cm-cell.cm-hdr {
+    font-size: 0.6rem; color: var(--ink-on-dark-4);
+    text-transform: uppercase; background: transparent;
+}
+.corr-matrix .cm-cell.cm-hi { background: rgba(94, 106, 210, 0.12); color: var(--fifa-blue-light); font-weight: 600; }
+.corr-group-card {
+    background: var(--card-bg); border: 1px solid var(--card-border);
+    border-radius: 6px; padding: 14px 16px; margin-bottom: 12px;
+}
+.corr-group-card .cgc-title { font-size: 0.85rem; font-weight: 510; color: var(--ink-on-dark); margin-bottom: 8px; }
+.corr-group-card .cgc-stat {
+    display: flex; justify-content: space-between;
+    padding: 2px 0; font-size: 0.78rem; color: var(--ink-on-dark-3);
+}
+.corr-group-card .cgc-stat .cgc-val { font-family: var(--font-mono); color: var(--ink-on-dark-2); }
+
+/* --- 13.6 风控规则表 --- */
+.risk-table {
+    width: 100%; border-collapse: collapse; font-size: 0.78rem;
+}
+.risk-table th {
+    text-align: left; padding: 6px 10px;
+    font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--ink-on-dark-4); font-weight: 500;
+    border-bottom: 1px solid var(--card-border);
+}
+.risk-table td {
+    padding: 6px 10px; border-bottom: 1px solid var(--card-border);
+    color: var(--ink-on-dark-2);
+}
+.risk-table td:last-child { text-align: right; }
+.risk-table .rt-ok { color: var(--green-best); }
+.risk-table .rt-warn { color: #fbbf24; }
+
+@media (max-width: 640px) {
+    .tracker-strip { grid-template-columns: repeat(2, 1fr); }
+    .compare-card { grid-template-columns: 1fr; }
+    .compare-card .cc-col + .cc-col { border-left: none; border-top: 1px solid var(--card-border); }
+    .bet-table th:nth-child(5), .bet-table td:nth-child(5) { display: none; } /* hide p_model on mobile */
 }

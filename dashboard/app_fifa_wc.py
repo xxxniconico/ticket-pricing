@@ -72,6 +72,7 @@ TEAM_CN: dict[str, tuple[str, str]] = {
     # E
     "Germany":              ("德国", "de"),
     "Curaçao":              ("库拉索", "cw"),
+    "Curacao":              ("库拉索", "cw"),
     "Ivory Coast":          ("科特迪瓦", "ci"),
     "Ecuador":              ("厄瓜多尔", "ec"),
     "Netherlands":          ("荷兰", "nl"),
@@ -113,26 +114,6 @@ TEAM_CN: dict[str, tuple[str, str]] = {
 # 国旗 CDN — flagcdn.com 提供 PNG, 尺寸 w20/w40/w80/w160/w320/w640/w1280/w2560
 FLAG_BASE_URL = "https://flagcdn.com"
 FLAG_WIDTH = 40  # px, 适合 ~32px 圆形容器
-
-def flag_html(iso_code: str) -> str:
-    """生成 <img> 国旗标签 (含 fallback emoji if CDN fails)"""
-    return f'<img src="{FLAG_BASE_URL}/w{FLAG_WIDTH}/{iso_code}.png" class="flag-img" alt="{iso_code}" loading="lazy" onerror="this.style.display=\'none\'"/>'
-
-# 48 个 unique 国家队 (做断言)
-UNIQUE_TEAMS = {
-    "Mexico", "South Africa", "South Korea", "Czech Republic",
-    "Canada", "Bosnia and Herzegovina", "Qatar", "Switzerland",
-    "Brazil", "Morocco", "Haiti", "Scotland",
-    "USA", "Paraguay", "Australia", "Turkey",
-    "Germany", "Curaçao", "Ivory Coast", "Ecuador", "Netherlands",
-    "Japan", "Sweden", "Tunisia", "Belgium", "Egypt",
-    "Iran", "New Zealand", "Spain", "Cape Verde", "Saudi Arabia",
-    "Uruguay", "France", "Senegal", "Iraq", "Norway",
-    "Argentina", "Algeria", "Austria", "Jordan",
-    "Portugal", "DR Congo", "Uzbekistan", "Colombia",
-    "England", "Croatia", "Ghana", "Panama",
-}
-assert len(UNIQUE_TEAMS) == 48, f"expected 48 unique teams, got {len(UNIQUE_TEAMS)}"
 
 # Wikipedia / Wikidata 常见后缀变体 (在 cn() 里被剥掉)
 _SUFFIX_PATTERNS = [
@@ -199,19 +180,18 @@ def flag_img(iso_code: str, fallback: str = "🏳️") -> str:
 
 def emoji_flag(iso_code: str) -> str:
     """ISO 3166-1 alpha-2 code → emoji regional indicator 序列.
-    用于 streamlit button label (不能用 HTML, 必须用纯文本).
 
     每个字母转成对应的 regional indicator symbol (A=🇦 ... Z=🇿).
-    例: 'mx' → 🇲🇽, 'gb-eng' → 🏴󠁧󠁢󠁥󠁮󠁧󠁿 (fallback for non-ISO codes).
+    例: 'mx' → 🇲🇽, 'gb-eng' → 🏴󠁧󠁢󠁥󠁮󠁧󠁿.
+
+    注: 当前 button label 不需要 emoji (用纯文本 + 真实国旗图), 此函数保留作为备用工具.
     """
     if not iso_code:
         return "🏳️"
     iso = iso_code.lower()
-    # 非标准 ISO code (Scotland / England 等)
     special = {"gb-sct": "🏴󠁧󠁢󠁳󠁣󠁴󠁿", "gb-eng": "🏴󠁧󠁢󠁥󠁮󠁧󠁿"}
     if iso in special:
         return special[iso]
-    # 标准 ISO 3166-1 alpha-2: 2 字母
     if len(iso) == 2 and iso.isalpha():
         return chr(0x1F1E6 + ord(iso[0]) - ord("a")) + chr(0x1F1E6 + ord(iso[1]) - ord("a"))
     return "🏳️"
@@ -360,27 +340,6 @@ def _match_time_html(m: dict) -> str:
     if -120 <= diff_min <= 0:
         return '<div class="m-time live">LIVE</div>'
     return f'<div class="m-time">{bj.strftime("%m-%d %H:%M")}</div>'
-
-
-def render_match_row_finished(m: dict) -> None:
-    """已赛比赛行 - 用单个 st.markdown + CSS grid 完全控制响应式"""
-    home_cn, home_flag = cn(m.get("home_en", ""))
-    away_cn, away_flag = cn(m.get("away_en", ""))
-    grp = m.get("group", "?")
-    score = m.get("score") or "–"
-    home_flag_img = flag_img(home_flag)
-    away_flag_img = flag_img(away_flag)
-
-    # 用单个 st.markdown 渲染整行 (CSS grid 处理响应式)
-    row_html = f"""<div class="match-row finished">
-      <div class="m-time">FT</div>
-      <div class="m-team home"><span class="flag">{home_flag_img}</span><span>{home_cn}</span></div>
-      <div class="m-score">{_format_score(score)}</div>
-      <div class="m-team away"><span class="flag">{away_flag_img}</span><span>{away_cn}</span></div>
-      <div></div>
-      <div class="m-status"><span class="badge group">Group {grp}</span></div>
-    </div>"""
-    st.markdown(row_html, unsafe_allow_html=True)
 
 
 def render_match_row_upcoming(m: dict) -> None:
@@ -713,6 +672,232 @@ def render_legend() -> None:
     render_html(html)
 
 
+# === Tab3: 价值下注 ===
+FINAL_BETS_FILE = ROOT / "output" / "wc_final_bets_20260620.json"
+TRACKER_FILE = ROOT / "output" / "wc_bet_tracker.json"
+CORR_FILE = ROOT / "output" / "wc_correlation_analysis_20260620.json"
+
+
+@st.cache_data(ttl=300)
+def _load_final_bets():
+    if not FINAL_BETS_FILE.exists():
+        return None
+    return json.loads(FINAL_BETS_FILE.read_text(encoding="utf-8"))
+
+@st.cache_data(ttl=30)
+def _load_tracker_data():
+    if not TRACKER_FILE.exists():
+        return None
+    return json.loads(TRACKER_FILE.read_text(encoding="utf-8"))
+
+@st.cache_data(ttl=300)
+def _load_correlation():
+    if not CORR_FILE.exists():
+        return None
+    return json.loads(CORR_FILE.read_text(encoding="utf-8"))
+
+
+def _ev_class(ev: float) -> str:
+    if ev > 0.50: return "ev-top"
+    if ev > 0.20: return "ev-high"
+    return "ev-mid"
+
+def _sel_class(sel: str) -> str:
+    return {"H": "sel-h", "D": "sel-d", "A": "sel-a"}.get(sel, "sel-d")
+
+
+def _render_value_kpi(final_bets: dict) -> None:
+    n = final_bets["n_bets"]; stake = final_bets["total_stake"]
+    ev = final_bets["total_ev"]; std = final_bets["optimization"]["optimal_portfolio_std"]
+    render_html(f"""<div class="kpi-strip">
+      <div class="kpi-cell"><span class="kpi-icon">🎯</span><div class="kpi-text">
+        <span class="kpi-value">{n}</span><span class="kpi-label">下注数</span></div></div>
+      <div class="kpi-cell"><span class="kpi-icon">💰</span><div class="kpi-text">
+        <span class="kpi-value">{stake:.1%}</span><span class="kpi-label">总仓位</span></div></div>
+      <div class="kpi-cell"><span class="kpi-icon">📈</span><div class="kpi-text">
+        <span class="kpi-value">{ev:+.2%}</span><span class="kpi-label">总 EV</span></div></div>
+      <div class="kpi-cell"><span class="kpi-icon">⚠️</span><div class="kpi-text">
+        <span class="kpi-value">{std:.1%}</span><span class="kpi-label">组合 σ</span></div></div>
+    </div>""")
+
+
+def _render_tracker_strip(tracker: dict) -> None:
+    c = tracker["cumulative"]
+    pl_cls = "pos" if c["total_profit"] >= 0 else "neg"
+    roi_cls = "pos" if c["roi"] >= 0 else "neg"
+    render_html(f"""<div class="tracker-strip">
+      <div class="ts-cell"><div class="ts-label">已结算</div>
+        <div class="ts-value">{c['settled']}场 <span style="font-size:0.8rem;color:var(--green-best)">{c['won']}W</span> <span style="font-size:0.8rem;color:var(--red-live)">{c['lost']}L</span></div>
+        <div class="ts-sub">待结算 {c['pending']} 场</div></div>
+      <div class="ts-cell"><div class="ts-label">累计盈亏</div>
+        <div class="ts-value {pl_cls}">{c['total_profit']:+.4f}</div>
+        <div class="ts-sub">下注 {c['total_staked']:.4f}</div></div>
+      <div class="ts-cell"><div class="ts-label">ROI</div>
+        <div class="ts-value {roi_cls}">{c['roi']:+.1%}</div>
+        <div class="ts-sub">命中率 {c['hit_rate']:.0%}</div></div>
+      <div class="ts-cell"><div class="ts-label">资金</div>
+        <div class="ts-value">{c['bankroll']:.4f}</div>
+        <div class="ts-sub">初始 1.0000</div></div>
+    </div>""")
+
+
+def _render_compare_card(final_bets: dict) -> None:
+    opt = final_bets["optimization"]
+    kv, ov = opt["kelly_portfolio_variance"], opt["optimal_portfolio_variance"]
+    kw, ow = min(kv / 0.05 * 100, 100), min(ov / 0.05 * 100, 100)
+    html = f"""<div class="compare-card">
+      <div class="cc-col">
+        <div class="cc-title">Kelly (1/2)</div>
+        <div class="cc-row"><span class="cc-label">总 EV</span><span class="cc-value pos">{opt['kelly_total_ev']:+.4f}</span></div>
+        <div class="cc-row"><span class="cc-label">标准差 σ</span><span class="cc-value warn">{opt['kelly_portfolio_std']:.1%}</span></div>
+        <div class="cc-row"><span class="cc-label">方差 σ²</span><span class="cc-value">{kv:.4f}</span></div>
+        <div class="cc-varbar"><div class="fill kelly" style="width:{kw:.0f}%"></div></div>
+      </div><div class="cc-col">
+        <div class="cc-title">优化 (SLSQP · σ²≤0.02)</div>
+        <div class="cc-row"><span class="cc-label">总 EV</span><span class="cc-value pos">{opt['optimal_total_ev']:+.4f}</span></div>
+        <div class="cc-row"><span class="cc-label">标准差 σ</span><span class="cc-value">{opt['optimal_portfolio_std']:.1%}</span></div>
+        <div class="cc-row"><span class="cc-label">方差 σ²</span><span class="cc-value">{ov:.4f}</span></div>
+        <div class="cc-varbar"><div class="fill opt" style="width:{ow:.0f}%"></div></div>
+      </div></div>"""
+    if opt["variance_constraint_binding"]:
+        html += (f'<div style="font-size:0.72rem;color:var(--ink-on-dark-3);'
+                 f'margin-top:-8px;margin-bottom:16px;padding:0 18px;">'
+                 f"✅ 方差约束 binding: EV 降 {abs(1-opt['optimal_total_ev']/opt['kelly_total_ev'])*100:.0f}%, "
+                 f"σ 降 {abs(1-opt['optimal_portfolio_std']/opt['kelly_portfolio_std'])*100:.0f}%</div>")
+    render_html(html)
+
+
+def _render_bet_table(final_bets: dict, tracker_by_match: dict, today_bj: str) -> None:
+    bets = sorted(final_bets["final_bets"], key=lambda x: (x["date"], -x["ev"]))
+    cap = 0.03; rows = ""
+    for b in bets:
+        tr = tracker_by_match.get(b["match"], {})
+        status = tr.get("status", "pending"); score = tr.get("score")
+        row_cls = ""
+        if b["date"] == today_bj: row_cls = "today"
+        if status == "won": row_cls = "won"
+        elif status == "lost": row_cls = "lost"
+        if status == "won":
+            sb = f'<span class="status-badge st-won">✅ {score}</span>'
+        elif status == "lost":
+            sb = f'<span class="status-badge st-lost">❌ {score}</span>'
+        else:
+            sb = '<span class="status-badge st-pending">⏳</span>'
+        h_cn, h_iso = cn(b.get("home", "")); a_cn, a_iso = cn(b.get("away", ""))
+        corr = ' 🔗' if "correlated_same_day_group" in b else ''
+        mh = (f'<div class="bt-match"><span class="flag">{flag_img(h_iso)}</span>'
+              f'{h_cn} vs {a_cn}<span class="flag">{flag_img(a_iso)}</span>'
+              f'<span class="corr-mark">{corr}</span></div>')
+        kw = min(b.get("kelly_stake", 0) / cap * 100, 100)
+        ow = min(b["optimal_stake"] / cap * 100, 100)
+        sh = (f'<div class="stake-cell"><div class="bar-bg">'
+              f'<div class="bar-kelly" style="width:{kw:.0f}%"></div>'
+              f'<div class="bar-opt" style="width:{ow:.0f}%"></div></div>'
+              f'<span class="stake-num">{b["optimal_stake"]:.1%}</span></div>')
+        rows += f"""<tr class="{row_cls}"><td>{b['date'][5:]}</td>
+          <td><span class="badge group">{b['group']}</span></td><td>{mh}</td>
+          <td><span class="sel-badge {_sel_class(b['selection'])}">{b['selection']}</span></td>
+          <td class="num">{b['p_model']:.1%}</td><td class="num">{b['odds']:.2f}</td>
+          <td class="num"><span class="ev-badge {_ev_class(b['ev'])}">{b['ev']:+.1%}</span></td>
+          <td class="num">{sh}</td><td>{sb}</td></tr>"""
+    render_html(f"""<table class="bet-table"><thead><tr>
+      <th>日期</th><th>组</th><th>比赛</th><th>选</th><th>模型P</th>
+      <th class="num">赔率</th><th class="num">EV</th><th class="num">建议仓位</th><th>状态</th>
+      </tr></thead><tbody>{rows}</tbody></table>""")
+
+
+def _render_daily_summary(final_bets: dict, tracker_by_match: dict) -> None:
+    bets = final_bets["final_bets"]
+    by_date: dict[str, list] = defaultdict(list)
+    for b in bets: by_date[b["date"]].append(b)
+    rows = ""
+    for date in sorted(by_date):
+        db = by_date[date]
+        stake = sum(b["optimal_stake"] for b in db)
+        ev = sum(b["ev"] * b["optimal_stake"] for b in db)
+        st = [b for b in db if tracker_by_match.get(b["match"], {}).get("status") in ("won", "lost")]
+        pl = sum(tracker_by_match[b["match"]].get("profit", 0) for b in st) if st else 0
+        cp = min(stake / 0.15 * 100, 100)
+        rows += f"<tr><td>{date}</td><td>{len(db)}</td><td>{stake:.1%}</td><td>{ev:+.4f}</td><td>{(f'{pl:+.4f}' if st else '—')}</td><td><div class='cap-bar'><div class='cb-bg'><div class='cb-fill' style='width:{cp:.0f}%'></div></div>{stake:.0%}/15%</div></td></tr>"
+    ts = sum(b["optimal_stake"] for b in bets); te = sum(b["ev"] * b["optimal_stake"] for b in bets)
+    asl = [b for b in bets if tracker_by_match.get(b["match"], {}).get("status") in ("won", "lost")]
+    tp = sum(tracker_by_match[b["match"]].get("profit", 0) for b in asl) if asl else 0
+    rows += f"<tr class='total'><td>合计</td><td>{len(bets)}</td><td>{ts:.1%}</td><td>{te:+.4f}</td><td>{tp:+.4f}</td><td></td></tr>"
+    render_html(f"<h3>📊 每日汇总</h3><table class='daily-table'><thead><tr><th>日期</th><th>注数</th><th>仓位</th><th>预期EV</th><th>实际P/L</th><th>上限</th></tr></thead><tbody>{rows}</tbody></table>")
+
+
+def _render_correlation_analysis(corr: dict) -> None:
+    labels = ["H", "D", "A"]
+    for g in corr["groups"]:
+        joint = g["joint_matrix"]; adv = g.get("advancement_prob", {})
+        adv_s = "  ".join(f"{cn(t)[0]} {p:.0%}" for t, p in sorted(adv.items(), key=lambda x: -x[1])[:4])
+        mat = '<div class="corr-matrix"><div class="cm-cell cm-hdr"></div>'
+        for l in labels: mat += f'<div class="cm-cell cm-hdr">场2={l}</div>'
+        for i, l in enumerate(labels):
+            mat += f'<div class="cm-cell cm-hdr">场1={l}</div>'
+            for j in range(3):
+                v = joint[i][j]; cls = "cm-hi" if v > 0.15 else ""
+                mat += f'<div class="cm-cell {cls}">{v:.1%}</div>'
+        mat += '</div>'
+        dec = "✅ KEEP BOTH" if g["keep_both"] else f"❌ DROP {g.get('dropped', '')}"
+        render_html(f"""<div class="corr-group-card">
+          <div class="cgc-title">Group {g['group']} · {', '.join(g['matches'])}</div>{mat}
+          <div class="cgc-stat"><span>bet 协方差</span><span class="cgc-val">{g['bet_covariance']:+.4f}</span></div>
+          <div class="cgc-stat"><span>P(双注中奖)</span><span class="cgc-val">{g['bet_joint_win_prob']:.1%}</span></div>
+          <div class="cgc-stat"><span>晋级概率</span><span class="cgc-val">{adv_s}</span></div>
+          <div class="cgc-stat"><span>决策</span><span class="cgc-val">{dec}</span></div>
+          <div style="font-size:0.72rem;color:var(--ink-on-dark-4);margin-top:4px">{g.get('reason', '')}</div></div>""")
+
+
+def _render_risk_rules(final_bets: dict) -> None:
+    rows = ""
+    for key, desc in final_bets.get("risk_rules", {}).items():
+        icon = "✅" if ("optimizer" in desc or "P4" in desc) else ("⚠️" if ("manual" in desc or "operational" in desc) else "•")
+        rows += f"<tr><td>{icon} {key}</td><td>{desc}</td></tr>"
+    render_html(f'<table class="risk-table"><thead><tr><th>规则</th><th>说明</th></tr></thead><tbody>{rows}</tbody></table>')
+    render_html("""<div style="margin-top:12px;font-size:0.78rem;color:var(--ink-on-dark-3);line-height:1.6">
+      <strong style="color:var(--ink-on-dark)">OOS 校准偏差 (32场已赛)</strong><br>
+      • 主胜: pred 45.1% vs actual 53.1% → Poisson <span style="color:var(--green-best)">低估主胜</span><br>
+      • 平局: pred 25.6% vs actual 31.2% → Poisson <span style="color:var(--green-best)">低估平局</span> (WC 平局率异常高)<br>
+      • 客胜: pred 29.3% vs actual 15.6% → Poisson <span style="color:var(--red-live)">高估客胜</span> (洲际联合会问题)<br>
+      <em>影响: 平局/主胜下注可能真实价值, 客胜下注疑似假价值</em></div>""")
+
+
+def render_value_tab() -> None:
+    """Tab3: 价值下注建议 + 实时结算追踪"""
+    final_bets = _load_final_bets()
+    tracker = _load_tracker_data()
+    corr = _load_correlation()
+    if final_bets is None:
+        st.warning("⚠️ 未找到下注建议数据。请先运行 P4-P6 管线。")
+        st.code(f"expected: {FINAL_BETS_FILE}")
+        return
+    tracker_by_match: dict = {}
+    if tracker:
+        for b in tracker.get("bets", []):
+            tracker_by_match[b["match"]] = b
+    today_bj = (_now_utc_naive() + timedelta(hours=8)).strftime("%Y-%m-%d")
+    _render_value_kpi(final_bets)
+    if tracker and tracker.get("cumulative", {}).get("settled", 0) > 0:
+        _render_tracker_strip(tracker)
+    rc1, _ = st.columns([1, 4])
+    with rc1:
+        if st.button("🔄 刷新赛果结算", use_container_width=True, key="refresh_settle"):
+            from wc_betting.strategy.tracker import settle_bets
+            with st.spinner("刷新 Wikipedia + 结算中..."):
+                settle_bets(verbose=False)
+            _load_tracker_data.clear()
+            st.rerun()
+    _render_compare_card(final_bets)
+    _render_bet_table(final_bets, tracker_by_match, today_bj)
+    _render_daily_summary(final_bets, tracker_by_match)
+    if corr:
+        with st.expander("🔗 同组相关性分析 (蒙特卡洛 N=10000)"):
+            _render_correlation_analysis(corr)
+    with st.expander("📋 风控规则 + 校准偏差"):
+        _render_risk_rules(final_bets)
+
+
 # === Main ===
 def main() -> None:
     inject_css()
@@ -759,7 +944,9 @@ def main() -> None:
     render_season_progress(finished, upcoming)
 
     # === 两个 Tab 分区: 未赛 (Tab1) + 已赛 (Tab2) ===
-    # 用 streamlit tabs, 头部 KPI / 进度条 / Header 保持在 tabs 之外
+    # 注: 之前有过 "📊 价值下注" Tab3 (V5.5 期间实验), 因不属于 FIFA 看板独立项目
+    #     (用户在历史 session 中明确说"这是独立项目, 不要写到 V8 看板") 已暂时停用.
+    #     相关代码 render_value_tab() 仍保留在文件中, 方便日后复用.
     tab1, tab2 = st.tabs([
         f"📅 未赛 ({len(upcoming)} 场)",
         f"✅ 已赛 ({len(finished)} 场 · 默认折叠)",
