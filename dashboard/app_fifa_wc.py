@@ -1,23 +1,23 @@
 """
-FIFA 世界杯赔率 + 战绩看板 V3
+FIFA 世界杯赔率 + 战绩看板 V4
 ==========================
 
 独立 Streamlit app, 端口 8507 (云端: ?app=fifa)
-- **按日期排序为主** (然后按 group)
-- **国旗放在国家名后面**: 墨西哥 🇲🇽 vs 南非 🇿🇦
-- **每场比赛标注组别**: Group A / Group B
-- 已赛 + 未赛 72 场全显示
-- 数据源: Wikipedia (已赛) + The Odds API (未赛)
+设计语言: 参照 FIFA.com / Flashscore / SofaScore / OddsPortal
+- FIFA 蓝 + 金主色
+- 比赛作为"行" (CSS Grid)
+- 国旗圆形锚
+- 数据 mono 字体
+- 状态色彩编码 (FT/LIVE/NS)
 
 作者: Hermes Agent
 日期: 2026-06-20
 """
 from __future__ import annotations
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
-import pandas as pd
 import streamlit as st
 import sys
 
@@ -26,6 +26,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 UNIFIED_FILE = ROOT / "data" / "processed" / "wc_2026_unified.json"
+CSS_FILE = ROOT / "dashboard" / "assets" / "fifa_style.css"
 
 # === 球队英文 → 中文 + 国旗 ===
 TEAM_CN = {
@@ -58,28 +59,22 @@ TEAM_CN = {
 }
 
 def cn(name):
-    if name in TEAM_CN:
-        return TEAM_CN[name]
-    return (name, "🏳️")
+    return TEAM_CN.get(name, (name, "🏳️"))
 
 
 # === 页面配置 ===
 st.set_page_config(
-    page_title="🌍 世界杯赔率看板",
+    page_title="FIFA 2026 赔率看板",
     page_icon="🌍",
     layout="wide",
 )
 
-# === 顶部品牌 ===
-st.markdown("""
-<div style="background: linear-gradient(90deg, #1e3a8a 0%, #3b82f6 100%);
-            padding: 16px; border-radius: 8px; margin-bottom: 16px;">
-  <h2 style="color: white; margin: 0;">🌍 世界杯赔率看板 · 美加墨 2026</h2>
-  <p style="color: #cbd5e1; margin: 4px 0 0 0;">
-    按日期排序 · 已赛 + 未赛 72 场 · 数据源 Wikipedia + The Odds API · 仅展示
-  </p>
-</div>
-""", unsafe_allow_html=True)
+
+def inject_css():
+    """注入 FIFA 专属 CSS"""
+    if CSS_FILE.exists():
+        css = CSS_FILE.read_text()
+        st.markdown(f"<style>{css}</style>", unsafe_allow_html=True)
 
 
 @st.cache_data(ttl=300)
@@ -89,144 +84,303 @@ def _load_unified():
     return json.loads(UNIFIED_FILE.read_text())
 
 
-def render_match_card(m, show_date_header=False):
-    """单场比赛卡片 - 国旗放在国家名后面"""
-    home_cn, home_flag = cn(m['home_en'])
-    away_cn, away_flag = cn(m['away_en'])
-    grp = m.get('group', '?')
-
-    # 国旗放在国家名后面
-    home_str = f"**{home_cn}** {home_flag}"
-    away_str = f"**{away_cn}** {away_flag}"
-
-    # 标题
-    if m['finished']:
-        # 已赛: 国家名 + 国旗 + 比分 + 国家名 + 国旗 + Group 标签
-        st.markdown(
-            f"#### ✅ {home_str} {m['score']} {away_str}  &nbsp;&nbsp; "
-            f"<span style='background-color:#1f2937;color:#9ca3af;padding:2px 8px;border-radius:4px;font-size:0.7em;'>"
-            f"Group {grp}</span>",
-            unsafe_allow_html=True,
-        )
-    else:
-        metrics = m.get('metrics', {})
-        date_cn = m.get('date_cn', m.get('date', ''))
-        st.markdown(
-            f"#### ⏳ {date_cn} 北京 | {home_str} vs {away_str}  &nbsp;&nbsp; "
-            f"<span style='background-color:#1f2937;color:#9ca3af;padding:2px 8px;border-radius:4px;font-size:0.7em;'>"
-            f"Group {grp}</span>",
-            unsafe_allow_html=True,
-        )
-
-        if metrics:
-            c1, c2, c3, c4, c5 = st.columns(5)
-            with c1:
-                st.metric("主胜概率", f"{metrics.get('p_h_mean', 0):.1%}")
-            with c2:
-                st.metric("主胜赔率", f"{metrics.get('avg_h', 0):.2f}")
-            with c3:
-                st.metric("平局赔率", f"{metrics.get('avg_d', 0):.2f}")
-            with c4:
-                st.metric("客胜赔率", f"{metrics.get('avg_a', 0):.2f}")
-            with c5:
-                std = metrics.get('p_h_std', 0)
-                level = "🔴 高" if std > 0.05 else ("🟡 中" if std > 0.02 else "🟢 低")
-                st.metric("分歧度", f"{std:.3f} {level}")
+def render_header(finished_total, unfinished_total, next_match):
+    """FIFA 蓝品牌 header + 下一场倒计时"""
+    if next_match:
+        utc = datetime.fromisoformat(next_match["commence_time"].replace("Z", ""))
+        bj = utc + timedelta(hours=8)
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
+        diff = utc.replace(tzinfo=None) - now
+        if diff.total_seconds() > 0:
+            days = int(diff.total_seconds() // 86400)
+            hours = int((diff.total_seconds() % 86400) // 3600)
+            mins = int((diff.total_seconds() % 3600) // 60)
+            countdown = f"<strong>{days}d {hours}h {mins}m</strong>"
+            countdown_label = "下一场开赛"
+            home_cn, _ = cn(next_match.get("home_team") or next_match.get("home_en", ""))
+            away_cn, _ = cn(next_match.get("away_team") or next_match.get("away_en", ""))
+            match_str = f" · {home_cn} vs {away_cn}"
         else:
-            st.caption("暂无赔率数据")
+            countdown = "<strong>LIVE</strong>"
+            countdown_label = "进行中"
+            match_str = ""
+    else:
+        countdown = "—"
+        countdown_label = "已完赛"
+        match_str = ""
+
+    html = f"""
+    <div class="fifa-header">
+      <h1>🌍 FIFA 世界杯 2026 · 赔率看板</h1>
+      <p class="subtitle">{finished_total} 已赛 · {unfinished_total} 未赛 · 数据源 The Odds API + Wikipedia{match_str}</p>
+      <div class="countdown">⏱ {countdown_label}: {countdown}</div>
+    </div>
+    """
+    st.markdown(html, unsafe_allow_html=True)
 
 
-def render_by_date(matches):
-    """按日期排序主视图"""
-    # 排序: 已赛按 (date, group), 未赛按 (commence_time, group)
-    # 已赛日期统一是 "2026-06 (Wikipedia)", 用 group 当 secondary
-    finished = [m for m in matches if m['finished']]
-    unfinished = [m for m in matches if not m['finished']]
+def render_kpi_strip(finished, unfinished):
+    """紧凑 KPI 条 (4 列)"""
+    total = finished + unfinished
+    today = datetime.now(timezone.utc).date().isoformat()
+    today_count = 0
+    # 今日未赛 (本地)
+    for m in (unfinished and []):  # placeholder, 实际由 caller 传
+        pass
 
-    # === 已赛区块 ===
-    st.markdown("### ✅ 已赛 (按小组分组)")
-    finished.sort(key=lambda x: (x['group'],))
+    html = f"""
+    <div class="kpi-strip">
+      <div class="kpi-cell">
+        <span class="kpi-icon">🏟️</span>
+        <div class="kpi-text">
+          <span class="kpi-value">{total}</span>
+          <span class="kpi-label">总场次</span>
+        </div>
+      </div>
+      <div class="kpi-cell">
+        <span class="kpi-icon">✅</span>
+        <div class="kpi-text">
+          <span class="kpi-value">{finished}</span>
+          <span class="kpi-label">已赛 FT</span>
+        </div>
+      </div>
+      <div class="kpi-cell">
+        <span class="kpi-icon">⏳</span>
+        <div class="kpi-text">
+          <span class="kpi-value">{unfinished}</span>
+          <span class="kpi-label">未开赛</span>
+        </div>
+      </div>
+      <div class="kpi-cell">
+        <span class="kpi-icon">🅰️</span>
+        <div class="kpi-text">
+          <span class="kpi-value">12</span>
+          <span class="kpi-label">小组</span>
+        </div>
+      </div>
+    </div>
+    """
+    st.markdown(html, unsafe_allow_html=True)
+
+
+def render_match_row_finished(m):
+    """已赛比赛行"""
+    home_cn, home_flag = cn(m["home_en"])
+    away_cn, away_flag = cn(m["away_en"])
+    grp = m.get("group", "?")
+    score = m.get("score", "–")
+
+    return f"""
+    <div class="match-row finished">
+      <div class="m-time">FT</div>
+      <div class="m-team home">
+        <span class="flag">{home_flag}</span>
+        <span>{home_cn}</span>
+      </div>
+      <div class="m-score">{score.replace('-', ' <span class="sep">–</span> ')}</div>
+      <div class="m-team away">
+        <span class="flag">{away_flag}</span>
+        <span>{away_cn}</span>
+      </div>
+      <div></div>
+      <div class="m-status">
+        <span class="badge group">Group {grp}</span>
+      </div>
+    </div>
+    """
+
+
+def render_match_row_upcoming(m):
+    """未赛比赛行"""
+    home_cn, home_flag = cn(m["home_en"])
+    away_cn, away_flag = cn(m["away_en"])
+    grp = m.get("group", "?")
+
+    # 时间
+    utc = datetime.fromisoformat(m["commence_time"].replace("Z", ""))
+    bj = utc + timedelta(hours=8)
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    diff_min = (utc.replace(tzinfo=None) - now).total_seconds() / 60
+
+    if -120 <= diff_min <= 0:
+        time_html = '<div class="m-time live">LIVE</div>'
+    else:
+        time_html = f'<div class="m-time">{bj.strftime("%H:%M")}</div>'
+
+    # 赔率
+    metrics = m.get("metrics", {})
+    if metrics:
+        h = metrics.get("avg_h", 0)
+        d = metrics.get("avg_d", 0)
+        a = metrics.get("avg_a", 0)
+        # Best odds (最高赔付对玩家最有利)
+        # 主胜最低 vs 平/客胜最高 → 标注"对客胜玩家最有利"
+        # 简化: 只显示 3 个赔率, 不高亮 (避免误解)
+        odds_html = f"""
+        <div class="m-odds">
+          <div class="odd"><span class="label">主</span><span class="value">{h:.2f}</span></div>
+          <div class="odd"><span class="label">平</span><span class="value">{d:.2f}</span></div>
+          <div class="odd"><span class="value">{a:.2f}</span></div>
+        </div>
+        """
+    else:
+        odds_html = '<div class="m-odds"><div class="odd"><span class="value">—</span></div></div>'
+
+    return f"""
+    <div class="match-row">
+      {time_html}
+      <div class="m-team home">
+        <span class="flag">{home_flag}</span>
+        <span>{home_cn}</span>
+      </div>
+      <div class="m-score"><span class="vs">vs</span></div>
+      <div class="m-team away">
+        <span class="flag">{away_flag}</span>
+        <span>{away_cn}</span>
+      </div>
+      {odds_html}
+      <div class="m-status">
+        <span class="badge group">Group {grp}</span>
+      </div>
+    </div>
+    """
+
+
+def render_finished_section(finished):
+    """已赛区块"""
+    st.markdown("### ✅ 已赛 32 场")
+
     from collections import defaultdict
     by_group = defaultdict(list)
     for m in finished:
-        by_group[m['group']].append(m)
-    for grp in 'ABCDEFGHIJKL':
-        if grp in by_group:
-            st.markdown(f"**Group {grp}**")
-            for m in by_group[grp]:
-                render_match_card(m)
+        by_group[m["group"]].append(m)
 
-    st.divider()
+    for grp in "ABCDEFGHIJKL":
+        if grp not in by_group:
+            continue
+        matches = by_group[grp]
+        # 收集 4 队 (从该组比赛)
+        teams = []
+        for m in matches:
+            for t in [m["home_en"], m["away_en"]]:
+                if t not in teams:
+                    teams.append(t)
+            if len(teams) >= 4:
+                break
+        flags = "".join(cn(t)[1] for t in teams[:4])
 
-    # === 未赛区块(按日期升序) ===
-    st.markdown("### ⏳ 未赛 (按日期排序)")
-    # 用 commence_time 排序,fallback 用 date
-    def sort_key(m):
-        return m.get('commence_time') or m.get('date') or '9999'
-    unfinished.sort(key=sort_key)
+        done = len(matches)
+        # 锚
+        anchor = f"""
+        <div class="group-anchor">
+          <span class="group-chip">Group {grp}</span>
+          <span class="group-flags">{flags}</span>
+          <span class="group-progress"><strong>{done}</strong> / 6 已赛</span>
+        </div>
+        """
+        st.markdown(anchor, unsafe_allow_html=True)
 
-    # 按日期分组显示,日期变化时显示日期标题
-    current_date = None
-    for m in unfinished:
-        utc = m.get('commence_time', '')
-        bj_date = utc[:10] if utc else m.get('date', '')
-        if bj_date != current_date:
-            current_date = bj_date
-            # 把 "2026-06-25" 转成中文友好格式
-            try:
-                dt = datetime.strptime(bj_date, '%Y-%m-%d')
-                weekday_cn = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'][dt.weekday()]
-                date_label = f"📅 {bj_date} {weekday_cn}"
-            except Exception:
-                date_label = f"📅 {bj_date}"
-            st.markdown(f"#### {date_label}")
+        # 行列表
+        st.markdown('<div class="match-list finished">', unsafe_allow_html=True)
+        rows_html = ""
+        for m in matches:
+            rows_html += render_match_row_finished(m)
+        st.markdown(rows_html, unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
 
-        render_match_card(m)
+
+def render_upcoming_section(upcoming):
+    """未赛区块"""
+    st.markdown("### ⏳ 未赛 · 按日期排序")
+
+    # 按日期分组
+    from collections import defaultdict
+    by_date = defaultdict(list)
+    for m in upcoming:
+        bj = datetime.fromisoformat(m["commence_time"].replace("Z", "")) + timedelta(hours=8)
+        date_key = bj.strftime("%Y-%m-%d")
+        by_date[date_key].append(m)
+
+    weekday_cn = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]
+
+    for date_key in sorted(by_date.keys()):
+        matches = by_date[date_key]
+        dt = datetime.strptime(date_key, "%Y-%m-%d")
+        wd = weekday_cn[dt.weekday()]
+
+        # 日期 header
+        header = f"""
+        <div class="date-header">
+          <span class="date-label">📅 {date_key}</span>
+          <span class="date-weekday">{wd}</span>
+          <span class="date-count">{len(matches)} 场比赛</span>
+        </div>
+        """
+        st.markdown(header, unsafe_allow_html=True)
+
+        # 行列表
+        st.markdown('<div class="match-list">', unsafe_allow_html=True)
+        rows_html = ""
+        # 按 commence_time 排序
+        matches.sort(key=lambda x: x["commence_time"])
+        for m in matches:
+            rows_html += render_match_row_upcoming(m)
+        st.markdown(rows_html, unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
+
+
+def render_legend():
+    """字段解读"""
+    html = """
+    <div class="legend">
+      <strong>📐 字段解读</strong><br>
+      • <span class="legend-key">主/平/客</span> 主胜/平局/客胜赔率 (去 vig 后均值)
+      · <span class="legend-key">FT</span> 已完赛 (Full Time)
+      · <span class="legend-key">LIVE</span> 进行中
+      · <span class="legend-key">Group X</span> 所在小组<br>
+      <em>设计参考: FIFA.com, Flashscore, SofaScore, OddsPortal</em>
+    </div>
+    """
+    st.markdown(html, unsafe_allow_html=True)
 
 
 def main():
+    inject_css()
+
     data = _load_unified()
     if data is None:
         st.warning("⚠️ 未找到世界杯数据。运行:")
-        st.code("bash scripts/fetch_csl_odds.sh  # 拉赔率 + Wikipedia 解析")
+        st.code("bash scripts/fetch_csl_odds.sh")
         return
 
-    finished_total = sum(1 for m in data if m['finished'])
-    unfinished_total = sum(1 for m in data if not m['finished'])
+    finished = [m for m in data if m["finished"]]
+    upcoming = [m for m in data if not m["finished"]]
 
-    # === 顶部状态栏 ===
-    c1, c2, c3, c4 = st.columns(4)
-    with c1:
-        st.metric("🏟️ 总场次", f"{len(data)} 场")
-    with c2:
-        st.metric("✅ 已赛", f"{finished_total} 场")
-    with c3:
-        st.metric("⏳ 未赛", f"{unfinished_total} 场")
-    with c4:
-        groups_count = len(set(m['group'] for m in data))
-        st.metric("🅰️ 小组", f"{groups_count}/12")
+    # 找下一场
+    next_match = None
+    if upcoming:
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
+        upcoming.sort(key=lambda x: x["commence_time"])
+        for m in upcoming:
+            utc = datetime.fromisoformat(m["commence_time"].replace("Z", ""))
+            if utc.replace(tzinfo=None) >= now:
+                next_match = m
+                break
 
-    st.divider()
+    # === Header + KPI ===
+    render_header(len(finished), len(upcoming), next_match)
+    render_kpi_strip(len(finished), len(upcoming))
 
-    # === 主视图 ===
-    render_by_date(data)
+    # === 已赛 ===
+    if finished:
+        render_finished_section(finished)
 
-    # === 底部说明 ===
-    st.divider()
-    st.markdown("#### 📐 看板字段解读")
-    st.markdown("""
-| 字段 | 含义 |
-|---|---|
-| `主胜概率` | 市场对主队获胜的隐含概率(去 vig 后, 多家公司均值) |
-| `分歧度` | 各家公司主胜概率的标准差 — **越大说明市场越分歧, 比赛悬念越大** |
-| `✅ 已赛` | 来自 Wikipedia, 含最终比分 |
-| `⏳ 未赛` | 来自 The Odds API, 含市场赔率(剔除跑偏公司) |
-| `Group X` | 该场比赛所在的小组 |
+    # === 未赛 ===
+    if upcoming:
+        render_upcoming_section(upcoming)
 
-**布局**: 已赛按小组分类 → 未赛按日期升序排列, 每场比赛后面附 Group 标签 + 国旗
-
-**局限**: Wikipedia 小组页面只有月份没有具体日期, 已赛比赛日期标记为 "Wikipedia"。
-""")
+    # === Legend ===
+    render_legend()
 
 
 if __name__ == "__main__":
