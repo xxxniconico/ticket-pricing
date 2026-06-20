@@ -45,71 +45,78 @@ CSS_FILE = ROOT / "dashboard" / "assets" / "fifa_style.css"
 # === 48 国家队英文 → (中文, 国旗) ===
 # 注意:
 # - Canada / USA / Australia 等的 "men's" 变体在 cn() 里归一化后也命中这里
-# - Scotland / England 用 regional indicator 序列 (无法被 OS 渲染的国旗)
+# - Scotland / England 用 gb-sct / gb-eng (flagcdn 的 sub-region code)
+# - 字段顺序: 中文名, ISO 3166-1 alpha-2 code (用于 flagcdn.com URL)
 TEAM_CN: dict[str, tuple[str, str]] = {
     # A
-    "Mexico":               ("墨西哥", "🇲🇽"),
-    "South Africa":         ("南非", "🇿🇦"),
-    "South Korea":          ("韩国", "🇰🇷"),
-    "Czech Republic":       ("捷克", "🇨🇿"),
+    "Mexico":               ("墨西哥", "mx"),
+    "South Africa":         ("南非", "za"),
+    "South Korea":          ("韩国", "kr"),
+    "Czech Republic":       ("捷克", "cz"),
     # B
-    "Canada":               ("加拿大", "🇨🇦"),
-    # Bosnia & Herzegovina 用 normalize_team() 归一化为 "Bosnia and Herzegovina"
-    # 所以只需要一个 key, 函数会处理两种写法
-    "Bosnia and Herzegovina": ("波黑", "🇧🇦"),
-    "Qatar":                ("卡塔尔", "🇶🇦"),
-    "Switzerland":          ("瑞士", "🇨🇭"),
+    "Canada":               ("加拿大", "ca"),
+    "Bosnia and Herzegovina": ("波黑", "ba"),
+    "Qatar":                ("卡塔尔", "qa"),
+    "Switzerland":          ("瑞士", "ch"),
     # C
-    "Brazil":               ("巴西", "🇧🇷"),
-    "Morocco":              ("摩洛哥", "🇲🇦"),
-    "Haiti":                ("海地", "🇭🇹"),
-    "Scotland":             ("苏格兰", "🏴\U000E0067\U000E0062\U000E0073\U000E0063\U000E0074\U000E007F"),
+    "Brazil":               ("巴西", "br"),
+    "Morocco":              ("摩洛哥", "ma"),
+    "Haiti":                ("海地", "ht"),
+    "Scotland":             ("苏格兰", "gb-sct"),
     # D
-    "USA":                  ("美国", "🇺🇸"),
-    "United States":        ("美国", "🇺🇸"),
-    "Paraguay":             ("巴拉圭", "🇵🇾"),
-    "Australia":            ("澳大利亚", "🇦🇺"),
-    "Turkey":               ("土耳其", "🇹🇷"),
+    "USA":                  ("美国", "us"),
+    "United States":        ("美国", "us"),
+    "Paraguay":             ("巴拉圭", "py"),
+    "Australia":            ("澳大利亚", "au"),
+    "Turkey":               ("土耳其", "tr"),
     # E
-    "Germany":              ("德国", "🇩🇪"),
-    "Curaçao":              ("库拉索", "🇨🇼"),
-    "Ivory Coast":          ("科特迪瓦", "🇨🇮"),
-    "Ecuador":              ("厄瓜多尔", "🇪🇨"),
-    "Netherlands":          ("荷兰", "🇳🇱"),
+    "Germany":              ("德国", "de"),
+    "Curaçao":              ("库拉索", "cw"),
+    "Ivory Coast":          ("科特迪瓦", "ci"),
+    "Ecuador":              ("厄瓜多尔", "ec"),
+    "Netherlands":          ("荷兰", "nl"),
     # F
-    "Japan":                ("日本", "🇯🇵"),
-    "Sweden":               ("瑞典", "🇸🇪"),
-    "Tunisia":              ("突尼斯", "🇹🇳"),
-    "Belgium":              ("比利时", "🇧🇪"),
-    "Egypt":                ("埃及", "🇪🇬"),
+    "Japan":                ("日本", "jp"),
+    "Sweden":               ("瑞典", "se"),
+    "Tunisia":              ("突尼斯", "tn"),
+    "Belgium":              ("比利时", "be"),
+    "Egypt":                ("埃及", "eg"),
     # G
-    "Iran":                 ("伊朗", "🇮🇷"),
-    "New Zealand":          ("新西兰", "🇳🇿"),
-    "Spain":                ("西班牙", "🇪🇸"),
-    "Cape Verde":           ("佛得角", "🇨🇻"),
-    "Saudi Arabia":         ("沙特", "🇸🇦"),
+    "Iran":                 ("伊朗", "ir"),
+    "New Zealand":          ("新西兰", "nz"),
+    "Spain":                ("西班牙", "es"),
+    "Cape Verde":           ("佛得角", "cv"),
+    "Saudi Arabia":         ("沙特", "sa"),
     # H
-    "Uruguay":              ("乌拉圭", "🇺🇾"),
-    "France":               ("法国", "🇫🇷"),
-    "Senegal":              ("塞内加尔", "🇸🇳"),
-    "Iraq":                 ("伊拉克", "🇮🇶"),
-    "Norway":               ("挪威", "🇳🇴"),
+    "Uruguay":              ("乌拉圭", "uy"),
+    "France":               ("法国", "fr"),
+    "Senegal":              ("塞内加尔", "sn"),
+    "Iraq":                 ("伊拉克", "iq"),
+    "Norway":               ("挪威", "no"),
     # I
-    "Argentina":            ("阿根廷", "🇦🇷"),
-    "Algeria":              ("阿尔及利亚", "🇩🇿"),
-    "Austria":              ("奥地利", "🇦🇹"),
-    "Jordan":               ("约旦", "🇯🇴"),
+    "Argentina":            ("阿根廷", "ar"),
+    "Algeria":              ("阿尔及利亚", "dz"),
+    "Austria":              ("奥地利", "at"),
+    "Jordan":               ("约旦", "jo"),
     # J
-    "Portugal":             ("葡萄牙", "🇵🇹"),
-    "DR Congo":             ("刚果(金)", "🇨🇩"),
-    "Uzbekistan":           ("乌兹别克斯坦", "🇺🇿"),
-    "Colombia":             ("哥伦比亚", "🇨🇴"),
+    "Portugal":             ("葡萄牙", "pt"),
+    "DR Congo":             ("刚果(金)", "cd"),
+    "Uzbekistan":           ("乌兹别克斯坦", "uz"),
+    "Colombia":             ("哥伦比亚", "co"),
     # K
-    "England":              ("英格兰", "🏴\U000E0067\U000E0062\U000E0065\U000E006E\U000E0067\U000E007F"),
-    "Croatia":              ("克罗地亚", "🇭🇷"),
-    "Ghana":                ("加纳", "🇬🇭"),
-    "Panama":               ("巴拿马", "🇵🇦"),
+    "England":              ("英格兰", "gb-eng"),
+    "Croatia":              ("克罗地亚", "hr"),
+    "Ghana":                ("加纳", "gh"),
+    "Panama":               ("巴拿马", "pa"),
 }
+
+# 国旗 CDN — flagcdn.com 提供 PNG, 尺寸 w20/w40/w80/w160/w320/w640/w1280/w2560
+FLAG_BASE_URL = "https://flagcdn.com"
+FLAG_WIDTH = 40  # px, 适合 ~32px 圆形容器
+
+def flag_html(iso_code: str) -> str:
+    """生成 <img> 国旗标签 (含 fallback emoji if CDN fails)"""
+    return f'<img src="{FLAG_BASE_URL}/w{FLAG_WIDTH}/{iso_code}.png" class="flag-img" alt="{iso_code}" loading="lazy" onerror="this.style.display=\'none\'"/>'
 
 # 48 个 unique 国家队 (做断言)
 UNIQUE_TEAMS = {
@@ -151,24 +158,43 @@ def normalize_team(name: str) -> str:
 
 
 def cn(name: str) -> tuple[str, str]:
-    """球队名 → (中文, 国旗).
+    """球队名 → (中文, ISO 3166-1 alpha-2 code).
+
+    调用方用 flag_img(iso) 生成 <img> 标签 (真实国旗 PNG from flagcdn.com).
 
     测试用例:
-      cn("Canada men&#39;s")  -> ("加拿大", "🇨🇦")
-      cn("USA")               -> ("美国",   "🇺🇸")
-      cn("Bosnia & Herzegovina") -> ("波黑", "🇧🇦")
+      cn("Canada men&#39;s")     -> ("加拿大", "ca")
+      cn("USA")                  -> ("美国",   "us")
+      cn("Bosnia & Herzegovina") -> ("波黑",   "ba")
+      cn("Scotland")             -> ("苏格兰", "gb-sct")
+      cn("England")              -> ("英格兰", "gb-eng")
     """
     if not name:
-        return ("?", "\U0001F3F3")
-    # 先按原名查 (兼容 "Bosnia & Herzegovina" 直接命中 — 也会先 normalize 命中)
+        return ("?", "")
+    # 先按原名查
     if name in TEAM_CN:
         return TEAM_CN[name]
     # 归一化后再查 (处理 men's / Bosnia & Herzegovina 等变体)
     norm = normalize_team(name)
     if norm in TEAM_CN:
         return TEAM_CN[norm]
-    # 已归一化但仍缺 → 返回归一化名 + 灰色旗
-    return (norm or "?", "\U0001F3F3")
+    # 已归一化但仍缺 → 返回归一化名 + 空 code (后续降级用 emoji fallback)
+    return (norm or "?", "")
+
+
+def flag_img(iso_code: str, fallback: str = "🏳️") -> str:
+    """生成 <img> 国旗标签, CDN 失败时显示 emoji fallback.
+
+    flagcdn.com 提供 24x24 / 48x48 / 80x80 等真实国旗 PNG.
+    """
+    if not iso_code:
+        return f'<span class="flag-emoji">{fallback}</span>'
+    return (
+        f'<img src="{FLAG_BASE_URL}/w{FLAG_WIDTH}/{iso_code}.png" '
+        f'class="flag-img" alt="{iso_code}" '
+        f'loading="lazy" '
+        f'onerror="this.outerHTML=\'<span class=flag-emoji>{fallback}</span>\'"/>'
+    )
 
 
 # === 页面配置 ===
@@ -321,6 +347,8 @@ def render_match_row_finished(m: dict) -> None:
     away_cn, away_flag = cn(m.get("away_en", ""))
     grp = m.get("group", "?")
     score = m.get("score") or "–"
+    home_flag_img = flag_img(home_flag)
+    away_flag_img = flag_img(away_flag)
 
     # 用 streamlit columns 强制布局 (6 列), 然后每列内独立 st.markdown
     cols = st.columns([1, 3, 1.2, 3, 0.5, 1.4], gap="small")
@@ -328,14 +356,14 @@ def render_match_row_finished(m: dict) -> None:
         st.markdown('<div class="m-time">FT</div>', unsafe_allow_html=True)
     with cols[1]:
         st.markdown(
-            f'<div class="m-team home"><span class="flag">{home_flag}</span><span>{home_cn}</span></div>',
+            f'<div class="m-team home"><span class="flag">{home_flag_img}</span><span>{home_cn}</span></div>',
             unsafe_allow_html=True,
         )
     with cols[2]:
         st.markdown(f'<div class="m-score">{_format_score(score)}</div>', unsafe_allow_html=True)
     with cols[3]:
         st.markdown(
-            f'<div class="m-team away"><span class="flag">{away_flag}</span><span>{away_cn}</span></div>',
+            f'<div class="m-team away"><span class="flag">{away_flag_img}</span><span>{away_cn}</span></div>',
             unsafe_allow_html=True,
         )
     with cols[4]:
@@ -355,6 +383,8 @@ def render_match_row_upcoming(m: dict) -> None:
     away_cn, away_flag = cn(m.get("away_en", ""))
     grp = m.get("group", "?")
     time_html = _match_time_html(m)
+    home_flag_img = flag_img(home_flag)
+    away_flag_img = flag_img(away_flag)
 
     # 赔率
     metrics = m.get("metrics") or {}
@@ -373,14 +403,14 @@ def render_match_row_upcoming(m: dict) -> None:
         st.markdown(time_html, unsafe_allow_html=True)
     with cols1[1]:
         st.markdown(
-            f'<div class="m-team home"><span class="flag">{home_flag}</span><span>{home_cn}</span></div>',
+            f'<div class="m-team home"><span class="flag">{home_flag_img}</span><span>{home_cn}</span></div>',
             unsafe_allow_html=True,
         )
     with cols1[2]:
         st.markdown('<div class="m-score"><span class="vs">vs</span></div>', unsafe_allow_html=True)
     with cols1[3]:
         st.markdown(
-            f'<div class="m-team away"><span class="flag">{away_flag}</span><span>{away_cn}</span></div>',
+            f'<div class="m-team away"><span class="flag">{away_flag_img}</span><span>{away_cn}</span></div>',
             unsafe_allow_html=True,
         )
     with cols1[4]:
@@ -442,7 +472,7 @@ def render_finished_section(finished: list[dict]) -> None:
                     teams.append(t)
             if len(teams) >= 4:
                 break
-        flags = "".join(cn(t)[1] for t in teams[:4])
+        flags = "".join(flag_img(cn(t)[1]) for t in teams[:4])
 
         done = len(matches)
         anchor = f"""

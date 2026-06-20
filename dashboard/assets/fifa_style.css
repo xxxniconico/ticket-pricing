@@ -309,8 +309,8 @@ h4 { font-size: 0.9rem !important; }
     color: var(--ink);
 }
 .match-row .m-team.away { justify-content: flex-end; }
+/* 国旗容器: 容纳 <img> 真实国旗 (flagcdn.com) 或 emoji fallback */
 .match-row .m-team .flag {
-    font-size: 1.4rem;
     width: 32px;
     height: 32px;
     display: inline-flex;
@@ -320,10 +320,42 @@ h4 { font-size: 0.9rem !important; }
     border: 1px solid var(--border);
     border-radius: 50%;
     flex-shrink: 0;
+    overflow: hidden;  /* 圆形裁剪超出部分 */
+    font-size: 1.4rem;
+}
+.match-row .m-team .flag .flag-img {
+    width: 28px;     /* 比容器小 4px, 给边框留空 */
+    height: 28px;
+    object-fit: cover;
+    display: block;
+    border-radius: 50%;
+}
+.match-row .m-team .flag .flag-emoji {
+    font-size: 1.2rem;
+    line-height: 1;
 }
 .match-row.finished .m-team .flag {
     background: var(--surface);
     border-color: var(--green-finished-border);
+}
+
+/* 小组锚 4 国旗横排 (img 风格) */
+.group-anchor .group-flags {
+    display: flex;
+    gap: 3px;
+    font-size: 1rem;
+    align-items: center;
+}
+.group-anchor .group-flags .flag-img {
+    width: 22px;
+    height: 22px;
+    object-fit: cover;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    display: inline-block;
+}
+.group-anchor .group-flags .flag-emoji {
+    font-size: 1.1rem;
 }
 
 /* === 8.3 比分列 === */
