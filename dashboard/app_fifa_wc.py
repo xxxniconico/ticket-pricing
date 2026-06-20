@@ -426,8 +426,34 @@ def render_match_row_upcoming(m: dict) -> None:
 
 # === 已赛区块 ===
 def render_finished_section(finished: list[dict]) -> None:
-    """已赛区块: 按 Group A-L, 每组 4 国旗 + match-list"""
+    """已赛区块: 按 Group A-L, 每组 4 国旗 + match-list (默认折叠)"""
     st.markdown("### ✅ 已赛 32 场 · 按小组")
+
+    # 总折叠按钮 (一键展开/折叠全部)
+    if "expanded_groups" not in st.session_state:
+        st.session_state.expanded_groups = set()
+
+    # 总进度条: 32/72 已赛
+    finished_count = len(finished)
+    total_count = finished_count + 32  # 已赛 32 + 未赛 40 = 72
+    pct_done = finished_count / total_count
+    progress_html = f"""
+    <div class="overall-progress">
+      <span class="label">赛季进度</span>
+      <div class="track"><div class="fill" style="width:{pct_done*100:.1f}%"></div></div>
+      <span class="value">{finished_count} / {total_count} ({pct_done*100:.0f}%)</span>
+    </div>
+    """
+    render_html(progress_html)
+
+    # 总展开/折叠控制
+    cs1, cs2 = st.columns([1, 1])
+    with cs1:
+        if st.button("📂 展开全部", use_container_width=True, key="expand_all_finished"):
+            st.session_state.expanded_groups = {"ALL"}
+    with cs2:
+        if st.button("📁 折叠全部", use_container_width=True, key="collapse_all_finished"):
+            st.session_state.expanded_groups = set()
 
     by_group: dict[str, list[dict]] = defaultdict(list)
     for m in finished:
@@ -437,7 +463,7 @@ def render_finished_section(finished: list[dict]) -> None:
         if grp not in by_group:
             continue
         matches = by_group[grp]
-        # 收集该组 4 队 (从比赛 dedup)
+        # 收集该组 4 队
         teams: list[str] = []
         for m in matches:
             for t in [m.get("home_en", ""), m.get("away_en", "")]:
@@ -448,18 +474,60 @@ def render_finished_section(finished: list[dict]) -> None:
         flags = "".join(flag_img(cn(t)[1]) for t in teams[:4])
 
         done = len(matches)
-        anchor = f"""
+        # Group 锚 (用 checkbox 控制单个组展开)
+        is_expanded = grp in st.session_state.expanded_groups or "ALL" in st.session_state.expanded_groups
+        anchor_html = f"""
         <div class="group-anchor">
           <span class="group-chip">Group {grp}</span>
           <span class="group-flags">{flags}</span>
           <span class="group-progress"><strong>{done}</strong> / 6 已赛</span>
         </div>
         """
-        render_html(anchor)
+        # Group 锚 + 折叠/展开按钮 (用 streamlit columns 排版按钮)
+        render_html(anchor_html)
+        # 单组展开/折叠按钮 (在 group-flags 旁边)
+        btn_col1, btn_col2 = st.columns([10, 1])
+        with btn_col2:
+            btn_label = "▼" if is_expanded else "▶"
+            if st.button(btn_label, key=f"toggle_{grp}"):
+                if grp in st.session_state.expanded_groups:
+                    st.session_state.expanded_groups.remove(grp)
+                else:
+                    st.session_state.expanded_groups.add(grp)
+                st.rerun()
 
-        # 行列表 - 直接循环调 render_match_row_finished (内部用 st.columns 渲染)
-        for m in matches:
-            render_match_row_finished(m)
+        # 如果展开了, 显示该组比赛
+        if is_expanded:
+            # 用单个 st.markdown 渲染所有比赛 (避免 streamlit columns stack)
+            rows_html = "".join(_finished_row_html(m) for m in matches)
+            st.markdown(f'<div class="match-list expanded">{rows_html}</div>', unsafe_allow_html=True)
+        else:
+            # 折叠状态 - 只显示一个占位提示
+            st.markdown(
+                f'<div class="match-list collapsed"><div class="collapse-hint">'
+                f'已折叠 {done} 场比赛 · 点击 ▶ 展开</div></div>',
+                unsafe_allow_html=True,
+            )
+
+
+def _finished_row_html(m: dict) -> str:
+    """已赛比赛行 HTML (供 render_finished_section 拼接)"""
+    home_cn, home_flag = cn(m.get("home_en", ""))
+    away_cn, away_flag = cn(m.get("away_en", ""))
+    grp = m.get("group", "?")
+    score = m.get("score") or "–"
+    home_flag_img = flag_img(home_flag)
+    away_flag_img = flag_img(away_flag)
+    return (
+        f'<div class="match-row finished">'
+        f'<div class="m-time">FT</div>'
+        f'<div class="m-team home"><span class="flag">{home_flag_img}</span><span>{home_cn}</span></div>'
+        f'<div class="m-score">{_format_score(score)}</div>'
+        f'<div class="m-team away"><span class="flag">{away_flag_img}</span><span>{away_cn}</span></div>'
+        f'<div></div>'
+        f'<div class="m-status"><span class="badge group">Group {grp}</span></div>'
+        f'</div>'
+    )
 
 
 # === 未赛区块 ===
@@ -519,6 +587,15 @@ def render_legend() -> None:
 def main() -> None:
     inject_css()
 
+    # === 自动刷新 + 手动刷新 (比赛数据每 5 分钟同步) ===
+    # 每次刷新会重新 _load_unified (因为 @st.cache_data ttl=300)
+    try:
+        from streamlit_autorefresh import st_autorefresh
+        # 5 分钟自动刷新 (300000 ms) - 不显示倒计时
+        st_autorefresh(interval=300_000, key="fifa_autorefresh")
+    except ImportError:
+        pass  # streamlit-autorefresh 未装,降级为手动刷新
+
     data = _load_unified()
     if data is None:
         st.warning("⚠️ 未找到世界杯数据。请先生成 `wc_2026_unified.json`。")
@@ -548,7 +625,27 @@ def main() -> None:
     render_header(len(finished), len(upcoming), next_match)
     render_kpi_strip(len(finished), len(upcoming), groups_done)
 
-    # === 已赛 ===
+    # === 手动刷新按钮 (放在已赛上方, 显眼位置) ===
+    st.markdown(
+        '<div style="margin-top: 16px; margin-bottom: 4px;"></div>',
+        unsafe_allow_html=True,
+    )
+    rc1, rc2, rc3 = st.columns([1, 1, 4])
+    with rc1:
+        if st.button("🔄 立即刷新数据", use_container_width=True):
+            # 清缓存, 强制 reload
+            _load_unified.clear()
+            st.rerun()
+    with rc2:
+        # 显示上次更新时间
+        try:
+            mtime = UNIFIED_FILE.stat().st_mtime
+            last_update = datetime.fromtimestamp(mtime)
+            st.caption(f"📅 数据更新: {last_update.strftime('%m-%d %H:%M')}")
+        except Exception:
+            st.caption("📅 数据更新时间未知")
+
+    # === 已赛 (默认折叠) ===
     if finished:
         render_finished_section(finished)
 
