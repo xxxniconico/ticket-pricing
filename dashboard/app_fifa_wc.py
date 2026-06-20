@@ -459,9 +459,13 @@ def render_finished_section(finished: list[dict]) -> None:
     for m in finished:
         by_group[m.get("group", "?")].append(m)
 
-    for grp in "ABCDEFGHIJKL":
-        if grp not in by_group:
-            continue
+    # 收集有比赛的 group (按 A-L 顺序)
+    active_groups = [g for g in "ABCDEFGHIJKL" if g in by_group]
+
+    # 收集所有 Group 锚 HTML, 后面用 grid 一次性渲染
+    group_cells: list[str] = []
+
+    for grp in active_groups:
         matches = by_group[grp]
         # 收集该组 4 队
         teams: list[str] = []
@@ -474,21 +478,38 @@ def render_finished_section(finished: list[dict]) -> None:
         flags = "".join(flag_img(cn(t)[1]) for t in teams[:4])
 
         done = len(matches)
-        # Group 锚 (用 checkbox 控制单个组展开)
+        # 计算状态 (CSS class + label)
         is_expanded = grp in st.session_state.expanded_groups or "ALL" in st.session_state.expanded_groups
+        state_cls = "expanded" if is_expanded else "collapsed"
+        state_label = "已展开 ▼" if is_expanded else "已折叠"
+
+        # Group 锚 cell (2 列 grid 内的单个 card)
         anchor_html = f"""
-        <div class="group-anchor">
+        <div class="group-anchor-cell {state_cls}" data-group="{grp}">
           <span class="group-chip">Group {grp}</span>
           <span class="group-flags">{flags}</span>
-          <span class="group-progress"><strong>{done}</strong> / 6 已赛</span>
+          <span class="group-progress"><strong>{done}</strong> / 6</span>
+          <span class="group-state">{state_label}</span>
         </div>
         """
-        # Group 锚 + 折叠/展开按钮 (用 streamlit columns 排版按钮)
-        render_html(anchor_html)
-        # 单组展开/折叠按钮 (在 group-flags 旁边)
-        btn_col1, btn_col2 = st.columns([10, 1])
-        with btn_col2:
-            btn_label = "▼" if is_expanded else "▶"
+        group_cells.append(anchor_html)
+
+    # 一次性渲染所有 Group 锚 (2 列 grid)
+    render_html(
+        f'<div class="group-grid">{("".join(group_cells))}</div>',
+    )
+
+    # 单独按钮组 (在 grid 下面, 网格对每个 group 一个按钮)
+    # 用 streamlit columns 不能在 markdown grid 内嵌按钮, 所以按钮放外面
+    # 简化: 一个 "全部展开/全部折叠" + 每组独立一行小按钮
+
+    # 每个组的展开按钮 - 横向排列
+    render_html('<div style="margin: 8px 0;"></div>')
+    btn_cols = st.columns(12, gap="small")
+    for idx, grp in enumerate(active_groups):
+        with btn_cols[idx]:
+            is_exp = grp in st.session_state.expanded_groups or "ALL" in st.session_state.expanded_groups
+            btn_label = f"▼{grp}" if is_exp else f"▶{grp}"
             if st.button(btn_label, key=f"toggle_{grp}"):
                 if grp in st.session_state.expanded_groups:
                     st.session_state.expanded_groups.remove(grp)
@@ -496,17 +517,21 @@ def render_finished_section(finished: list[dict]) -> None:
                     st.session_state.expanded_groups.add(grp)
                 st.rerun()
 
-        # 如果展开了, 显示该组比赛
-        if is_expanded:
-            # 用单个 st.markdown 渲染所有比赛 (避免 streamlit columns stack)
+    # 展开状态: 渲染该组比赛 (全宽)
+    for grp in active_groups:
+        if (grp in st.session_state.expanded_groups) or ("ALL" in st.session_state.expanded_groups):
+            matches = by_group[grp]
             rows_html = "".join(_finished_row_html(m) for m in matches)
-            st.markdown(f'<div class="match-list expanded">{rows_html}</div>', unsafe_allow_html=True)
-        else:
-            # 折叠状态 - 只显示一个占位提示
-            st.markdown(
-                f'<div class="match-list collapsed"><div class="collapse-hint">'
-                f'已折叠 {done} 场比赛 · 点击 ▶ 展开</div></div>',
-                unsafe_allow_html=True,
+            # 取第一场比赛的国家作为旗帜
+            first_match = matches[0]
+            flags = "".join(flag_img(cn(t)[1]) for t in [first_match["home_en"], first_match["away_en"]] if t)
+            render_html(
+                f'<div class="match-list expanded expanded-section">'
+                f'<div class="group-anchor expanded">'
+                f'<span class="group-chip">Group {grp}</span>'
+                f'<span class="group-flags">{flags}</span>'
+                f'<span class="group-progress"><strong>{len(matches)}</strong> / 6 已赛 (展开)</span>'
+                f'</div>{rows_html}</div>',
             )
 
 

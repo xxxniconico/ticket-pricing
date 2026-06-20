@@ -264,6 +264,82 @@ h4 { font-size: 0.9rem !important; }
     border-bottom: none;
     margin-top: 24px;
 }
+
+/* 已赛紧凑网格 - 2 列, 12 个 Group 只占 6 行 */
+.group-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+.group-anchor-cell {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 6px;
+    transition: background 0.12s ease;
+    cursor: default;
+    min-height: 36px;
+}
+.group-anchor-cell.collapsed:hover {
+    background: var(--card-bg-hover);
+}
+.group-anchor-cell.expanded {
+    background: rgba(94, 106, 210, 0.08);
+    border-color: var(--fifa-blue);
+}
+.group-anchor-cell .group-chip {
+    font-size: 0.72rem;
+    padding: 2px 8px;
+    background: var(--fifa-blue);
+    color: white;
+    border-radius: 4px;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+.group-anchor-cell .group-flags {
+    display: flex;
+    gap: 1px;
+    flex-shrink: 0;
+}
+.group-anchor-cell .group-flags .flag-img,
+.group-anchor-cell .group-flags .flag-emoji {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    object-fit: cover;
+    font-size: 0.9rem;
+}
+.group-anchor-cell .group-progress {
+    margin-left: auto;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--ink-on-dark-3);
+}
+.group-anchor-cell .group-progress strong {
+    color: var(--ink-on-dark);
+    font-weight: 600;
+}
+.group-anchor-cell .group-state {
+    font-size: 0.65rem;
+    color: var(--ink-on-dark-4);
+    margin-left: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+/* 12 列按钮组 (每组一个展开按钮) */
+.group-buttons-grid {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 4px;
+    margin-top: 8px;
+    margin-bottom: 12px;
+}
 .group-anchor .group-chip {
     display: inline-flex;
     align-items: center;
@@ -685,6 +761,15 @@ h4 { font-size: 0.9rem !important; }
 
 /* === 手机 (≤ 640px) - 关键调整 === */
 @media (max-width: 640px) {
+    /* 已赛 grid 在窄屏变 1 列 */
+    .group-grid { grid-template-columns: 1fr; }
+    .group-buttons-grid { grid-template-columns: repeat(6, 1fr); }
+    .group-anchor-cell .group-flags .flag-img,
+    .group-anchor-cell .group-flags .flag-emoji {
+        width: 14px;
+        height: 14px;
+    }
+
     /* Header: 缩小 padding, 标题允许换行 */
     .fifa-header {
         padding: 16px 18px;
