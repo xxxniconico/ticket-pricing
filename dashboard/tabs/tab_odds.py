@@ -22,7 +22,7 @@ from pathlib import Path
 import pandas as pd
 import streamlit as st
 
-ODDS_DIR = Path("/home/xxxsuli/ticket-pricing/data/raw/odds")
+ODDS_DIR = Path(__file__).resolve().parent.parent.parent / "data" / "raw" / "odds"
 
 # 球队英文名 -> 中文名(对接 CSL 联赛)
 TEAM_MAP = {
