@@ -273,6 +273,82 @@ h4 { font-size: 0.9rem !important; }
     margin-top: 16px;
 }
 
+/* ==== Group Card (整行可点击 - 顶部 HTML 渲染) ==== */
+.group-card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 12px 18px;
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-bottom: none;  /* 跟 button 共享底边, 视觉连成一片 */
+    border-radius: 6px 6px 0 0;
+    transition: background 0.12s ease;
+}
+.group-card.expanded {
+    background: rgba(94, 106, 210, 0.08);
+    border-color: var(--fifa-blue);
+}
+.group-card-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+}
+.group-card .group-chip {
+    font-size: 0.82rem;
+    padding: 4px 12px;
+    background: var(--fifa-blue);
+    color: white;
+    border-radius: 4px;
+    font-weight: 600;
+    min-width: 64px;
+    text-align: center;
+}
+.group-card .group-progress {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: var(--ink-on-dark);
+    font-weight: 600;
+}
+.group-card .group-progress .dim {
+    color: var(--ink-on-dark-4);
+    font-weight: 400;
+}
+.group-card-flags {
+    display: flex;
+    gap: 6px;
+    flex: 1;
+    justify-content: center;
+}
+.group-card-flags .flag-img {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid var(--card-border);
+    display: block;
+}
+.group-card-flags .flag-emoji {
+    font-size: 1.4rem;
+}
+.group-card .group-arrow {
+    font-size: 0.85rem;
+    color: var(--ink-on-dark-3);
+    flex-shrink: 0;
+    font-family: var(--font-sans);
+}
+
+/* 紧贴 button 在下方的视觉衔接 */
+.group-card + .stButton {
+    margin-top: -1px !important;  /* 去掉 card 和 button 之间的缝隙 */
+}
+.group-card + .stButton button {
+    border-top-left-radius: 0 !important;
+    border-top-right-radius: 0 !important;
+    border-color: var(--card-border) !important;
+}
+
 .group-anchor-cell {
     display: flex;
     align-items: center;

@@ -514,17 +514,29 @@ def render_finished_section(finished: list[dict]) -> None:
                     teams.append(t)
             if len(teams) >= 4:
                 break
-        flags = "".join(flag_img(cn(t)[1]) for t in teams[:4])
 
         done = len(matches)
         is_expanded = grp in st.session_state.expanded_groups or "ALL" in st.session_state.expanded_groups
-
-        # Button label 只用纯文本 (streamlit button 不解析 HTML)
-        # 用 emoji 国旗 + 文本组合
         state_arrow = "▼" if is_expanded else "▶"
-        emoji_flags = " ".join(emoji_flag(cn(t)[1]) for t in teams[:4])
-        btn_label = f"{state_arrow}  Group {grp}   {emoji_flags}   {done}/6"
+        state_cls = "expanded" if is_expanded else "collapsed"
 
+        # === Card 顶部: HTML 渲染 (含真实国旗图) ===
+        flags_html = "".join(flag_img(cn(t)[1]) for t in teams[:4])
+        card_top = f"""
+        <div class="group-card {state_cls}" data-group="{grp}">
+          <div class="group-card-left">
+            <span class="group-chip">Group {grp}</span>
+            <span class="group-progress">{done}<span class="dim">/6</span></span>
+          </div>
+          <div class="group-card-flags">{flags_html}</div>
+          <span class="group-arrow">{state_arrow}</span>
+        </div>
+        """
+        render_html(card_top)
+
+        # === Card 底部: streamlit button (可点击) ===
+        # button 紧贴 card 下方, 视觉上连成一片
+        btn_label = f"{'收起' if is_expanded else '展开'} Group {grp} ({done}/6)"
         if st.button(btn_label, key=f"toggle_{grp}", use_container_width=True):
             if grp in st.session_state.expanded_groups:
                 st.session_state.expanded_groups.remove(grp)
