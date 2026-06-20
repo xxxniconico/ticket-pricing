@@ -383,7 +383,7 @@ def render_match_row_upcoming(m: dict) -> None:
             f'<div class="m-team away"><span class="flag">{away_flag}</span><span>{away_cn}</span></div>',
             unsafe_allow_html=True,
         )
-    # 赔率区: 嵌套 3 列
+    # 赔率区: 嵌套 3 列 + 概率行
     with cols[4]:
         if best_val is None:
             # 没数据, 显示占位
@@ -397,6 +397,26 @@ def render_match_row_upcoming(m: dict) -> None:
                         f'<div class="{cls}"><span class="label">{label}</span><span class="value">{val:.2f}</span></div>',
                         unsafe_allow_html=True,
                     )
+            # 主/平/客 隐含胜率 (从赔率反推)
+            p_h = float(metrics.get("p_h_mean") or 0)
+            if p_h > 0 and h > 0 and d > 0 and a > 0:
+                raw = 1/h + 1/d + 1/a  # 去 vig 前的隐含概率之和
+                p_h_nv = (1/h) / raw
+                p_d_nv = (1/d) / raw
+                p_a_nv = (1/a) / raw
+                # 最高概率高亮 (跟 best odds 一致)
+                probs = [p_h_nv, p_d_nv, p_a_nv]
+                max_idx = max(range(3), key=lambda i: probs[i])
+                hl = ["", "", ""]
+                hl[max_idx] = " highlight"
+                p_html = (
+                    '<div class="m-prob">'
+                    f'<span class="prob{hl[0]}"><span class="label">主</span><span class="value">{p_h_nv:.0%}</span></span>'
+                    f'<span class="prob{hl[1]}"><span class="label">平</span><span class="value">{p_d_nv:.0%}</span></span>'
+                    f'<span class="prob{hl[2]}"><span class="label">客</span><span class="value">{p_a_nv:.0%}</span></span>'
+                    '</div>'
+                )
+                st.markdown(p_html, unsafe_allow_html=True)
     with cols[5]:
         st.markdown(
             f'<div class="m-status"><span class="badge group">Group {grp}</span></div>',
