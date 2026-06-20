@@ -8,76 +8,90 @@
    - 状态颜色编码: 已赛绿 / 未赛白 / LIVE 红
 */
 
-/* ==== 1. CSS 变量 (FIFA 深色商务风) ==== */
-/* 灵感: FIFA.com 官方品牌 + 暗色商务 UI (类似 Bloomberg Sports / ESPN+) */
-/* 深蓝主背景 + 白色卡片 + 金色强调 + 高对比度排版 */
+/* ==== 1. CSS 变量 (Linear 风 + FIFA 蓝品牌) ==== */
+/* 参考 popular-web-designs/templates/linear.app.md */
+/* Linear 设计原则: */
+/* - 几乎纯黑背景, 半透明白卡片 (不是纯白) */
+/* - Inter Variable 字体 + weight 510 强调 */
+/* - 半透明白色边框 rgba(255,255,255,0.08) */
+/* - 单一品牌色 (FIFA 蓝), 不要金色 */
+/* - 阴影少, 靠背景亮度分级 */
 :root {
-    --fifa-blue: #326295;       /* FIFA 官方蓝 (品牌主色) */
-    --fifa-blue-light: #4a7fb3;
-    --fifa-blue-dark: #1a3a5c;
-    --fifa-blue-dim: rgba(50, 98, 149, 0.12);
-    --fifa-gold: #d4af37;       /* 金色 (提升版, 更有档次) */
-    --fifa-gold-light: #e8c878;
-    --fifa-gold-dim: rgba(212, 175, 55, 0.15);
+    /* 品牌色 - FIFA 蓝 (只用一种品牌色) */
+    --fifa-blue: #5e6ad2;       /* 主品牌色 (映射 Linear indigo) */
+    --fifa-blue-light: #7170ff;
+    --fifa-blue-hover: #828fff;
+    --fifa-blue-dim: rgba(94, 106, 210, 0.12);
 
-    /* 深色背景层 — 从最深到最浅 */
-    --bg-darkest: #0d1b2a;      /* 整体背景 (深海军蓝) */
-    --bg-darker: #142a40;        /* 主分区背景 */
-    --bg-dark: #1c3650;         /* 次级背景 */
+    /* 背景层 - Linear 风 (从深到浅) */
+    --bg-deepest: #08090a;      /* 整体背景 (跟 Linear 一致) */
+    --bg-darker: #0f1011;        /* 主区背景 */
+    --bg-dark: #191a1b;         /* 卡片表面 */
+    --bg-elevated: #28282c;     /* 高亮/hover */
 
-    /* 卡片层 — 白色 / 米白 */
-    --surface: #ffffff;
-    --surface-2: #fafbfc;
-    --surface-3: #f5f6f8;
-    --surface-tinted: #f8fafc;   /* 略冷调 */
-    --border: #e8eaee;
-    --border-2: #d8dce2;
+    /* 卡片 - 半透明白 (Linear 风格) */
+    --card-bg: rgba(255, 255, 255, 0.02);
+    --card-bg-hover: rgba(255, 255, 255, 0.04);
+    --card-border: rgba(255, 255, 255, 0.08);
+    --card-border-strong: rgba(255, 255, 255, 0.12);
 
-    /* 文字 — 在深背景上 */
-    --ink-on-dark: #ffffff;
-    --ink-on-dark-2: #d8dce2;
-    --ink-on-dark-3: #a8b0bc;
-    --ink-on-dark-4: #6b7785;
+    /* 文字 - 在深背景上 (Linear 灰阶) */
+    --ink-on-dark: #f7f8f8;       /* 主文字 (不是纯白) */
+    --ink-on-dark-2: #d0d6e0;     /* 次文字 */
+    --ink-on-dark-3: #8a8f98;     /* 三级文字 */
+    --ink-on-dark-4: #62666d;     /* 最淡文字 */
 
-    /* 文字 — 在白卡片上 */
+    /* 文字 - 在白卡片上 (兼容保留) */
     --ink: #1a1d23;
     --ink-2: #4a4f5a;
     --ink-3: #8a8f98;
-    --ink-4: #b8bcc4;
 
     /* 数据色 */
-    --green-best: #00a86b;
-    --green-best-dim: rgba(0, 168, 107, 0.08);
-    --green-finished: #e6f7ed;
-    --green-finished-border: #b8e6c8;
+    --green-best: #27a644;       /* 用 Linear 同款绿 */
+    --green-best-dim: rgba(39, 166, 68, 0.12);
+    --green-finished: rgba(39, 166, 68, 0.08);
 
     --red-live: #ff5757;
     --red-live-dim: rgba(255, 87, 87, 0.10);
 
+    /* === 废弃旧色 - 保留向后兼容 === */
+    --fifa-gold: #d4af37;
+    --fifa-gold-light: #e8c878;
+    --fifa-gold-dim: rgba(212, 175, 55, 0.15);
+    --surface: #ffffff;
+    --surface-2: #fafbfc;
+    --surface-3: #f5f6f8;
+    --surface-tinted: #f8fafc;
+    --border: var(--card-border);
+    --border-2: var(--card-border-strong);
     --neutral: #6b7280;
     --neutral-dim: rgba(107, 114, 128, 0.06);
 
-    --bg: #0d1b2a;  /* 主背景 = 深海军蓝 */
+    --bg: var(--bg-deepest);  /* 主背景 = 几乎纯黑 */
 
-    --font-sans: 'Inter', system-ui, -apple-system, 'Helvetica Neue', sans-serif;
-    --font-mono: 'JetBrains Mono', 'SF Mono', 'Monaco', 'Cascadia Code', ui-monospace, monospace;
+    --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    --font-mono: 'JetBrains Mono', 'SF Mono', ui-monospace, monospace;
+
+    /* 字体特性 - Linear 同款 */
+    --font-features: 'cv01', 'ss03';
 }
 
 /* ==== 2. 全局排版 ==== */
-.stApp { background: var(--bg) !important; }
-/* streamlit 主区背景也调深 */
+.stApp { background: var(--bg-deepest) !important; }
 section.main, [data-testid="stAppViewContainer"], [data-testid="stMain"] {
-    background: var(--bg) !important;
+    background: var(--bg-deepest) !important;
     color: var(--ink-on-dark);
 }
 html, body, .stApp, .stMarkdown, p, div, span, label {
     font-family: var(--font-sans) !important;
-    color: var(--ink-2);
+    font-feature-settings: var(--font-features);
+    color: var(--ink-on-dark-2);
 }
 h1, h2, h3, h4, h5 {
     font-family: var(--font-sans) !important;
+    font-feature-settings: var(--font-features);
     color: var(--ink-on-dark) !important;
-    font-weight: 600 !important;
+    font-weight: 510 !important;  /* Linear signature weight */
     letter-spacing: -0.01em;
 }
 h1 { font-size: 1.5rem !important; }
@@ -88,83 +102,74 @@ h4 { font-size: 0.9rem !important; }
 /* ==== 3. FIFA 品牌 Header ==== */
 .fifa-header {
     background:
-        linear-gradient(135deg, rgba(255,255,255,0.08) 0%, transparent 60%),
-        linear-gradient(135deg, var(--fifa-blue) 0%, var(--fifa-blue-dark) 100%);
-    color: white;
+        radial-gradient(ellipse at top left, rgba(94, 106, 210, 0.15) 0%, transparent 50%),
+        linear-gradient(180deg, var(--bg-darker) 0%, var(--bg-deepest) 100%);
+    color: var(--ink-on-dark);
     padding: 24px 32px;
-    border-radius: 14px;
+    border-radius: 12px;
     margin-bottom: 20px;
     position: relative;
     overflow: hidden;
-    border: 1px solid rgba(255,255,255,0.08);
-    box-shadow:
-        0 1px 3px rgba(0,0,0,0.3),
-        0 8px 24px rgba(50, 98, 149, 0.25);
+    border: 1px solid var(--card-border);
 }
+/* 装饰光晕 - 弱化 */
 .fifa-header::before {
     content: '';
     position: absolute;
     top: -50%;
     right: -10%;
-    width: 500px;
-    height: 500px;
-    background: radial-gradient(circle, rgba(212, 175, 55, 0.10) 0%, transparent 70%);  /* 金色光晕 */
-    pointer-events: none;
-}
-.fifa-header::after {
-    content: '';
-    position: absolute;
-    bottom: -30%;
-    left: -10%;
-    width: 300px;
-    height: 300px;
-    background: radial-gradient(circle, rgba(255, 255, 255, 0.06) 0%, transparent 70%);
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, rgba(94, 106, 210, 0.08) 0%, transparent 70%);
     pointer-events: none;
 }
 .fifa-header h1 {
-    color: white !important;
-    font-size: 1.7rem !important;
-    font-weight: 700 !important;
-    margin: 0 0 6px 0 !important;
+    color: var(--ink-on-dark) !important;
+    font-size: 1.5rem !important;
+    font-weight: 510 !important;  /* Linear signature weight */
+    margin: 0 0 4px 0 !important;
     letter-spacing: -0.02em !important;
     position: relative;
     z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: 12px;
 }
 .fifa-header h1::before {
     content: '';
     display: inline-block;
-    width: 4px;
-    height: 24px;
-    background: var(--fifa-gold);
-    margin-right: 12px;
-    vertical-align: -3px;
+    width: 3px;
+    height: 20px;
+    background: var(--fifa-blue);
     border-radius: 2px;
+    flex-shrink: 0;
 }
 .fifa-header .subtitle {
-    color: rgba(255, 255, 255, 0.80);
+    color: var(--ink-on-dark-3);
     font-size: 0.85rem;
     margin: 0;
     position: relative;
     z-index: 1;
 }
 .fifa-header .countdown {
-    display: inline-block;
-    background: rgba(0, 0, 0, 0.25);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--card-bg);
     backdrop-filter: blur(8px);
-    border: 1px solid rgba(212, 175, 55, 0.4);
-    border-radius: 8px;
-    padding: 10px 16px;
+    border: 1px solid var(--card-border);
+    border-radius: 6px;
+    padding: 8px 14px;
     margin-top: 14px;
     font-family: var(--font-mono);
-    font-size: 0.85rem;
-    color: white;
+    font-size: 0.82rem;
+    color: var(--ink-on-dark-2);
     position: relative;
     z-index: 1;
 }
 .fifa-header .countdown strong {
-    color: var(--fifa-gold);
-    font-weight: 700;
-    text-shadow: 0 0 8px rgba(212, 175, 55, 0.3);
+    color: var(--fifa-blue-light);
+    font-weight: 600;
 }
 
 /* ==== 4. KPI 紧凑条 ==== */
@@ -175,42 +180,41 @@ h4 { font-size: 0.9rem !important; }
     margin-bottom: 16px;
 }
 .kpi-strip .kpi-cell {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 14px 16px;
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 8px;
+    padding: 12px 14px;
     display: flex;
     align-items: center;
     gap: 12px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    transition: background 0.15s ease;
 }
 .kpi-strip .kpi-cell:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    background: var(--card-bg-hover);
 }
 .kpi-strip .kpi-icon {
-    font-size: 1.4rem;
+    font-size: 1.2rem;
     line-height: 1;
-    width: 36px;
-    height: 36px;
+    width: 32px;
+    height: 32px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     background: var(--fifa-blue-dim);
-    border-radius: 8px;
+    border-radius: 6px;
 }
 .kpi-strip .kpi-text { display: flex; flex-direction: column; }
 .kpi-strip .kpi-value {
     font-family: var(--font-mono);
-    font-size: 1.35rem;
+    font-size: 1.25rem;
     font-weight: 600;
-    color: var(--fifa-blue-dark);
+    color: var(--ink-on-dark);
     line-height: 1.1;
+    letter-spacing: -0.02em;
 }
 .kpi-strip .kpi-label {
-    font-size: 0.7rem;
-    color: var(--ink-3);
+    font-size: 0.68rem;
+    color: var(--ink-on-dark-3);
     text-transform: uppercase;
     letter-spacing: 0.04em;
     margin-top: 2px;
@@ -253,13 +257,12 @@ h4 { font-size: 0.9rem !important; }
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 12px 16px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px 10px 0 0;
+    padding: 10px 14px;
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 6px 6px 0 0;
     border-bottom: none;
-    margin-top: 20px;
-    box-shadow: 0 -1px 0 rgba(0,0,0,0.02);
+    margin-top: 24px;
 }
 .group-anchor .group-chip {
     display: inline-flex;
@@ -267,10 +270,10 @@ h4 { font-size: 0.9rem !important; }
     gap: 4px;
     background: var(--fifa-blue);
     color: white;
-    padding: 4px 10px;
-    border-radius: 12px;
-    font-size: 0.78rem;
-    font-weight: 600;
+    padding: 3px 9px;
+    border-radius: 4px;
+    font-size: 0.72rem;
+    font-weight: 510;  /* Linear signature */
     letter-spacing: 0.02em;
 }
 .group-anchor .group-flags {
@@ -281,11 +284,11 @@ h4 { font-size: 0.9rem !important; }
 .group-anchor .group-progress {
     margin-left: auto;
     font-family: var(--font-mono);
-    font-size: 0.78rem;
-    color: var(--ink-3);
+    font-size: 0.75rem;
+    color: var(--ink-on-dark-3);
 }
 .group-anchor .group-progress strong {
-    color: var(--ink);
+    color: var(--ink-on-dark);
     font-weight: 600;
 }
 
@@ -294,78 +297,64 @@ h4 { font-size: 0.9rem !important; }
     display: flex;
     align-items: baseline;
     gap: 12px;
-    padding: 14px 4px 10px 4px;
-    margin-top: 16px;
-    border-bottom: 1px solid rgba(255,255,255,0.08);
-    position: relative;
-}
-.date-header::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 3px;
-    height: 16px;
-    background: var(--fifa-gold);
-    border-radius: 2px;
+    padding: 14px 4px 8px 4px;
+    margin-top: 12px;
+    color: var(--ink-on-dark-2);
 }
 .date-header .date-label {
-    font-size: 1.1rem;
-    font-weight: 700;
+    font-size: 0.95rem;
+    font-weight: 510;
     color: var(--ink-on-dark);
     letter-spacing: -0.01em;
-    margin-left: 12px;
 }
 .date-header .date-weekday {
-    font-size: 0.78rem;
+    font-size: 0.75rem;
     color: var(--ink-on-dark-3);
     font-family: var(--font-sans);
 }
 .date-header .date-count {
     margin-left: auto;
     font-family: var(--font-mono);
-    font-size: 0.78rem;
+    font-size: 0.72rem;
     color: var(--ink-on-dark-3);
-    background: rgba(255,255,255,0.05);
+    background: var(--card-bg);
     padding: 2px 8px;
     border-radius: 4px;
+    border: 1px solid var(--card-border);
 }
 
 /* ==== 8. 比赛行 (核心) ==== */
 .match-list {
-    border: 1px solid var(--border);
-    border-radius: 0 0 10px 10px;
+    border: 1px solid var(--card-border);
+    border-radius: 0 0 6px 6px;
     overflow: hidden;
-    background: var(--surface);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+    background: var(--card-bg);
 }
 .match-list.finished {
     border-top: none;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.06), 0 0 0 1px rgba(0, 168, 107, 0.10) inset;
 }
 .match-row {
     display: grid;
     grid-template-columns: 64px 1fr 80px 1fr 110px 70px;
     align-items: center;
     gap: 12px;
-    padding: 12px 16px;
-    border-bottom: 1px solid var(--border);
-    min-height: 60px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--card-border);
+    min-height: 56px;
     transition: background 0.12s ease;
 }
 .match-row:last-child { border-bottom: none; }
-.match-row:hover { background: var(--surface-2); }
+.match-row:hover { background: var(--card-bg-hover); }
 
-/* 已赛变体 */
-.match-row.finished { background: var(--green-finished); }
-.match-row.finished:hover { background: #d8f0e1; }
+/* 已赛变体 - 微妙的绿色 tint */
+.match-row.finished { background: rgba(39, 166, 68, 0.04); }
+.match-row.finished:hover { background: rgba(39, 166, 68, 0.08); }
 
 /* === 8.1 时间列 === */
 .match-row .m-time {
     font-family: var(--font-mono);
     font-size: 0.85rem;
-    color: var(--ink-2);
+    color: var(--ink-on-dark-2);
     text-align: center;
 }
 .match-row .m-time.live {
@@ -392,42 +381,38 @@ h4 { font-size: 0.9rem !important; }
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 0.92rem;
-    font-weight: 500;
-    color: var(--ink);
+    font-size: 0.9rem;
+    font-weight: 510;  /* Linear signature */
+    color: var(--ink-on-dark);
+    letter-spacing: -0.01em;
 }
 .match-row .m-team.away { justify-content: flex-end; }
 /* 国旗容器: 容纳 <img> 真实国旗 (flagcdn.com) 或 emoji fallback */
 .match-row .m-team .flag {
-    width: 32px;
-    height: 32px;
+    width: 28px;
+    height: 28px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    background: var(--surface-3);
-    border: 1px solid var(--border);
+    background: var(--card-bg-hover);
+    border: 1px solid var(--card-border);
     border-radius: 50%;
     flex-shrink: 0;
-    overflow: hidden;  /* 圆形裁剪超出部分 */
+    overflow: hidden;
     font-size: 1.4rem;
 }
 .match-row .m-team .flag .flag-img {
-    width: 28px;     /* 比容器小 4px, 给边框留空 */
-    height: 28px;
+    width: 100%;
+    height: 100%;
     object-fit: cover;
     display: block;
-    border-radius: 50%;
 }
 .match-row .m-team .flag .flag-emoji {
     font-size: 1.2rem;
     line-height: 1;
 }
-.match-row.finished .m-team .flag {
-    background: var(--surface);
-    border-color: var(--green-finished-border);
-}
 
-/* 小组锚 4 国旗横排 (img 风格) */
+/* 小组锚 4 国旗横排 */
 .group-anchor .group-flags {
     display: flex;
     gap: 3px;
@@ -435,11 +420,11 @@ h4 { font-size: 0.9rem !important; }
     align-items: center;
 }
 .group-anchor .group-flags .flag-img {
-    width: 22px;
-    height: 22px;
+    width: 20px;
+    height: 20px;
     object-fit: cover;
     border-radius: 50%;
-    border: 1px solid var(--border);
+    border: 1px solid var(--card-border);
     display: inline-block;
 }
 .group-anchor .group-flags .flag-emoji {
@@ -449,21 +434,21 @@ h4 { font-size: 0.9rem !important; }
 /* === 8.3 比分列 === */
 .match-row .m-score {
     font-family: var(--font-mono);
-    font-size: 1.25rem;
+    font-size: 1.15rem;
     font-weight: 600;
-    color: var(--ink);
+    color: var(--ink-on-dark);
     text-align: center;
     letter-spacing: -0.02em;
 }
 .match-row .m-score .vs {
-    color: var(--ink-4);
+    color: var(--ink-on-dark-4);
     font-weight: 400;
     font-size: 0.85rem;
     letter-spacing: 0.05em;
 }
 .match-row .m-score .sep {
     margin: 0 6px;
-    color: var(--ink-4);
+    color: var(--ink-on-dark-4);
     font-weight: 300;
 }
 
@@ -471,85 +456,85 @@ h4 { font-size: 0.9rem !important; }
 .m-stack {
     display: flex !important;
     flex-direction: column !important;
-    gap: 8px;
+    gap: 6px;
     margin-top: 6px;
-    padding: 10px 12px;
-    background: linear-gradient(180deg, var(--surface-2) 0%, var(--surface-3) 100%);
-    border: 1px solid var(--border);
-    border-radius: 8px;
+    padding: 8px 10px;
+    background: rgba(0, 0, 0, 0.15);  /* 深色卡片 */
+    border: 1px solid var(--card-border);
+    border-radius: 6px;
     font-family: var(--font-mono);
 }
 .m-stack .m-odds {
     display: grid !important;
     grid-template-columns: 1fr 1fr 1fr !important;
-    gap: 8px !important;
+    gap: 6px !important;
     font-size: 0.85rem;
 }
 .m-stack .m-odds .odd {
     display: inline-flex;
     flex-direction: column;
     align-items: center;
-    background: var(--surface-3);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 4px 8px;
+    background: var(--card-bg-hover);
+    border: 1px solid var(--card-border);
+    border-radius: 4px;
+    padding: 4px 6px;
     min-width: 40px;
     transition: all 0.12s ease;
 }
 .m-stack .m-odds .odd .label {
     font-size: 0.55rem;
-    color: var(--ink-4);
+    color: var(--ink-on-dark-4);
     text-transform: uppercase;
     letter-spacing: 0.04em;
     font-family: var(--font-sans);
     margin-bottom: 1px;
 }
 .m-stack .m-odds .odd .value {
-    color: var(--ink);
+    color: var(--ink-on-dark);
     font-weight: 600;
     font-size: 0.92rem;
 }
 .m-stack .m-odds .odd.best {
-    background: var(--green-best-dim);
+    background: rgba(39, 166, 68, 0.15);
     border-color: var(--green-best);
 }
 .m-stack .m-odds .odd.best .value {
     color: var(--green-best);
 }
 
-/* ==== 概率行 (主/平/客 隐含胜率, 放在赔率下面) ==== */
+/* ==== 概率行 ==== */
 .m-stack .m-prob {
     display: grid !important;
     grid-template-columns: 1fr 1fr 1fr !important;
-    gap: 8px !important;
+    gap: 6px !important;
     text-align: center;
 }
 .m-stack .m-prob .prob {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 3px 2px;
+    padding: 2px;
     background: transparent;
     border-radius: 4px;
 }
 .m-stack .m-prob .prob .label {
-    font-size: 0.6rem;
-    color: var(--ink-4);
+    font-size: 0.55rem;
+    color: var(--ink-on-dark-4);
     text-transform: uppercase;
     letter-spacing: 0.04em;
     font-family: var(--font-sans);
     line-height: 1;
 }
 .m-stack .m-prob .prob .value {
-    font-size: 0.85rem;
+    font-size: 0.78rem;
     font-weight: 600;
-    color: var(--ink-2);
+    color: var(--ink-on-dark-2);
     margin-top: 1px;
     line-height: 1;
 }
-/* 最高概率高亮 (跟 best odds 一致) */
+/* 最高概率高亮 */
 .m-stack .m-prob .prob.highlight {
-    background: var(--green-best-dim);
+    background: rgba(39, 166, 68, 0.15);
     border-radius: 4px;
 }
 .m-stack .m-prob .prob.highlight .value {
@@ -645,19 +630,19 @@ h4 { font-size: 0.9rem !important; }
 
 /* ==== 12. 字段解读区 ==== */
 .legend {
-    background: var(--surface);
-    border: 1px solid var(--border);
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
     border-radius: 8px;
     padding: 14px 18px;
     margin-top: 18px;
     font-size: 0.82rem;
-    color: var(--ink-3);
+    color: var(--ink-on-dark-3);
 }
-.legend strong { color: var(--ink); }
+.legend strong { color: var(--ink-on-dark); }
 .legend .legend-key {
     display: inline-block;
     background: var(--fifa-blue-dim);
-    color: var(--fifa-blue);
+    color: var(--fifa-blue-light);
     padding: 1px 6px;
     border-radius: 3px;
     font-family: var(--font-mono);
