@@ -29,6 +29,7 @@ from dashboard.tabs.tab_standings import render_standings_table
 from dashboard.tabs.tab_h2_strategy import render_h2_strategy
 from dashboard.tabs.tab_heatmap import render_heatmap_tab
 from dashboard.tabs.tab_validation import render_validation_tab
+from dashboard.tabs.tab_odds import render_odds_tab
 
 import numpy as np
 import streamlit as st
@@ -119,7 +120,7 @@ def main():
       <div class="progress-track"><div class="progress-fill" style="width:{pct}%"></div></div>
     </div>""", unsafe_allow_html=True)
 
-    tab_names = ["🎯 下一场预测", "📋 历史定价", "🔍 对手分析", "🏆 积分榜", "📊 H2策略", "🔥 座位热力图", "📐 模型验证"]
+    tab_names = ["🎯 下一场预测", "📋 历史定价", "🔍 对手分析", "🏆 积分榜", "📊 H2策略", "🔥 座位热力图", "📐 模型验证", "🎲 赔率信号"]
     active_tab = st.radio("导航", tab_names, horizontal=True, label_visibility="collapsed", key="main_tab")
 
     if active_tab == tab_names[0]:
@@ -169,6 +170,8 @@ def main():
         render_heatmap_tab(guoan_matches)
     if active_tab == tab_names[6]:
         render_validation_tab(home_preds, guoan_matches, all_matches)
+    if active_tab == tab_names[7]:
+        render_odds_tab()
 
     st.caption(f"V8.1 · 国安绿品牌 · 决策工作台 · 赛程引擎 {SCHEDULE_ENGINE_VERSION}")
 
