@@ -343,7 +343,7 @@ def _match_time_html(m: dict) -> str:
 
 
 def render_match_row_finished(m: dict) -> None:
-    """已赛比赛行 - 用 st.columns + 每段单独 st.markdown"""
+    """已赛比赛行 - 用单个 st.markdown + CSS grid 完全控制响应式"""
     home_cn, home_flag = cn(m.get("home_en", ""))
     away_cn, away_flag = cn(m.get("away_en", ""))
     grp = m.get("group", "?")
@@ -351,31 +351,16 @@ def render_match_row_finished(m: dict) -> None:
     home_flag_img = flag_img(home_flag)
     away_flag_img = flag_img(away_flag)
 
-    # 用 streamlit columns 强制布局 (6 列), 然后每列内独立 st.markdown
-    cols = st.columns([1, 3, 1.2, 3, 0.5, 1.4], gap="small")
-    with cols[0]:
-        st.markdown('<div class="m-time">FT</div>', unsafe_allow_html=True)
-    with cols[1]:
-        st.markdown(
-            f'<div class="m-team home"><span class="flag">{home_flag_img}</span><span>{home_cn}</span></div>',
-            unsafe_allow_html=True,
-        )
-    with cols[2]:
-        st.markdown(f'<div class="m-score">{_format_score(score)}</div>', unsafe_allow_html=True)
-    with cols[3]:
-        st.markdown(
-            f'<div class="m-team away"><span class="flag">{away_flag_img}</span><span>{away_cn}</span></div>',
-            unsafe_allow_html=True,
-        )
-    with cols[4]:
-        st.markdown("<div></div>", unsafe_allow_html=True)
-    with cols[5]:
-        st.markdown(
-            f'<div class="m-status"><span class="badge group">Group {grp}</span></div>',
-            unsafe_allow_html=True,
-        )
-    # 加底部分隔线 (CSS 已用 border-bottom, 但用 st.empty 占位让 streamlit 渲染 row)
-    st.markdown("", unsafe_allow_html=False)
+    # 用单个 st.markdown 渲染整行 (CSS grid 处理响应式)
+    row_html = f"""<div class="match-row finished">
+      <div class="m-time">FT</div>
+      <div class="m-team home"><span class="flag">{home_flag_img}</span><span>{home_cn}</span></div>
+      <div class="m-score">{_format_score(score)}</div>
+      <div class="m-team away"><span class="flag">{away_flag_img}</span><span>{away_cn}</span></div>
+      <div></div>
+      <div class="m-status"><span class="badge group">Group {grp}</span></div>
+    </div>"""
+    st.markdown(row_html, unsafe_allow_html=True)
 
 
 def render_match_row_upcoming(m: dict) -> None:
@@ -398,27 +383,17 @@ def render_match_row_upcoming(m: dict) -> None:
     else:
         best_val = None
 
-    # === 第一行: 时间 | 主队 | vs | 客队 | Group ===
-    cols1 = st.columns([0.8, 2.5, 0.5, 2.5, 1.2], gap="small")
-    with cols1[0]:
-        st.markdown(time_html, unsafe_allow_html=True)
-    with cols1[1]:
-        st.markdown(
-            f'<div class="m-team home"><span class="flag">{home_flag_img}</span><span>{home_cn}</span></div>',
-            unsafe_allow_html=True,
-        )
-    with cols1[2]:
-        st.markdown('<div class="m-score"><span class="vs">vs</span></div>', unsafe_allow_html=True)
-    with cols1[3]:
-        st.markdown(
-            f'<div class="m-team away"><span class="flag">{away_flag_img}</span><span>{away_cn}</span></div>',
-            unsafe_allow_html=True,
-        )
-    with cols1[4]:
-        st.markdown(
-            f'<div class="m-status"><span class="badge group">Group {grp}</span></div>',
-            unsafe_allow_html=True,
-        )
+    # === 用单个 st.markdown 渲染整行 (CSS grid 处理响应式) ===
+    # 第一行: 时间 | 主队 | vs | 客队 | 占位 | Group chip
+    row1_html = f"""<div class="match-row">
+      {time_html}
+      <div class="m-team home"><span class="flag">{home_flag_img}</span><span>{home_cn}</span></div>
+      <div class="m-score"><span class="vs">vs</span></div>
+      <div class="m-team away"><span class="flag">{away_flag_img}</span><span>{away_cn}</span></div>
+      <div></div>
+      <div class="m-status"><span class="badge group">Group {grp}</span></div>
+    </div>"""
+    st.markdown(row1_html, unsafe_allow_html=True)
 
     # === 第二行: 赔率 + 概率 (全宽) ===
     if best_val is not None:
@@ -446,10 +421,7 @@ def render_match_row_upcoming(m: dict) -> None:
                 '</div>'
             )
         stack_html = f'<div class="m-stack"><div class="m-odds">{odds_html}</div>{p_html}</div>'
-        # 第二行用单列, 全宽
         st.markdown(stack_html, unsafe_allow_html=True)
-    # 分隔
-    st.markdown("", unsafe_allow_html=False)
 
 
 # === 已赛区块 ===

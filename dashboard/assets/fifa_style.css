@@ -608,20 +608,152 @@ h4 { font-size: 0.9rem !important; }
     color: white !important;
 }
 
-/* ==== 10. 响应式 ==== */
+/* ==== 10. 响应式 (手机端优先, 平板次之, 桌面默认) ==== */
+
+/* === 平板 (≤ 900px) - 中等调整 === */
 @media (max-width: 900px) {
     .kpi-strip { grid-template-columns: repeat(2, 1fr); }
     .match-row {
-        grid-template-columns: 50px 1fr 60px 1fr 90px 50px;
+        grid-template-columns: 56px 1fr 60px 1fr 100px 60px;
         gap: 8px;
-        padding: 8px 10px;
+        padding: 10px 12px;
     }
-    .match-row .m-team .flag { width: 24px; height: 24px; font-size: 1.1rem; }
-    .match-row .m-team { font-size: 0.82rem; }
-    .match-row .m-score { font-size: 1rem; }
+    .match-row .m-team .flag { width: 26px; height: 26px; }
+    .match-row .m-team { font-size: 0.85rem; }
+    .match-row .m-score { font-size: 1.05rem; }
+    .fifa-header h1 { font-size: 1.3rem !important; }
 }
-@media (max-width: 600px) {
-    .kpi-strip { grid-template-columns: 1fr; }
+
+/* === 手机 (≤ 640px) - 关键调整 === */
+@media (max-width: 640px) {
+    /* Header: 缩小 padding, 标题允许换行 */
+    .fifa-header {
+        padding: 16px 18px;
+        margin-bottom: 14px;
+    }
+    .fifa-header h1 {
+        font-size: 1.15rem !important;
+        gap: 10px;
+        line-height: 1.2;
+    }
+    .fifa-header h1::before {
+        width: 3px;
+        height: 16px;
+    }
+    .fifa-header .subtitle {
+        font-size: 0.78rem;
+        line-height: 1.4;
+    }
+    .fifa-header .countdown {
+        font-size: 0.75rem;
+        padding: 6px 10px;
+    }
+
+    /* KPI: 2 列网格 (而不是纵向堆叠) */
+    .kpi-strip {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+        margin-bottom: 12px;
+    }
+    .kpi-strip .kpi-cell {
+        padding: 10px 12px;
+        gap: 10px;
+    }
+    .kpi-strip .kpi-icon {
+        width: 28px;
+        height: 28px;
+        font-size: 1.1rem;
+    }
+    .kpi-strip .kpi-value {
+        font-size: 1.1rem;
+    }
+    .kpi-strip .kpi-label {
+        font-size: 0.62rem;
+    }
+
+    /* Group 锚: 紧凑 */
+    .group-anchor {
+        padding: 8px 12px;
+        margin-top: 18px;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+    .group-anchor .group-chip {
+        padding: 2px 8px;
+        font-size: 0.68rem;
+    }
+    .group-anchor .group-flags .flag-img {
+        width: 18px;
+        height: 18px;
+    }
+    .group-anchor .group-progress {
+        font-size: 0.7rem;
+    }
+
+    /* 日期 header: 紧凑 */
+    .date-header {
+        padding: 12px 2px 6px 2px;
+        margin-top: 10px;
+    }
+    .date-header .date-label {
+        font-size: 0.88rem;
+    }
+    .date-header .date-weekday,
+    .date-header .date-count {
+        font-size: 0.68rem;
+    }
+
+    /* 比赛行: 关键修复 - 4 列而非 6 列, 国旗缩小 */
+    .match-row {
+        grid-template-columns: 48px 1fr 60px 1fr;
+        gap: 6px;
+        padding: 8px 10px;
+        min-height: 52px;
+    }
+    /* 隐藏赔率列 + Group 列, 移到下方 */
+    .match-row .m-status {
+        display: none;
+    }
+    .match-row .m-team .flag {
+        width: 24px;
+        height: 24px;
+    }
+    .match-row .m-team {
+        font-size: 0.8rem;
+        gap: 5px;
+    }
+    .match-row .m-time {
+        font-size: 0.75rem;
+    }
+    .match-row .m-score {
+        font-size: 1rem;
+    }
+
+    /* 赔率区: 全宽, 紧凑 */
+    .m-stack {
+        padding: 8px;
+        gap: 5px;
+    }
+    .m-stack .m-odds {
+        gap: 4px !important;
+    }
+    .m-stack .m-odds .odd {
+        padding: 3px 4px;
+        min-width: 32px;
+    }
+    .m-stack .m-odds .odd .value {
+        font-size: 0.85rem;
+    }
+    .m-stack .m-prob .prob .value {
+        font-size: 0.72rem;
+    }
+}
+
+/* === 超窄屏 (≤ 380px) - iPhone SE 等 === */
+@media (max-width: 380px) {
+    .kpi-strip .kpi-value { font-size: 1rem; }
+    .match-row .m-team { font-size: 0.72rem; }
+    .match-row .m-team .flag { width: 20px; height: 20px; }
 }
 
 /* ==== 11. Streamlit 元素重置 ==== */
