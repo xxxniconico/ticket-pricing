@@ -517,32 +517,36 @@ def render_finished_section(finished: list[dict]) -> None:
 
         done = len(matches)
         is_expanded = grp in st.session_state.expanded_groups or "ALL" in st.session_state.expanded_groups
-        state_arrow = "▼" if is_expanded else "▶"
-        state_cls = "expanded" if is_expanded else "collapsed"
 
-        # === Card 顶部: HTML 渲染 (含真实国旗图) ===
+        # 整行 markdown card (Group chip + 国旗 + 进度 + 队名)
         flags_html = "".join(flag_img(cn(t)[1]) for t in teams[:4])
-        card_top = f"""
-        <div class="group-card {state_cls}" data-group="{grp}">
-          <div class="group-card-left">
-            <span class="group-chip">Group {grp}</span>
-            <span class="group-progress">{done}<span class="dim">/6</span></span>
-          </div>
-          <div class="group-card-flags">{flags_html}</div>
-          <span class="group-arrow">{state_arrow}</span>
-        </div>
-        """
-        render_html(card_top)
+        team_names = [cn(t)[0] for t in teams[:4]]
+        teams_str = " · ".join(team_names)
 
-        # === Card 底部: streamlit button (可点击) ===
-        # button 紧贴 card 下方, 视觉上连成一片
-        btn_label = f"{'收起' if is_expanded else '展开'} Group {grp} ({done}/6)"
-        if st.button(btn_label, key=f"toggle_{grp}", use_container_width=True):
-            if grp in st.session_state.expanded_groups:
-                st.session_state.expanded_groups.remove(grp)
-            else:
-                st.session_state.expanded_groups.add(grp)
-            st.rerun()
+        # 用 columns 让 card 占大部分, button 占小部分
+        card_col, btn_col = st.columns([9, 1], gap="small")
+
+        with card_col:
+            render_html(f"""
+            <div class="group-card {'expanded' if is_expanded else 'collapsed'}" data-group="{grp}">
+              <div class="group-card-left">
+                <span class="group-chip">Group {grp}</span>
+                <span class="group-progress">{done}<span class="dim">/6</span></span>
+              </div>
+              <div class="group-card-flags">{flags_html}</div>
+              <span class="group-card-teams">{teams_str}</span>
+            </div>
+            """)
+
+        with btn_col:
+            state_arrow = "▼" if is_expanded else "▶"
+            # button 取消 padding 让它跟 card 同高
+            if st.button(state_arrow, key=f"toggle_{grp}", use_container_width=True):
+                if grp in st.session_state.expanded_groups:
+                    st.session_state.expanded_groups.remove(grp)
+                else:
+                    st.session_state.expanded_groups.add(grp)
+                st.rerun()
 
     # === 展开区域: 显示每个展开组的 (1) 积分榜 + (2) 比赛结果 ===
     for grp in active_groups:

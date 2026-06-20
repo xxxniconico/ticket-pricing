@@ -273,7 +273,7 @@ h4 { font-size: 0.9rem !important; }
     margin-top: 16px;
 }
 
-/* ==== Group Card (整行可点击 - 顶部 HTML 渲染) ==== */
+/* ==== Group Card (整行 + 右侧 button) ==== */
 .group-card {
     display: flex;
     align-items: center;
@@ -281,9 +281,9 @@ h4 { font-size: 0.9rem !important; }
     padding: 12px 18px;
     background: var(--card-bg);
     border: 1px solid var(--card-border);
-    border-bottom: none;  /* 跟 button 共享底边, 视觉连成一片 */
-    border-radius: 6px 6px 0 0;
-    transition: background 0.12s ease;
+    border-radius: 6px;
+    height: 56px;  /* 跟 button 同高 */
+    box-sizing: border-box;
 }
 .group-card.expanded {
     background: rgba(94, 106, 210, 0.08);
@@ -317,36 +317,63 @@ h4 { font-size: 0.9rem !important; }
 }
 .group-card-flags {
     display: flex;
-    gap: 6px;
-    flex: 1;
-    justify-content: center;
+    gap: 5px;
+    flex-shrink: 0;
 }
 .group-card-flags .flag-img {
-    width: 28px;
-    height: 28px;
+    width: 24px;
+    height: 24px;
     border-radius: 50%;
     object-fit: cover;
     border: 1px solid var(--card-border);
     display: block;
 }
 .group-card-flags .flag-emoji {
-    font-size: 1.4rem;
+    font-size: 1.3rem;
 }
-.group-card .group-arrow {
-    font-size: 0.85rem;
-    color: var(--ink-on-dark-3);
-    flex-shrink: 0;
-    font-family: var(--font-sans);
+.group-card-teams {
+    flex: 1;
+    color: var(--ink-on-dark-2);
+    font-size: 0.78rem;
+    letter-spacing: 0.02em;
+    margin-left: 8px;
 }
 
-/* 紧贴 button 在下方的视觉衔接 */
-.group-card + .stButton {
-    margin-top: -1px !important;  /* 去掉 card 和 button 之间的缝隙 */
+/* button 跟 card 同高 */
+div[data-testid="column"] + div[data-testid="column"] button {
+    height: 56px !important;
+    font-size: 1.2rem !important;
 }
-.group-card + .stButton button {
+
+/* ==== 关键: card + button 视觉完全合为一体 ==== */
+/* 让 button 跟 card 之间无任何 margin, 共享 border */
+.group-card + div[data-testid="stButton"] {
+    margin-top: -1px !important;
+}
+.group-card + div[data-testid="stButton"] button {
     border-top-left-radius: 0 !important;
     border-top-right-radius: 0 !important;
     border-color: var(--card-border) !important;
+    border-top: 1px solid var(--card-border) !important;
+    background: rgba(94, 106, 210, 0.04) !important;  /* 轻微蓝色 */
+}
+.group-card + div[data-testid="stButton"] button:hover {
+    background: rgba(94, 106, 210, 0.10) !important;
+}
+
+/* 展开时 button 视觉变化 */
+.group-card.expanded + div[data-testid="stButton"] button {
+    background: rgba(94, 106, 210, 0.08) !important;
+    border-color: var(--fifa-blue) !important;
+    color: var(--fifa-blue) !important;
+}
+
+/* 展开内容 (积分榜 + 比赛) 紧贴 button, 视觉衔接 */
+.expanded-section {
+    margin-top: -1px !important;  /* 跟 button 衔接, 无缝 */
+    border-top: 1px dashed var(--card-border) !important;
+    border-top-left-radius: 0 !important;
+    border-top-right-radius: 0 !important;
 }
 
 .group-anchor-cell {
