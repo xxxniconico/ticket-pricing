@@ -265,25 +265,25 @@ h4 { font-size: 0.9rem !important; }
     margin-top: 24px;
 }
 
-/* 已赛紧凑网格 - 2 列, 12 个 Group 只占 6 行 */
+/* 已赛网格 - 1 列平铺, 12 个 Group 每行 1 个 */
 .group-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
+    grid-template-columns: 1fr;
+    gap: 6px;
     margin-top: 16px;
 }
 
 .group-anchor-cell {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 8px 12px;
+    gap: 14px;
+    padding: 12px 18px;
     background: var(--card-bg);
     border: 1px solid var(--card-border);
     border-radius: 6px;
     transition: background 0.12s ease;
     cursor: default;
-    min-height: 36px;
+    min-height: 48px;
 }
 .group-anchor-cell.collapsed:hover {
     background: var(--card-bg-hover);
@@ -293,26 +293,28 @@ h4 { font-size: 0.9rem !important; }
     border-color: var(--fifa-blue);
 }
 .group-anchor-cell .group-chip {
-    font-size: 0.72rem;
-    padding: 2px 8px;
+    font-size: 0.82rem;
+    padding: 4px 12px;
     background: var(--fifa-blue);
     color: white;
     border-radius: 4px;
     font-weight: 600;
     flex-shrink: 0;
+    min-width: 64px;
+    text-align: center;
 }
 .group-anchor-cell .group-flags {
     display: flex;
-    gap: 1px;
+    gap: 3px;
     flex-shrink: 0;
 }
 .group-anchor-cell .group-flags .flag-img,
 .group-anchor-cell .group-flags .flag-emoji {
-    width: 16px;
-    height: 16px;
+    width: 22px;
+    height: 22px;
     border-radius: 50%;
     object-fit: cover;
-    font-size: 0.9rem;
+    font-size: 1.1rem;
 }
 .group-anchor-cell .group-progress {
     margin-left: auto;
