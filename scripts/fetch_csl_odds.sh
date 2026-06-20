@@ -53,3 +53,16 @@ echo "[fetch_csl_odds] OK: $N_MATCHES matches saved to $OUT_FILE"
 cd "$OUT_DIR"
 ls -1t csl_odds_*.json | tail -n +9 | xargs -r rm -f
 echo "[fetch_csl_odds] cleaned old files, kept latest 8"
+# ── 拉 FIFA 世界杯赔率 (独立看板, 不进 CSL/V5.5) ──
+echo "[fetch_csl_odds] also pulling FIFA World Cup odds..."
+WC_OUT="$OUT_DIR/fifa_wc_$(date +%Y%m%d).json"
+WC_URL="https://api.the-odds-api.com/v4/sports/soccer_fifa_world_cup/odds/?regions=eu&markets=h2h&oddsFormat=decimal&apiKey=$API_KEY"
+HTTP_CODE=$(curl -s -o "$WC_OUT.tmp" -w "%{http_code}" --max-time 30 "$WC_URL")
+if [ "$HTTP_CODE" = "200" ] && ! grep -q '"error_code"' "$WC_OUT.tmp"; then
+    mv "$WC_OUT.tmp" "$WC_OUT"
+    N_WC=$(python3 -c "import json; print(len(json.load(open('$WC_OUT'))))")
+    echo "[fetch_csl_odds] FIFA WC: $N_WC matches saved to $WC_OUT"
+else
+    rm -f "$WC_OUT.tmp"
+    echo "[fetch_csl_odds] FIFA WC pull skipped (HTTP $HTTP_CODE or error)"
+fi
