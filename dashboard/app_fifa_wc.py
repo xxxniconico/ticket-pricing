@@ -424,19 +424,15 @@ def render_match_row_upcoming(m: dict) -> None:
         st.markdown(stack_html, unsafe_allow_html=True)
 
 
-# === 已赛区块 ===
-def render_finished_section(finished: list[dict]) -> None:
-    """已赛区块: 按 Group A-L, 每组 4 国旗 + match-list (默认折叠)"""
-    st.markdown("### ✅ 已赛 32 场 · 按小组")
-
-    # 总折叠按钮 (一键展开/折叠全部)
-    if "expanded_groups" not in st.session_state:
-        st.session_state.expanded_groups = set()
-
-    # 总进度条: 32/72 已赛
+# === 赛季总进度 (统一的页面头部, 两个 Tab 共享) ===
+def render_season_progress(finished: list[dict], upcoming: list[dict]) -> None:
+    """统一的赛季进度条 + 倒计时 + 刷新按钮. 显示在两个 Tab 之上, 不会被 tab 包裹"""
+    # 进度条
     finished_count = len(finished)
-    total_count = finished_count + 32  # 已赛 32 + 未赛 40 = 72
-    pct_done = finished_count / total_count
+    upcoming_count = len(upcoming)
+    total_count = finished_count + upcoming_count
+    pct_done = finished_count / total_count if total_count > 0 else 0
+
     progress_html = f"""
     <div class="overall-progress">
       <span class="label">赛季进度</span>
@@ -446,7 +442,30 @@ def render_finished_section(finished: list[dict]) -> None:
     """
     render_html(progress_html)
 
-    # 总展开/折叠控制
+    # 手动刷新按钮 + 数据时间戳 (也统一在头部)
+    rc1, rc2, rc3 = st.columns([1, 1, 4])
+    with rc1:
+        if st.button("🔄 立即刷新数据", use_container_width=True):
+            _load_unified.clear()
+            st.rerun()
+    with rc2:
+        try:
+            mtime = UNIFIED_FILE.stat().st_mtime
+            last_update = datetime.fromtimestamp(mtime)
+            st.caption(f"📅 数据更新: {last_update.strftime('%m-%d %H:%M')}")
+        except Exception:
+            st.caption("📅 数据更新时间未知")
+
+
+# === 已赛区块 ===
+def render_finished_section(finished: list[dict]) -> None:
+    """已赛区块: 2 列紧凑网格, 默认折叠. 进度条在外部 render_season_progress 渲染"""
+    # 初始化 session_state
+    if "expanded_groups" not in st.session_state:
+        st.session_state.expanded_groups = set()
+
+    # 标题 + 全局展开/折叠按钮 (Tab2 内部)
+    st.markdown("### ✅ 已赛 32 场 · 按小组")
     cs1, cs2 = st.columns([1, 1])
     with cs1:
         if st.button("📂 展开全部", use_container_width=True, key="expand_all_finished"):
@@ -650,35 +669,29 @@ def main() -> None:
     render_header(len(finished), len(upcoming), next_match)
     render_kpi_strip(len(finished), len(upcoming), groups_done)
 
-    # === 手动刷新按钮 (放在已赛上方, 显眼位置) ===
-    st.markdown(
-        '<div style="margin-top: 16px; margin-bottom: 4px;"></div>',
-        unsafe_allow_html=True,
-    )
-    rc1, rc2, rc3 = st.columns([1, 1, 4])
-    with rc1:
-        if st.button("🔄 立即刷新数据", use_container_width=True):
-            # 清缓存, 强制 reload
-            _load_unified.clear()
-            st.rerun()
-    with rc2:
-        # 显示上次更新时间
-        try:
-            mtime = UNIFIED_FILE.stat().st_mtime
-            last_update = datetime.fromtimestamp(mtime)
-            st.caption(f"📅 数据更新: {last_update.strftime('%m-%d %H:%M')}")
-        except Exception:
-            st.caption("📅 数据更新时间未知")
+    # === 统一的页面头部: 进度条 + 刷新按钮 (Tab 之外) ===
+    render_season_progress(finished, upcoming)
 
-    # === 已赛 (默认折叠) ===
-    if finished:
-        render_finished_section(finished)
+    # === 两个 Tab 分区: 未赛 (Tab1) + 已赛 (Tab2) ===
+    # 用 streamlit tabs, 头部 KPI / 进度条 / Header 保持在 tabs 之外
+    tab1, tab2 = st.tabs([
+        f"📅 未赛 ({len(upcoming)} 场)",
+        f"✅ 已赛 ({len(finished)} 场 · 默认折叠)",
+    ])
 
-    # === 未赛 ===
-    if upcoming:
-        render_upcoming_section(upcoming)
+    with tab1:
+        if upcoming:
+            render_upcoming_section(upcoming)
+        else:
+            st.info("🎉 全部比赛已完成!")
 
-    # === Legend ===
+    with tab2:
+        if finished:
+            render_finished_section(finished)
+        else:
+            st.info("暂无已赛记录")
+
+    # === Legend (Tab 外面, 统一在底部) ===
     render_legend()
 
 
