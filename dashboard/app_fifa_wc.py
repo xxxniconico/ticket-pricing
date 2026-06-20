@@ -181,10 +181,21 @@ st.set_page_config(
 
 
 # === 工具 ===
+# 兼容老版本 streamlit (<1.31 没有 st.html)
+HTML_RENDERER = getattr(st, "html", None)
+def render_html(html: str) -> None:
+    """统一 HTML 渲染入口. 新版本用 st.html, 老版本 fallback"""
+    if HTML_RENDERER is not None:
+        HTML_RENDERER(html)
+    else:
+        st.markdown(html, unsafe_allow_html=True)
+
+
 def inject_css() -> None:
-    """注入 FIFA 专属 CSS"""
+    """注入 FIFA 专属 CSS (style 标签必须用 markdown, 否则被解析)"""
     if CSS_FILE.exists():
         css = CSS_FILE.read_text(encoding="utf-8")
+        # <style> 必须用 markdown, 否则 <style> 内的 {} 会被 f-string 解析
         st.markdown(f"<style>{css}</style>", unsafe_allow_html=True)
 
 
@@ -246,7 +257,7 @@ def render_header(finished_total: int, unfinished_total: int, next_match: dict |
       <div class="countdown">⏱ {countdown_label}: {countdown}</div>
     </div>
     """
-    st.html(html)
+    render_html(html)
 
 
 # === KPI ===
@@ -285,94 +296,114 @@ def render_kpi_strip(finished: int, unfinished: int, groups_done: int) -> None:
       </div>
     </div>
     """
-    st.html(html)
+    render_html(html)
 
 
-# === 行渲染 ===
-def render_match_row_finished(m: dict) -> str:
-    """已赛比赛行 (.match-row.finished)"""
+# === 行渲染 (用 streamlit 原生 columns + 每段独立 markdown) ===
+# 不依赖 st.html / st.markdown 大块 HTML, 避免 markdown 解析破坏嵌套 div
+# 每个 cell 一个独立 st.markdown(unsafe_allow_html=True) 单段 HTML, 兼容性最好
+
+def _match_time_html(m: dict) -> str:
+    iso = m.get("commence_time")
+    if not iso:
+        return '<div class="m-time">—</div>'
+    bj = _to_bj(iso)
+    utc = datetime.fromisoformat(iso.replace("Z", ""))
+    diff_min = (utc.replace(tzinfo=None) - _now_utc_naive()).total_seconds() / 60
+    if -120 <= diff_min <= 0:
+        return '<div class="m-time live">LIVE</div>'
+    return f'<div class="m-time">{bj.strftime("%m-%d %H:%M")}</div>'
+
+
+def render_match_row_finished(m: dict) -> None:
+    """已赛比赛行 - 用 st.columns + 每段单独 st.markdown"""
     home_cn, home_flag = cn(m.get("home_en", ""))
     away_cn, away_flag = cn(m.get("away_en", ""))
     grp = m.get("group", "?")
     score = m.get("score") or "–"
-    return f"""
-    <div class="match-row finished">
-      <div class="m-time">FT</div>
-      <div class="m-team home">
-        <span class="flag">{home_flag}</span>
-        <span>{home_cn}</span>
-      </div>
-      <div class="m-score">{_format_score(score)}</div>
-      <div class="m-team away">
-        <span class="flag">{away_flag}</span>
-        <span>{away_cn}</span>
-      </div>
-      <div></div>
-      <div class="m-status">
-        <span class="badge group">Group {grp}</span>
-      </div>
-    </div>
-    """
+
+    # 用 streamlit columns 强制布局 (6 列), 然后每列内独立 st.markdown
+    cols = st.columns([1, 3, 1.2, 3, 0.5, 1.4], gap="small")
+    with cols[0]:
+        st.markdown('<div class="m-time">FT</div>', unsafe_allow_html=True)
+    with cols[1]:
+        st.markdown(
+            f'<div class="m-team home"><span class="flag">{home_flag}</span><span>{home_cn}</span></div>',
+            unsafe_allow_html=True,
+        )
+    with cols[2]:
+        st.markdown(f'<div class="m-score">{_format_score(score)}</div>', unsafe_allow_html=True)
+    with cols[3]:
+        st.markdown(
+            f'<div class="m-team away"><span class="flag">{away_flag}</span><span>{away_cn}</span></div>',
+            unsafe_allow_html=True,
+        )
+    with cols[4]:
+        st.markdown("<div></div>", unsafe_allow_html=True)
+    with cols[5]:
+        st.markdown(
+            f'<div class="m-status"><span class="badge group">Group {grp}</span></div>',
+            unsafe_allow_html=True,
+        )
+    # 加底部分隔线 (CSS 已用 border-bottom, 但用 st.empty 占位让 streamlit 渲染 row)
+    st.markdown("", unsafe_allow_html=False)
 
 
-def render_match_row_upcoming(m: dict) -> str:
-    """未赛比赛行 (.match-row) 含赔率 3 列"""
+def render_match_row_upcoming(m: dict) -> None:
+    """未赛比赛行 - 用 st.columns + 每段单独 st.markdown"""
     home_cn, home_flag = cn(m.get("home_en", ""))
     away_cn, away_flag = cn(m.get("away_en", ""))
     grp = m.get("group", "?")
+    time_html = _match_time_html(m)
 
-    # 时间 (北京时间)
-    iso = m.get("commence_time")
-    bj = _to_bj(iso) if iso else None
-    now = _now_utc_naive()
-    if bj is None:
-        time_html = '<div class="m-time">—</div>'
-    else:
-        # bj 是北京时间 (UTC+8 naive), now 是 UTC naive, 直接比较 — 但 bj 偏移 +8h
-        # 重新计算差: 用原始 UTC
-        utc = datetime.fromisoformat(iso.replace("Z", ""))
-        diff_min = (utc.replace(tzinfo=None) - now).total_seconds() / 60
-        if -120 <= diff_min <= 0:
-            time_html = '<div class="m-time live">LIVE</div>'
-        else:
-            time_html = f'<div class="m-time">{bj.strftime("%m-%d %H:%M")}</div>'
-
-    # 赔率 (3 列, .best 高亮最低赔率 = 隐含概率最高)
+    # 赔率
     metrics = m.get("metrics") or {}
     h = float(metrics.get("avg_h") or 0)
     d = float(metrics.get("avg_d") or 0)
     a = float(metrics.get("avg_a") or 0)
+    odds = [(h, "主"), (d, "平"), (a, "客")]
     if h > 0 and d > 0 and a > 0:
-        # best = 最低赔率 (对博彩公司最看好, 也是隐含概率最高)
-        best_idx = ["h", "d", "a"][min(range(3), key=lambda i: [h, d, a][i])]
-        odds_html = f"""
-        <div class="m-odds">
-          <div class="odd{' best' if best_idx == 'h' else ''}"><span class="label">主</span><span class="value">{h:.2f}</span></div>
-          <div class="odd{' best' if best_idx == 'd' else ''}"><span class="label">平</span><span class="value">{d:.2f}</span></div>
-          <div class="odd{' best' if best_idx == 'a' else ''}"><span class="label">客</span><span class="value">{a:.2f}</span></div>
-        </div>
-        """
+        best_val = min(odds, key=lambda x: x[0])[0]
     else:
-        odds_html = '<div class="m-odds"><div class="odd"><span class="value">—</span></div></div>'
+        best_val = None
 
-    return f"""
-    <div class="match-row">
-      {time_html}
-      <div class="m-team home">
-        <span class="flag">{home_flag}</span>
-        <span>{home_cn}</span>
-      </div>
-      <div class="m-score"><span class="vs">vs</span></div>
-      <div class="m-team away">
-        <span class="flag">{away_flag}</span>
-        <span>{away_cn}</span>
-      </div>
-      {odds_html}
-      <div class="m-status">
-        <span class="badge group">Group {grp}</span>
-      </div>
-    </div>
-    """
+    # 6 列布局: 时间 | 主队 | vs | 客队 | 赔率3列 | Group
+    cols = st.columns([1, 3, 0.6, 3, 3, 1.4], gap="small")
+    with cols[0]:
+        st.markdown(time_html, unsafe_allow_html=True)
+    with cols[1]:
+        st.markdown(
+            f'<div class="m-team home"><span class="flag">{home_flag}</span><span>{home_cn}</span></div>',
+            unsafe_allow_html=True,
+        )
+    with cols[2]:
+        st.markdown('<div class="m-score"><span class="vs">vs</span></div>', unsafe_allow_html=True)
+    with cols[3]:
+        st.markdown(
+            f'<div class="m-team away"><span class="flag">{away_flag}</span><span>{away_cn}</span></div>',
+            unsafe_allow_html=True,
+        )
+    # 赔率区: 嵌套 3 列
+    with cols[4]:
+        if best_val is None:
+            # 没数据, 显示占位
+            st.markdown('<div class="m-odds"><div class="odd"><span class="value">—</span></div></div>', unsafe_allow_html=True)
+        else:
+            odd_cols = st.columns(3, gap="small")
+            for i, (val, label) in enumerate(odds):
+                cls = "odd best" if val == best_val else "odd"
+                with odd_cols[i]:
+                    st.markdown(
+                        f'<div class="{cls}"><span class="label">{label}</span><span class="value">{val:.2f}</span></div>',
+                        unsafe_allow_html=True,
+                    )
+    with cols[5]:
+        st.markdown(
+            f'<div class="m-status"><span class="badge group">Group {grp}</span></div>',
+            unsafe_allow_html=True,
+        )
+    # 分隔
+    st.markdown("", unsafe_allow_html=False)
 
 
 # === 已赛区块 ===
@@ -406,11 +437,11 @@ def render_finished_section(finished: list[dict]) -> None:
           <span class="group-progress"><strong>{done}</strong> / 6 已赛</span>
         </div>
         """
-        st.html(anchor)
+        render_html(anchor)
 
-        # 行列表 (合并到一次 html 调用, 避免 markdown 解析破坏 HTML)
-        rows_html = "".join(render_match_row_finished(m) for m in matches)
-        st.html(f'<div class="match-list finished">{rows_html}</div>')
+        # 行列表 - 直接循环调 render_match_row_finished (内部用 st.columns 渲染)
+        for m in matches:
+            render_match_row_finished(m)
 
 
 # === 未赛区块 ===
@@ -444,12 +475,11 @@ def render_upcoming_section(upcoming: list[dict]) -> None:
           <span class="date-count">{len(matches)} 场比赛</span>
         </div>
         """
-        st.html(header)
+        render_html(header)
 
-        # 行列表 (合并)
-        # 行列表 (合并, 用 st.html 避免 markdown 解析破坏 HTML)
-        rows_html = "".join(render_match_row_upcoming(m) for m in matches)
-        st.html(f'<div class="match-list">{rows_html}</div>')
+        # 行列表 - 直接循环调 render_match_row_upcoming
+        for m in matches:
+            render_match_row_upcoming(m)
 
 
 # === Legend ===
@@ -464,7 +494,7 @@ def render_legend() -> None:
       <em>设计参考: FIFA.com, Flashscore, SofaScore, OddsPortal</em>
     </div>
     """
-    st.html(html)
+    render_html(html)
 
 
 # === Main ===
