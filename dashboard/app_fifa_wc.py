@@ -367,61 +367,56 @@ def render_match_row_upcoming(m: dict) -> None:
     else:
         best_val = None
 
-    # 6 列布局: 时间 | 主队 | vs | 客队 | 赔率3列 | Group
-    cols = st.columns([1, 3, 0.6, 3, 3, 1.4], gap="small")
-    with cols[0]:
+    # === 第一行: 时间 | 主队 | vs | 客队 | Group ===
+    cols1 = st.columns([0.8, 2.5, 0.5, 2.5, 1.2], gap="small")
+    with cols1[0]:
         st.markdown(time_html, unsafe_allow_html=True)
-    with cols[1]:
+    with cols1[1]:
         st.markdown(
             f'<div class="m-team home"><span class="flag">{home_flag}</span><span>{home_cn}</span></div>',
             unsafe_allow_html=True,
         )
-    with cols[2]:
+    with cols1[2]:
         st.markdown('<div class="m-score"><span class="vs">vs</span></div>', unsafe_allow_html=True)
-    with cols[3]:
+    with cols1[3]:
         st.markdown(
             f'<div class="m-team away"><span class="flag">{away_flag}</span><span>{away_cn}</span></div>',
             unsafe_allow_html=True,
         )
-    # 赔率区: 嵌套 3 列 + 概率行
-    with cols[4]:
-        if best_val is None:
-            # 没数据, 显示占位
-            st.markdown('<div class="m-odds"><div class="odd"><span class="value">—</span></div></div>', unsafe_allow_html=True)
-        else:
-            odd_cols = st.columns(3, gap="small")
-            for i, (val, label) in enumerate(odds):
-                cls = "odd best" if val == best_val else "odd"
-                with odd_cols[i]:
-                    st.markdown(
-                        f'<div class="{cls}"><span class="label">{label}</span><span class="value">{val:.2f}</span></div>',
-                        unsafe_allow_html=True,
-                    )
-            # 主/平/客 隐含胜率 (从赔率反推)
-            p_h = float(metrics.get("p_h_mean") or 0)
-            if p_h > 0 and h > 0 and d > 0 and a > 0:
-                raw = 1/h + 1/d + 1/a  # 去 vig 前的隐含概率之和
-                p_h_nv = (1/h) / raw
-                p_d_nv = (1/d) / raw
-                p_a_nv = (1/a) / raw
-                # 最高概率高亮 (跟 best odds 一致)
-                probs = [p_h_nv, p_d_nv, p_a_nv]
-                max_idx = max(range(3), key=lambda i: probs[i])
-                hl = ["", "", ""]
-                hl[max_idx] = " highlight"
-                p_html = (
-                    '<div class="m-prob">'
-                    f'<span class="prob{hl[0]}"><span class="label">主</span><span class="value">{p_h_nv:.0%}</span></span>'
-                    f'<span class="prob{hl[1]}"><span class="label">平</span><span class="value">{p_d_nv:.0%}</span></span>'
-                    f'<span class="prob{hl[2]}"><span class="label">客</span><span class="value">{p_a_nv:.0%}</span></span>'
-                    '</div>'
-                )
-                st.markdown(p_html, unsafe_allow_html=True)
-    with cols[5]:
+    with cols1[4]:
         st.markdown(
             f'<div class="m-status"><span class="badge group">Group {grp}</span></div>',
             unsafe_allow_html=True,
         )
+
+    # === 第二行: 赔率 + 概率 (全宽) ===
+    if best_val is not None:
+        odds_html = ""
+        for val, label in odds:
+            cls = "odd best" if val == best_val else "odd"
+            odds_html += f'<div class="{cls}"><span class="label">{label}</span><span class="value">{val:.2f}</span></div>'
+
+        p_html = ""
+        p_h = float(metrics.get("p_h_mean") or 0)
+        if p_h > 0 and h > 0 and d > 0 and a > 0:
+            raw = 1/h + 1/d + 1/a
+            p_h_nv = (1/h) / raw
+            p_d_nv = (1/d) / raw
+            p_a_nv = (1/a) / raw
+            probs = [p_h_nv, p_d_nv, p_a_nv]
+            max_idx = max(range(3), key=lambda i: probs[i])
+            hl = ["", "", ""]
+            hl[max_idx] = " highlight"
+            p_html = (
+                '<div class="m-prob">'
+                f'<span class="prob{hl[0]}"><span class="label">主</span><span class="value">{p_h_nv:.0%}</span></span>'
+                f'<span class="prob{hl[1]}"><span class="label">平</span><span class="value">{p_d_nv:.0%}</span></span>'
+                f'<span class="prob{hl[2]}"><span class="label">客</span><span class="value">{p_a_nv:.0%}</span></span>'
+                '</div>'
+            )
+        stack_html = f'<div class="m-stack"><div class="m-odds">{odds_html}</div>{p_html}</div>'
+        # 第二行用单列, 全宽
+        st.markdown(stack_html, unsafe_allow_html=True)
     # 分隔
     st.markdown("", unsafe_allow_html=False)
 

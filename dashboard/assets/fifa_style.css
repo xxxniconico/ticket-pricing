@@ -347,15 +347,25 @@ h4 { font-size: 0.9rem !important; }
     font-weight: 300;
 }
 
-/* === 8.4 赔率列 (未赛) === */
-.match-row .m-odds {
-    display: flex;
-    gap: 4px;
-    justify-content: flex-end;
+/* === 8.4 赔率区 (未赛) — 占比赛行下整行, 横向布局 === */
+.m-stack {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 6px;
+    margin-top: 4px;
+    padding: 6px 8px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
     font-family: var(--font-mono);
+}
+.m-stack .m-odds {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr 1fr !important;
+    gap: 8px !important;
     font-size: 0.85rem;
 }
-.match-row .m-odds .odd {
+.m-stack .m-odds .odd {
     display: inline-flex;
     flex-direction: column;
     align-items: center;
@@ -366,7 +376,7 @@ h4 { font-size: 0.9rem !important; }
     min-width: 40px;
     transition: all 0.12s ease;
 }
-.match-row .m-odds .odd .label {
+.m-stack .m-odds .odd .label {
     font-size: 0.55rem;
     color: var(--ink-4);
     text-transform: uppercase;
@@ -374,29 +384,27 @@ h4 { font-size: 0.9rem !important; }
     font-family: var(--font-sans);
     margin-bottom: 1px;
 }
-.match-row .m-odds .odd .value {
+.m-stack .m-odds .odd .value {
     color: var(--ink);
     font-weight: 600;
     font-size: 0.92rem;
 }
-.match-row .m-odds .odd.best {
+.m-stack .m-odds .odd.best {
     background: var(--green-best-dim);
     border-color: var(--green-best);
 }
-.match-row .m-odds .odd.best .value {
+.m-stack .m-odds .odd.best .value {
     color: var(--green-best);
 }
 
 /* ==== 概率行 (主/平/客 隐含胜率, 放在赔率下面) ==== */
-.match-row .m-prob {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 4px;
-    margin-top: 4px;
-    font-family: var(--font-mono);
+.m-stack .m-prob {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr 1fr !important;
+    gap: 8px !important;
     text-align: center;
 }
-.match-row .m-prob .prob {
+.m-stack .m-prob .prob {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -404,27 +412,27 @@ h4 { font-size: 0.9rem !important; }
     background: transparent;
     border-radius: 4px;
 }
-.match-row .m-prob .prob .label {
-    font-size: 0.55rem;
+.m-stack .m-prob .prob .label {
+    font-size: 0.6rem;
     color: var(--ink-4);
     text-transform: uppercase;
     letter-spacing: 0.04em;
     font-family: var(--font-sans);
     line-height: 1;
 }
-.match-row .m-prob .prob .value {
-    font-size: 0.78rem;
+.m-stack .m-prob .prob .value {
+    font-size: 0.85rem;
     font-weight: 600;
     color: var(--ink-2);
     margin-top: 1px;
     line-height: 1;
 }
 /* 最高概率高亮 (跟 best odds 一致) */
-.match-row .m-prob .prob.highlight {
+.m-stack .m-prob .prob.highlight {
     background: var(--green-best-dim);
     border-radius: 4px;
 }
-.match-row .m-prob .prob.highlight .value {
+.m-stack .m-prob .prob.highlight .value {
     color: var(--green-best);
 }
 
