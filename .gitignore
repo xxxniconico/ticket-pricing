@@ -27,3 +27,11 @@ Thumbs.db
 # Raw data (subdirectories too)
 data/raw/
 README.md
+
+# Secrets
+.env
+.env.*
+
+# Exception: odds data 是公开赔率, 无敏感信息, 同步到云端给看板用
+!data/raw/odds/
+!data/raw/odds/*.json
