@@ -203,6 +203,7 @@ st.set_page_config(
     page_icon="🌍",
     layout="wide",
     initial_sidebar_state="collapsed",
+    menu_items=None,  # 隐藏右上角 hamburger
 )
 
 

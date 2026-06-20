@@ -8,39 +8,56 @@
    - 状态颜色编码: 已赛绿 / 未赛白 / LIVE 红
 */
 
-/* ==== 1. CSS 变量 (品牌色板) ==== */
+/* ==== 1. CSS 变量 (FIFA 深色商务风) ==== */
+/* 灵感: FIFA.com 官方品牌 + 暗色商务 UI (类似 Bloomberg Sports / ESPN+) */
+/* 深蓝主背景 + 白色卡片 + 金色强调 + 高对比度排版 */
 :root {
-    --fifa-blue: #326295;
+    --fifa-blue: #326295;       /* FIFA 官方蓝 (品牌主色) */
     --fifa-blue-light: #4a7fb3;
-    --fifa-blue-dark: #234c70;
-    --fifa-blue-dim: rgba(50, 98, 149, 0.10);
-    --fifa-gold: #93764d;
-    --fifa-gold-light: #b89870;
-    --fifa-gold-dim: rgba(147, 118, 77, 0.10);
+    --fifa-blue-dark: #1a3a5c;
+    --fifa-blue-dim: rgba(50, 98, 149, 0.12);
+    --fifa-gold: #d4af37;       /* 金色 (提升版, 更有档次) */
+    --fifa-gold-light: #e8c878;
+    --fifa-gold-dim: rgba(212, 175, 55, 0.15);
 
+    /* 深色背景层 — 从最深到最浅 */
+    --bg-darkest: #0d1b2a;      /* 整体背景 (深海军蓝) */
+    --bg-darker: #142a40;        /* 主分区背景 */
+    --bg-dark: #1c3650;         /* 次级背景 */
+
+    /* 卡片层 — 白色 / 米白 */
+    --surface: #ffffff;
+    --surface-2: #fafbfc;
+    --surface-3: #f5f6f8;
+    --surface-tinted: #f8fafc;   /* 略冷调 */
+    --border: #e8eaee;
+    --border-2: #d8dce2;
+
+    /* 文字 — 在深背景上 */
+    --ink-on-dark: #ffffff;
+    --ink-on-dark-2: #d8dce2;
+    --ink-on-dark-3: #a8b0bc;
+    --ink-on-dark-4: #6b7785;
+
+    /* 文字 — 在白卡片上 */
     --ink: #1a1d23;
     --ink-2: #4a4f5a;
     --ink-3: #8a8f98;
     --ink-4: #b8bcc4;
 
-    --surface: #ffffff;
-    --surface-2: #fafbfc;
-    --surface-3: #f5f6f8;
-    --border: #e8eaee;
-    --border-2: #d8dce2;
-
+    /* 数据色 */
     --green-best: #00a86b;
     --green-best-dim: rgba(0, 168, 107, 0.08);
     --green-finished: #e6f7ed;
     --green-finished-border: #b8e6c8;
 
-    --red-live: #d64545;
-    --red-live-dim: rgba(214, 69, 69, 0.08);
+    --red-live: #ff5757;
+    --red-live-dim: rgba(255, 87, 87, 0.10);
 
     --neutral: #6b7280;
     --neutral-dim: rgba(107, 114, 128, 0.06);
 
-    --bg: #f7f8fa;
+    --bg: #0d1b2a;  /* 主背景 = 深海军蓝 */
 
     --font-sans: 'Inter', system-ui, -apple-system, 'Helvetica Neue', sans-serif;
     --font-mono: 'JetBrains Mono', 'SF Mono', 'Monaco', 'Cascadia Code', ui-monospace, monospace;
@@ -48,13 +65,18 @@
 
 /* ==== 2. 全局排版 ==== */
 .stApp { background: var(--bg) !important; }
+/* streamlit 主区背景也调深 */
+section.main, [data-testid="stAppViewContainer"], [data-testid="stMain"] {
+    background: var(--bg) !important;
+    color: var(--ink-on-dark);
+}
 html, body, .stApp, .stMarkdown, p, div, span, label {
     font-family: var(--font-sans) !important;
     color: var(--ink-2);
 }
 h1, h2, h3, h4, h5 {
     font-family: var(--font-sans) !important;
-    color: var(--ink) !important;
+    color: var(--ink-on-dark) !important;
     font-weight: 600 !important;
     letter-spacing: -0.01em;
 }
@@ -65,51 +87,84 @@ h4 { font-size: 0.9rem !important; }
 
 /* ==== 3. FIFA 品牌 Header ==== */
 .fifa-header {
-    background: linear-gradient(135deg, var(--fifa-blue) 0%, var(--fifa-blue-dark) 100%);
+    background:
+        linear-gradient(135deg, rgba(255,255,255,0.08) 0%, transparent 60%),
+        linear-gradient(135deg, var(--fifa-blue) 0%, var(--fifa-blue-dark) 100%);
     color: white;
-    padding: 20px 28px;
-    border-radius: 12px;
+    padding: 24px 32px;
+    border-radius: 14px;
     margin-bottom: 20px;
     position: relative;
     overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.08);
+    box-shadow:
+        0 1px 3px rgba(0,0,0,0.3),
+        0 8px 24px rgba(50, 98, 149, 0.25);
 }
 .fifa-header::before {
     content: '';
     position: absolute;
     top: -50%;
     right: -10%;
-    width: 400px;
-    height: 400px;
-    background: radial-gradient(circle, rgba(255,255,255,0.06) 0%, transparent 70%);
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, rgba(212, 175, 55, 0.10) 0%, transparent 70%);  /* 金色光晕 */
+    pointer-events: none;
+}
+.fifa-header::after {
+    content: '';
+    position: absolute;
+    bottom: -30%;
+    left: -10%;
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.06) 0%, transparent 70%);
     pointer-events: none;
 }
 .fifa-header h1 {
     color: white !important;
-    font-size: 1.6rem !important;
+    font-size: 1.7rem !important;
     font-weight: 700 !important;
-    margin: 0 0 4px 0 !important;
+    margin: 0 0 6px 0 !important;
     letter-spacing: -0.02em !important;
+    position: relative;
+    z-index: 1;
+}
+.fifa-header h1::before {
+    content: '';
+    display: inline-block;
+    width: 4px;
+    height: 24px;
+    background: var(--fifa-gold);
+    margin-right: 12px;
+    vertical-align: -3px;
+    border-radius: 2px;
 }
 .fifa-header .subtitle {
-    color: rgba(255, 255, 255, 0.75);
+    color: rgba(255, 255, 255, 0.80);
     font-size: 0.85rem;
     margin: 0;
+    position: relative;
+    z-index: 1;
 }
 .fifa-header .countdown {
     display: inline-block;
-    background: rgba(255, 255, 255, 0.15);
+    background: rgba(0, 0, 0, 0.25);
     backdrop-filter: blur(8px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(212, 175, 55, 0.4);
     border-radius: 8px;
-    padding: 8px 14px;
-    margin-top: 10px;
+    padding: 10px 16px;
+    margin-top: 14px;
     font-family: var(--font-mono);
     font-size: 0.85rem;
     color: white;
+    position: relative;
+    z-index: 1;
 }
 .fifa-header .countdown strong {
-    color: var(--fifa-gold-light);
-    font-weight: 600;
+    color: var(--fifa-gold);
+    font-weight: 700;
+    text-shadow: 0 0 8px rgba(212, 175, 55, 0.3);
 }
 
 /* ==== 4. KPI 紧凑条 ==== */
@@ -122,22 +177,35 @@ h4 { font-size: 0.9rem !important; }
 .kpi-strip .kpi-cell {
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 12px 14px;
+    border-radius: 10px;
+    padding: 14px 16px;
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.kpi-strip .kpi-cell:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
 }
 .kpi-strip .kpi-icon {
-    font-size: 1.3rem;
+    font-size: 1.4rem;
     line-height: 1;
+    width: 36px;
+    height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--fifa-blue-dim);
+    border-radius: 8px;
 }
 .kpi-strip .kpi-text { display: flex; flex-direction: column; }
 .kpi-strip .kpi-value {
     font-family: var(--font-mono);
-    font-size: 1.2rem;
+    font-size: 1.35rem;
     font-weight: 600;
-    color: var(--ink);
+    color: var(--fifa-blue-dark);
     line-height: 1.1;
 }
 .kpi-strip .kpi-label {
@@ -146,6 +214,7 @@ h4 { font-size: 0.9rem !important; }
     text-transform: uppercase;
     letter-spacing: 0.04em;
     margin-top: 2px;
+    font-weight: 500;
 }
 
 /* ==== 5. 市场类型切换器 (chip tabs) ==== */
@@ -184,12 +253,13 @@ h4 { font-size: 0.9rem !important; }
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 10px 14px;
+    padding: 12px 16px;
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 8px 8px 0 0;
+    border-radius: 10px 10px 0 0;
     border-bottom: none;
-    margin-top: 18px;
+    margin-top: 20px;
+    box-shadow: 0 -1px 0 rgba(0,0,0,0.02);
 }
 .group-anchor .group-chip {
     display: inline-flex;
@@ -224,46 +294,64 @@ h4 { font-size: 0.9rem !important; }
     display: flex;
     align-items: baseline;
     gap: 12px;
-    padding: 14px 0 10px 0;
-    margin-top: 12px;
-    border-bottom: 1px solid var(--border);
+    padding: 14px 4px 10px 4px;
+    margin-top: 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    position: relative;
+}
+.date-header::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3px;
+    height: 16px;
+    background: var(--fifa-gold);
+    border-radius: 2px;
 }
 .date-header .date-label {
-    font-size: 1.05rem;
-    font-weight: 600;
-    color: var(--ink);
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--ink-on-dark);
     letter-spacing: -0.01em;
+    margin-left: 12px;
 }
 .date-header .date-weekday {
     font-size: 0.78rem;
-    color: var(--ink-3);
+    color: var(--ink-on-dark-3);
     font-family: var(--font-sans);
 }
 .date-header .date-count {
     margin-left: auto;
     font-family: var(--font-mono);
     font-size: 0.78rem;
-    color: var(--ink-3);
+    color: var(--ink-on-dark-3);
+    background: rgba(255,255,255,0.05);
+    padding: 2px 8px;
+    border-radius: 4px;
 }
 
 /* ==== 8. 比赛行 (核心) ==== */
 .match-list {
     border: 1px solid var(--border);
-    border-radius: 0 0 8px 8px;
+    border-radius: 0 0 10px 10px;
     overflow: hidden;
     background: var(--surface);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.06);
 }
 .match-list.finished {
     border-top: none;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.06), 0 0 0 1px rgba(0, 168, 107, 0.10) inset;
 }
 .match-row {
     display: grid;
     grid-template-columns: 64px 1fr 80px 1fr 110px 70px;
     align-items: center;
     gap: 12px;
-    padding: 10px 14px;
+    padding: 12px 16px;
     border-bottom: 1px solid var(--border);
-    min-height: 56px;
+    min-height: 60px;
     transition: background 0.12s ease;
 }
 .match-row:last-child { border-bottom: none; }
@@ -383,12 +471,12 @@ h4 { font-size: 0.9rem !important; }
 .m-stack {
     display: flex !important;
     flex-direction: column !important;
-    gap: 6px;
-    margin-top: 4px;
-    padding: 6px 8px;
-    background: var(--surface-2);
+    gap: 8px;
+    margin-top: 6px;
+    padding: 10px 12px;
+    background: linear-gradient(180deg, var(--surface-2) 0%, var(--surface-3) 100%);
     border: 1px solid var(--border);
-    border-radius: 6px;
+    border-radius: 8px;
     font-family: var(--font-mono);
 }
 .m-stack .m-odds {
