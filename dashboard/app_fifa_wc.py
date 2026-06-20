@@ -1,12 +1,12 @@
 """
-FIFA 世界杯赔率 + 战绩看板 V2
+FIFA 世界杯赔率 + 战绩看板 V3
 ==========================
 
 独立 Streamlit app, 端口 8507 (云端: ?app=fifa)
-- 12 个小组分类展示
-- 国旗 emoji 标识
+- **按日期排序为主** (然后按 group)
+- **国旗放在国家名后面**: 墨西哥 🇲🇽 vs 南非 🇿🇦
+- **每场比赛标注组别**: Group A / Group B
 - 已赛 + 未赛 72 场全显示
-- 强队出场只显示均值, 不列公司明细
 - 数据源: Wikipedia (已赛) + The Odds API (未赛)
 
 作者: Hermes Agent
@@ -58,7 +58,6 @@ TEAM_CN = {
 }
 
 def cn(name):
-    """球队名 → (中文, 国旗)"""
     if name in TEAM_CN:
         return TEAM_CN[name]
     return (name, "🏳️")
@@ -77,7 +76,7 @@ st.markdown("""
             padding: 16px; border-radius: 8px; margin-bottom: 16px;">
   <h2 style="color: white; margin: 0;">🌍 世界杯赔率看板 · 美加墨 2026</h2>
   <p style="color: #cbd5e1; margin: 4px 0 0 0;">
-    12 个小组 · 已赛 + 未赛 72 场 · 数据源 Wikipedia + The Odds API · 仅展示
+    按日期排序 · 已赛 + 未赛 72 场 · 数据源 Wikipedia + The Odds API · 仅展示
   </p>
 </div>
 """, unsafe_allow_html=True)
@@ -90,19 +89,34 @@ def _load_unified():
     return json.loads(UNIFIED_FILE.read_text())
 
 
-def render_match_card(m):
-    """单场比赛卡片"""
+def render_match_card(m, show_date_header=False):
+    """单场比赛卡片 - 国旗放在国家名后面"""
     home_cn, home_flag = cn(m['home_en'])
     away_cn, away_flag = cn(m['away_en'])
+    grp = m.get('group', '?')
+
+    # 国旗放在国家名后面
+    home_str = f"**{home_cn}** {home_flag}"
+    away_str = f"**{away_cn}** {away_flag}"
 
     # 标题
     if m['finished']:
-        title = f"{home_flag} **{home_cn}** {m['score']} **{away_cn}** {away_flag}"
-        st.markdown(f"#### ✅ {title}")
+        # 已赛: 国家名 + 国旗 + 比分 + 国家名 + 国旗 + Group 标签
+        st.markdown(
+            f"#### ✅ {home_str} {m['score']} {away_str}  &nbsp;&nbsp; "
+            f"<span style='background-color:#1f2937;color:#9ca3af;padding:2px 8px;border-radius:4px;font-size:0.7em;'>"
+            f"Group {grp}</span>",
+            unsafe_allow_html=True,
+        )
     else:
         metrics = m.get('metrics', {})
         date_cn = m.get('date_cn', m.get('date', ''))
-        st.markdown(f"#### ⏳ {date_cn} 北京 | {home_flag} **{home_cn}** vs {away_flag} **{away_cn}**")
+        st.markdown(
+            f"#### ⏳ {date_cn} 北京 | {home_str} vs {away_str}  &nbsp;&nbsp; "
+            f"<span style='background-color:#1f2937;color:#9ca3af;padding:2px 8px;border-radius:4px;font-size:0.7em;'>"
+            f"Group {grp}</span>",
+            unsafe_allow_html=True,
+        )
 
         if metrics:
             c1, c2, c3, c4, c5 = st.columns(5)
@@ -122,39 +136,52 @@ def render_match_card(m):
             st.caption("暂无赔率数据")
 
 
-def render_group_section(group, matches):
-    """渲染单个小组"""
-    matches.sort(key=lambda x: (x.get('date', ''), 0 if x['finished'] else 1))
+def render_by_date(matches):
+    """按日期排序主视图"""
+    # 排序: 已赛按 (date, group), 未赛按 (commence_time, group)
+    # 已赛日期统一是 "2026-06 (Wikipedia)", 用 group 当 secondary
     finished = [m for m in matches if m['finished']]
     unfinished = [m for m in matches if not m['finished']]
 
-    # 头部: 4 支队
-    teams_seen = []
-    for m in matches:
-        if m['home_en'] not in teams_seen:
-            teams_seen.append(m['home_en'])
-        if m['away_en'] not in teams_seen:
-            teams_seen.append(m['away_en'])
-    team_flags = " ".join(f"{cn(t)[1]} {cn(t)[0]}" for t in teams_seen[:4])
-
-    n_total = len(matches)
-    n_done = len(finished)
-    st.markdown(f"### 🏆 Group {group} ({n_done}/{n_total} 已赛)")
-    st.caption(team_flags)
-
-    # 已赛
-    if finished:
-        st.markdown("**✅ 已赛**")
-        for m in finished:
-            render_match_card(m)
-
-    # 未赛
-    if unfinished:
-        st.markdown("**⏳ 未赛**")
-        for m in unfinished:
-            render_match_card(m)
+    # === 已赛区块 ===
+    st.markdown("### ✅ 已赛 (按小组分组)")
+    finished.sort(key=lambda x: (x['group'],))
+    from collections import defaultdict
+    by_group = defaultdict(list)
+    for m in finished:
+        by_group[m['group']].append(m)
+    for grp in 'ABCDEFGHIJKL':
+        if grp in by_group:
+            st.markdown(f"**Group {grp}**")
+            for m in by_group[grp]:
+                render_match_card(m)
 
     st.divider()
+
+    # === 未赛区块(按日期升序) ===
+    st.markdown("### ⏳ 未赛 (按日期排序)")
+    # 用 commence_time 排序,fallback 用 date
+    def sort_key(m):
+        return m.get('commence_time') or m.get('date') or '9999'
+    unfinished.sort(key=sort_key)
+
+    # 按日期分组显示,日期变化时显示日期标题
+    current_date = None
+    for m in unfinished:
+        utc = m.get('commence_time', '')
+        bj_date = utc[:10] if utc else m.get('date', '')
+        if bj_date != current_date:
+            current_date = bj_date
+            # 把 "2026-06-25" 转成中文友好格式
+            try:
+                dt = datetime.strptime(bj_date, '%Y-%m-%d')
+                weekday_cn = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'][dt.weekday()]
+                date_label = f"📅 {bj_date} {weekday_cn}"
+            except Exception:
+                date_label = f"📅 {bj_date}"
+            st.markdown(f"#### {date_label}")
+
+        render_match_card(m)
 
 
 def main():
@@ -176,22 +203,16 @@ def main():
     with c3:
         st.metric("⏳ 未赛", f"{unfinished_total} 场")
     with c4:
-        groups_with_matches = len(set(m['group'] for m in data))
-        st.metric("🅰️ 小组", f"{groups_with_matches}/12")
+        groups_count = len(set(m['group'] for m in data))
+        st.metric("🅰️ 小组", f"{groups_count}/12")
 
     st.divider()
 
-    # === 按 group 渲染 ===
-    from collections import defaultdict
-    by_group = defaultdict(list)
-    for m in data:
-        by_group[m['group']].append(m)
-
-    for grp in 'ABCDEFGHIJKL':
-        if grp in by_group:
-            render_group_section(grp, by_group[grp])
+    # === 主视图 ===
+    render_by_date(data)
 
     # === 底部说明 ===
+    st.divider()
     st.markdown("#### 📐 看板字段解读")
     st.markdown("""
 | 字段 | 含义 |
@@ -200,10 +221,11 @@ def main():
 | `分歧度` | 各家公司主胜概率的标准差 — **越大说明市场越分歧, 比赛悬念越大** |
 | `✅ 已赛` | 来自 Wikipedia, 含最终比分 |
 | `⏳ 未赛` | 来自 The Odds API, 含市场赔率(剔除跑偏公司) |
+| `Group X` | 该场比赛所在的小组 |
 
-**国旗**: 🇲🇽 墨西哥 / 🇧🇷 巴西 / 🇩🇪 德国 ... 以 ISO 3166-1 为准
+**布局**: 已赛按小组分类 → 未赛按日期升序排列, 每场比赛后面附 Group 标签 + 国旗
 
-**局限**: Wikipedia 小组页面只有月份没有具体日期, 已赛比赛日期为 "TBD"。未赛比赛有精确时间 (北京时间)。
+**局限**: Wikipedia 小组页面只有月份没有具体日期, 已赛比赛日期标记为 "Wikipedia"。
 """)
 
 
