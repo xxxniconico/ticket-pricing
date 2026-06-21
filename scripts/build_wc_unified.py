@@ -3,6 +3,7 @@
 """
 import json, re, statistics, sys, argparse
 from datetime import datetime, timezone, timedelta
+from html import unescape
 from pathlib import Path
 
 ROOT = Path('/home/xxxsuli/ticket-pricing')
@@ -34,9 +35,9 @@ def parse_group_html(html_path, group):
     i = 0
     while i < len(items) - 2:
         if items[i][1] == 'home' and items[i+1][1] == 'score' and items[i+2][1] == 'away':
-            home_team = items[i][2].replace(' national football team', '').replace(' national soccer team', '')
+            home_team = unescape(items[i][2]).replace(' national football team', '').replace(' national soccer team', '')
             score = items[i+1][2]
-            away_team = items[i+2][2].replace(' national football team', '').replace(' national soccer team', '')
+            away_team = unescape(items[i+2][2]).replace(' national football team', '').replace(' national soccer team', '')
             has_score = score and score not in ('–', '-', '') and not score.startswith('Match')
             matches.append({
                 'date': '2026-06 (Wikipedia)',

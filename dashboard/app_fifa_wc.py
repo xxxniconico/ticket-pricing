@@ -17,10 +17,10 @@ V5 重写要点:
 5. 赔率列显示主/平/客 3 列, 用 .odd.best 高亮最低赔率 (隐含概率最高)
 
 数据源 (只读):
-- data/processed/wc_2026_unified.json  (72 场: 32 已赛 + 40 未赛)
+- data/processed/wc_2026_unified.json  (69 场: 33 已赛 + 36 未赛)
 
 作者: Hermes Agent
-日期: 2026-06-20
+日期: 2026-06-21
 """
 from __future__ import annotations
 
@@ -445,7 +445,7 @@ def render_finished_section(finished: list[dict]) -> None:
 
     # 标题 + 全局展开/折叠按钮 (Tab2 内部)
     # === 标题 + 全局展开/折叠按钮 ===
-    st.markdown("### ✅ 已赛 32 场 · 按小组")
+    st.markdown(f"### ✅ 已赛 {len(finished)} 场 · 按小组")
     cs1, cs2 = st.columns([1, 1])
     with cs1:
         if st.button("📂 展开全部", use_container_width=True, key="expand_all_finished"):
@@ -507,15 +507,10 @@ def render_finished_section(finished: list[dict]) -> None:
                     st.session_state.expanded_groups.add(grp)
                 st.rerun()
 
-    # === 展开区域: 显示每个展开组的 (1) 积分榜 + (2) 比赛结果 ===
-    for grp in active_groups:
-        if (grp in st.session_state.expanded_groups) or ("ALL" in st.session_state.expanded_groups):
-            matches = by_group[grp]
-            # 算积分 + 净胜球
+        # === 展开内容紧贴 button 下方 (穿插到 group 之间) ===
+        if is_expanded:
             standings = _compute_standings(matches)
-            # 渲染积分榜
             render_standings(standings, grp)
-            # 渲染比赛结果
             rows_html = "".join(_finished_row_html(m) for m in matches)
             render_html(f'<div class="match-list expanded expanded-section">{rows_html}</div>')
 
@@ -622,7 +617,7 @@ def _finished_row_html(m: dict) -> str:
 # === 未赛区块 ===
 def render_upcoming_section(upcoming: list[dict]) -> None:
     """未赛区块: 按日期分组, 含赔率 3 列"""
-    st.markdown("### ⏳ 未赛 40 场 · 按日期")
+    st.markdown(f"### ⏳ 未赛 {len(upcoming)} 场 · 按日期")
 
     by_date: dict[str, list[dict]] = defaultdict(list)
     for m in upcoming:
@@ -676,6 +671,7 @@ def render_legend() -> None:
 FINAL_BETS_FILE = ROOT / "output" / "wc_final_bets_20260620.json"
 TRACKER_FILE = ROOT / "output" / "wc_bet_tracker.json"
 CORR_FILE = ROOT / "output" / "wc_correlation_analysis_20260620.json"
+DAILY_FILE = ROOT / "output" / "wc_daily_analysis_20260620.json"
 
 
 @st.cache_data(ttl=300)
@@ -695,6 +691,12 @@ def _load_correlation():
     if not CORR_FILE.exists():
         return None
     return json.loads(CORR_FILE.read_text(encoding="utf-8"))
+
+@st.cache_data(ttl=300)
+def _load_daily_analysis():
+    if not DAILY_FILE.exists():
+        return None
+    return json.loads(DAILY_FILE.read_text(encoding="utf-8"))
 
 
 def _ev_class(ev: float) -> str:
@@ -863,11 +865,82 @@ def _render_risk_rules(final_bets: dict) -> None:
       <em>影响: 平局/主胜下注可能真实价值, 客胜下注疑似假价值</em></div>""")
 
 
+def _render_daily_combinations(daily: dict, tracker_by_match: dict) -> None:
+    """每日下注组合: 风险/收益/对冲分析."""
+    days = daily.get("days", [])
+    cards = ""
+    for d in days:
+        n = d["n_bets"]
+        g = d["global"]; k = d["kelly"]
+        hedges = d.get("hedging", [])
+        div_b = d.get("diversification_benefit", 0)
+        today_cls = "dc-today" if d["date"] == (_now_utc_naive() + timedelta(hours=8)).strftime("%Y-%m-%d") else ""
+
+        # Bet rows
+        bet_rows = ""
+        for b in d["bets"]:
+            tr = tracker_by_match.get(b["match"], {})
+            st_icon = {"won": "✅", "lost": "❌"}.get(tr.get("status", ""), "⏳")
+            bet_rows += (f'<div class="dc-bet"><span class="dc-sel {_sel_class(b["selection"])}">'
+                         f'{b["selection"]}</span><span class="dc-match">{b["match"]}</span>'
+                         f'<span class="dc-odds">@{b["odds"]:.2f}</span>'
+                         f'<span class="dc-ev {_ev_class(b["ev"])}">{b["ev"]:+.0%}</span>'
+                         f'<span class="dc-stake">{b["global_optimal_stake"]:.1%}</span>'
+                         f'<span class="dc-icon">{st_icon}</span></div>')
+
+        # Hedging badges
+        hedge_html = ""
+        for h in hedges:
+            ht = h["hedge_type"]
+            badge = "🔗 同向" if ht == "none" else "🛡️ 部分对冲"
+            hedge_html += (f'<div class="dc-hedge"><span class="hg-badge hg-{ht}">{badge}</span>'
+                           f'Group {h["group"]} · {", ".join(h["matches"])}'
+                           f'<span class="hg-note">{h["note"]}</span></div>')
+
+        div_html = (f'<div class="dc-div">分散化降σ ~{div_b:.0%}</div>' if div_b > 0.01 else "")
+
+        cards += f"""<div class="dc-card {today_cls}">
+          <div class="dc-header"><span class="dc-date">{d["date"]}</span>
+            <span class="dc-nbets">{n} 注</span>{div_html}</div>
+          <div class="dc-bets">{bet_rows}</div>{hedge_html}
+          <div class="dc-stats">
+            <div class="dc-stat"><span class="dc-label">全局</span>
+              <span class="dc-val">EV {g["ev"]:+.4f} · σ {g["sigma"]:.1%} · Sharpe {g["sharpe"]:.2f}</span></div>
+            <div class="dc-stat"><span class="dc-label">Kelly</span>
+              <span class="dc-val">EV {k["ev"]:+.4f} · σ {k["sigma"]:.1%} · Sharpe {k["sharpe"]:.2f}</span></div>
+          </div></div>"""
+
+    render_html(f'<div class="dc-grid">{cards}</div>')
+
+
+def _render_approach_comparison(daily: dict) -> None:
+    """方案对比表: 全局/Kelly/每日SLSQP."""
+    aps = daily.get("summary", {}).get("approaches", {})
+    rows = ""
+    for key, ap in aps.items():
+        is_best_sharpe = ap.get("sharpe", 0) == max(a.get("sharpe", 0) for a in aps.values())
+        is_best_ev = ap.get("total_ev", 0) == max(a.get("total_ev", 0) for a in aps.values())
+        stars = (" ★" if is_best_sharpe else "") + (" ▲" if is_best_ev else "")
+        cls = "ap-best" if (is_best_sharpe or is_best_ev) else ""
+        rows += (f'<tr class="{cls}"><td>{ap["label"]}{stars}</td>'
+                 f'<td class="num">{ap["total_stake"]:.1%}</td>'
+                 f'<td class="num">{ap["total_ev"]:+.4f}</td>'
+                 f'<td class="num">{ap["sigma"]:.1%}</td>'
+                 f'<td class="num">{ap["sharpe"]:.2f}</td></tr>')
+    render_html(f"""<table class="bet-table approach-table"><thead><tr>
+      <th>方案</th><th class="num">总仓位</th><th class="num">总EV</th>
+      <th class="num">σ</th><th class="num">Sharpe</th></tr></thead><tbody>{rows}</tbody></table>""")
+    rec = daily.get("summary", {}).get("recommendation", "")
+    if rec:
+        render_html(f'<div class="rec-box">{rec}</div>')
+
+
 def render_value_tab() -> None:
     """Tab3: 价值下注建议 + 实时结算追踪"""
     final_bets = _load_final_bets()
     tracker = _load_tracker_data()
     corr = _load_correlation()
+    daily = _load_daily_analysis()
     if final_bets is None:
         st.warning("⚠️ 未找到下注建议数据。请先运行 P4-P6 管线。")
         st.code(f"expected: {FINAL_BETS_FILE}")
@@ -891,6 +964,10 @@ def render_value_tab() -> None:
     _render_compare_card(final_bets)
     _render_bet_table(final_bets, tracker_by_match, today_bj)
     _render_daily_summary(final_bets, tracker_by_match)
+    if daily:
+        st.markdown("### 📅 每日组合分析 + 对冲")
+        _render_daily_combinations(daily, tracker_by_match)
+        _render_approach_comparison(daily)
     if corr:
         with st.expander("🔗 同组相关性分析 (蒙特卡洛 N=10000)"):
             _render_correlation_analysis(corr)
@@ -943,13 +1020,11 @@ def main() -> None:
     # === 统一的页面头部: 进度条 + 刷新按钮 (Tab 之外) ===
     render_season_progress(finished, upcoming)
 
-    # === 两个 Tab 分区: 未赛 (Tab1) + 已赛 (Tab2) ===
-    # 注: 之前有过 "📊 价值下注" Tab3 (V5.5 期间实验), 因不属于 FIFA 看板独立项目
-    #     (用户在历史 session 中明确说"这是独立项目, 不要写到 V8 看板") 已暂时停用.
-    #     相关代码 render_value_tab() 仍保留在文件中, 方便日后复用.
-    tab1, tab2 = st.tabs([
+    # === 三个 Tab 分区: 未赛 (Tab1) + 已赛 (Tab2) + 价值下注 (Tab3) ===
+    tab1, tab2, tab3 = st.tabs([
         f"📅 未赛 ({len(upcoming)} 场)",
         f"✅ 已赛 ({len(finished)} 场 · 默认折叠)",
+        "📊 价值下注",
     ])
 
     with tab1:
@@ -963,6 +1038,9 @@ def main() -> None:
             render_finished_section(finished)
         else:
             st.info("暂无已赛记录")
+
+    with tab3:
+        render_value_tab()
 
     # === Legend (Tab 外面, 统一在底部) ===
     render_legend()
