@@ -72,7 +72,19 @@ def render_h2_strategy(guoan_matches, standings, mae=0):
         ctx = detect_ctx(mock, guoan_matches + [mock], get_ctx_rounds())
         dt_ts = pd.Timestamp(next_home["date"]); opp = next_home["opponent"]
         pred_args = build_pred_args(next_home, ctx, {'season_opener': False, 'match_year': '2026'})
-        live_pred = rule_predict(opp, **pred_args)
+        # Dynamic tier
+        opponent_tier = None
+        try:
+            import streamlit as st
+            if st.session_state.get("use_dynamic_tier", False):
+                from src.opponent_rating import get_opponent_scorecard, load_elo_history
+                elo_hist = load_elo_history()
+                card = get_opponent_scorecard(opp, next_home["date"], elo_history=elo_hist,
+                                               standings_by_round=get_ctx_rounds(), matches=None)
+                opponent_tier = card["tier"]
+        except Exception:
+            pass
+        live_pred = rule_predict(opp, opponent_tier_override=opponent_tier, **pred_args)
         live_opt = optimizer.optimize(opp, **pred_args)
         next_target = next((m for m in matches if m["date"] == next_home["date"]), None)
         if next_target:
@@ -116,7 +128,7 @@ def render_h2_strategy(guoan_matches, standings, mae=0):
     if next_home and live_opt:
         st.divider()
         st.markdown("**下一场盯盘**")
-        tier = classify_opponent_tier(next_home["opponent"])
+        tier = classify_opponent_tier(next_home["opponent"], match_date=next_home["date"])
         pt = get_pricing_tier(next_home["opponent"])
         prices = pm[pt]
         ctx_str = "+".join([k for k, v in ctx.items() if v]) or "无触发"

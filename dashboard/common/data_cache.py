@@ -163,6 +163,19 @@ def compute_home_predictions(home_done, guoan_matches, enable_ema=False):
             continue
         ctx = detect_ctx(m, guoan_matches, _ctx_rounds)
         pred_args = build_pred_args(m, ctx)
-        p = rule_predict(m["opponent"], enable_ema=enable_ema, **pred_args)
+        # Dynamic tier support
+        opponent_tier = None
+        try:
+            import streamlit as st
+            if st.session_state.get("use_dynamic_tier", False):
+                from src.opponent_rating import get_opponent_scorecard, load_elo_history
+                elo_hist = load_elo_history()
+                card = get_opponent_scorecard(m["opponent"], m["date"], elo_history=elo_hist,
+                                               standings_by_round=_ctx_rounds, matches=None)
+                opponent_tier = card["tier"]
+        except Exception:
+            pass
+        p = rule_predict(m["opponent"], enable_ema=enable_ema,
+                         opponent_tier_override=opponent_tier, **pred_args)
         results.append((m, p, a, ctx))
     return results

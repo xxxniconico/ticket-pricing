@@ -20,7 +20,7 @@ def render_kpi_cards(target_match, home_preds, guoan_rank, total_pts, home_w, ho
     if target_match:
         opp = target_match["opponent"]
         dt = pd.Timestamp(target_match["date"])
-        tier = classify_opponent_tier(opp)
+        tier = classify_opponent_tier(opp, match_date=target_match["date"])
         pt = get_pricing_tier(opp)
         opp_label = f"vs {opp}"
         opp_sub = f"{target_match['date']} {WEEKDAYS[dt.weekday()]} · {target_match['round']}"
@@ -417,7 +417,7 @@ def save_snapshot(match_date, opponent, pred, pred_args, result, model_version="
         'match': {'date': match_date, 'opponent': opponent},
         'prediction': {
             'predicted_quantity': int(pred),
-            'tier': classify_opponent_tier(opponent),
+            'tier': classify_opponent_tier(opponent, match_date=match_date),
         },
         'context': {k: v for k, v in pred_args.items() if v},
         'optimization': {
