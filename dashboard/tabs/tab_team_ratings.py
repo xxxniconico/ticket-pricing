@@ -74,7 +74,7 @@ def render_team_ratings(matches, standings, use_dynamic=True):
         return ""
 
     st.dataframe(
-        df.style.applymap(color_tier, subset=["Tier"]),
+        df.style.map(color_tier, subset=["Tier"]),
         use_container_width=True, hide_index=True,
     )
 

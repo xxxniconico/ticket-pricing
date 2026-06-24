@@ -1,7 +1,11 @@
-"""整合 Wikipedia 已赛 + Odds API 未赛, 输出统一格式
+"""整合 Wikipedia 已赛 + Odds API SCORES (fallback) + Odds API 未赛, 输出统一格式
 支持命令行 --wiki-dir 参数 (默认用 /tmp/wc_groups/)
+
+数据源优先级 (已赛):
+  1. Wikipedia (主) — 含 group + date + 比分
+  2. The Odds API SCORES (fallback) — wiki 比分缺失/未更新时补 (e.g. Tunisia 0-4 Japan, 6/20)
 """
-import json, re, statistics, sys, argparse
+import json, re, statistics, sys, argparse, urllib.request, urllib.parse
 from datetime import datetime, timezone, timedelta
 from html import unescape
 from pathlib import Path
@@ -9,45 +13,70 @@ from pathlib import Path
 ROOT = Path('/home/xxxsuli/ticket-pricing')
 
 
+def fetch_odds_scores(api_key: str, days_from: int = 3) -> list[dict]:
+    """拉 The Odds API SCORES endpoint (已赛比分)."""
+    url = "https://api.the-odds-api.com/v4/sports/soccer_fifa_world_cup/scores/?" + urllib.parse.urlencode({
+        "apiKey": api_key,
+        "daysFrom": days_from,
+        "dateFormat": "iso",
+    })
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+        with urllib.request.urlopen(req, timeout=20) as resp:
+            return json.loads(resp.read().decode())
+    except Exception as e:
+        print(f"  WARNING: SCORES endpoint failed: {e}", file=sys.stderr)
+        return []
+
+
 def parse_group_html(html_path, group):
-    """从 Wikipedia Group 子页面 HTML 抽出比赛"""
+    """从 Wikipedia Group 子页面 HTML 抽出比赛 (含日期)
+
+    HTML 结构 (microdata):
+      <time itemprop="dtstart published updated itvstart">2026-06-11</time>
+      ... <th itemprop="homeTeam">...title="Mexico national football team"...</th>
+      <th class="fscore">2-0</th>
+      <th itemprop="awayTeam">...title="South Africa national football team"...</th>
+
+    按 DOM 位置排序, 四元组配对 (date + home + score + away)
+    """
     with open(html_path) as f:
         html = f.read()
 
-    home_iter = re.finditer(r'itemprop="homeTeam".*?title="([^"]+national [^"]+ team)"', html, re.DOTALL)
-    away_iter = re.finditer(r'itemprop="awayTeam".*?title="([^"]+national [^"]+ team)"', html, re.DOTALL)
-    score_iter = re.finditer(r'class="fscore"[^>]*>([^<]+)<', html)
+    items: list[tuple[int, str, str]] = []
 
-    homes = list(home_iter)
-    aways = list(away_iter)
-    scores = list(score_iter)
+    for m in re.finditer(r'itemprop="homeTeam".*?title="([^"]+national [^\"]+ team)"', html, re.DOTALL):
+        items.append((m.start(), 'home', m.group(1)))
+    for m in re.finditer(r'itemprop="awayTeam".*?title="([^"]+national [^\"]+ team)"', html, re.DOTALL):
+        items.append((m.start(), 'away', m.group(1)))
+    for m in re.finditer(r'class="fscore"[^>]*>([^<]+)<', html):
+        items.append((m.start(), 'score', m.group(1).strip()))
+    for m in re.finditer(r'dtstart[^>]*>(\d{4}-\d{2}-\d{2})<', html):
+        items.append((m.start(), 'date', m.group(1)))
 
-    items = []
-    for h in homes:
-        items.append((h.start(), 'home', h.group(1)))
-    for a in aways:
-        items.append((a.start(), 'away', a.group(1)))
-    for s in scores:
-        items.append((s.start(), 'score', s.group(1).strip()))
     items.sort()
 
     matches = []
     i = 0
-    while i < len(items) - 2:
-        if items[i][1] == 'home' and items[i+1][1] == 'score' and items[i+2][1] == 'away':
-            home_team = unescape(items[i][2]).replace(' national football team', '').replace(' national soccer team', '')
-            score = items[i+1][2]
-            away_team = unescape(items[i+2][2]).replace(' national football team', '').replace(' national soccer team', '')
+    while i + 3 < len(items):
+        if (items[i][1] == 'date'
+                and items[i + 1][1] == 'home'
+                and items[i + 2][1] == 'score'
+                and items[i + 3][1] == 'away'):
+            date_iso = items[i][2]
+            home_team = unescape(items[i + 1][2]).replace(' national football team', '').replace(' national soccer team', '')
+            score = items[i + 2][2]
+            away_team = unescape(items[i + 3][2]).replace(' national football team', '').replace(' national soccer team', '')
             has_score = score and score not in ('–', '-', '') and not score.startswith('Match')
             matches.append({
-                'date': '2026-06 (Wikipedia)',
+                'date': date_iso,
                 'home_en': home_team,
                 'away_en': away_team,
                 'score': score if has_score else None,
                 'finished': has_score,
                 'group': group,
             })
-            i += 3
+            i += 4
         else:
             i += 1
     return matches
@@ -89,6 +118,48 @@ def main():
         team_to_group[h] = m['group']
         team_to_group[a] = m['group']
     team_to_group['Bosnia & Herzegovina'] = team_to_group.get('Bosnia and Herzegovina', 'B')
+
+    # === 2.5. SCORES endpoint fallback: 补 wiki 缺漏的已赛 ===
+    # 哪些 (home, away) 已被 wiki 覆盖 (用作 key, 大小写/& 等归一)
+    def _norm_name(n: str) -> str:
+        return n.lower().replace(" & ", " and ").replace("'", "").strip()
+
+    wiki_done = {(_norm_name(NAME_FIX.get(m['home_en']) or m['home_en']),
+                  _norm_name(NAME_FIX.get(m['away_en']) or m['away_en'])): m
+                 for m in groups_data if m['finished']}
+
+    env_text = (ROOT / '.env').read_text() if (ROOT / '.env').exists() else ''
+    api_key = next((line.split('=', 1)[1].strip() for line in env_text.splitlines()
+                    if line.startswith('ODDS_API_KEY=') and '***' not in line), None)
+
+    if api_key:
+        scores_data = fetch_odds_scores(api_key, days_from=3)
+        added = 0
+        for sm in scores_data:
+            if not sm.get('completed') or not sm.get('scores'):
+                continue
+            s = {x['name']: x['score'] for x in sm['scores']}
+            h, a = sm['home_team'], sm['away_team']
+            if (_norm_name(h), _norm_name(a)) in wiki_done:
+                continue
+            grp = team_to_group.get(h) or team_to_group.get(a)
+            if not grp:
+                continue
+            # 转换 UTC → BJ date (跟未赛规则一致)
+            t = datetime.fromisoformat(sm['commence_time'].replace('Z', '+00:00'))
+            bj = t.astimezone(timezone(timedelta(hours=8)))
+            groups_data.append({
+                'group': grp,
+                'home_en': h,
+                'away_en': a,
+                'score': f"{s[h]}–{s[a]}",
+                'finished': True,
+                'date': bj.strftime('%Y-%m-%d'),
+            })
+            added += 1
+        print(f'  SCORES fallback: +{added} 场 (wiki 缺漏已补)', file=sys.stderr)
+    else:
+        print('  ODDS_API_KEY 未在 .env 找到, 跳过 SCORES fallback', file=sys.stderr)
 
     # === 3. Odds API 未赛 ===
     if args.odds_file:
@@ -155,6 +226,7 @@ def main():
             'away_en': a,
             'score': m['score'],
             'finished': True,
+            'date': m['date'],          # 2026-06-11 来自 Wikipedia dtstart
             'commence_time': None,
         })
 

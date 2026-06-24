@@ -628,6 +628,21 @@ div[data-testid="column"] + div[data-testid="column"] button:hover {
     font-size: 0.85rem;
     color: var(--ink-on-dark-2);
     text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    line-height: 1.1;
+}
+.match-row .m-time .m-date {
+    font-size: 0.78rem;
+    color: var(--ink-on-dark);
+    font-weight: 500;
+}
+.match-row .m-time .m-ft {
+    font-size: 0.7rem;
+    color: var(--ink-on-dark-2);
+    letter-spacing: 0.05em;
 }
 .match-row .m-time.live {
     color: var(--red-live);
@@ -1304,9 +1319,297 @@ div[data-testid="column"] + div[data-testid="column"] button:hover {
 .risk-table .rt-ok { color: var(--green-best); }
 .risk-table .rt-warn { color: #fbbf24; }
 
+/* --- Daily combination cards --- */
+.dc-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 12px; margin-bottom: 16px;
+}
+.dc-card {
+    background: var(--card-bg); border: 1px solid var(--card-border);
+    border-radius: 10px; padding: 14px 16px;
+}
+.dc-card.dc-today { border-color: var(--fifa-blue); box-shadow: 0 0 0 1px var(--fifa-blue); }
+.dc-header {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 10px;
+    border-bottom: 1px solid var(--card-border); padding-bottom: 8px;
+}
+.dc-date { font-weight: 700; font-size: 0.95rem; color: var(--ink-on-dark); }
+.dc-nbets { font-size: 0.72rem; color: var(--ink-on-dark-3); background: var(--card-border); padding: 2px 8px; border-radius: 8px; }
+.dc-div { font-size: 0.7rem; color: var(--green-best); margin-left: auto; }
+.dc-bets { display: flex; flex-direction: column; gap: 5px; margin-bottom: 8px; }
+.dc-bet {
+    display: flex; align-items: center; gap: 6px; font-size: 0.78rem;
+    padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.dc-bet:last-child { border-bottom: none; }
+.dc-sel {
+    width: 18px; height: 18px; display: flex; align-items: center; justify-content: center;
+    border-radius: 4px; font-size: 0.68rem; font-weight: 700; flex-shrink: 0;
+}
+.dc-sel.sel-h { background: rgba(0,166,81,0.2); color: var(--green-best); }
+.dc-sel.sel-d { background: rgba(251,191,36,0.2); color: #fbbf24; }
+.dc-sel.sel-a { background: rgba(239,68,68,0.2); color: var(--red-live); }
+.dc-match { flex: 1; color: var(--ink-on-dark-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dc-odds { color: var(--ink-on-dark-3); font-size: 0.72rem; }
+.dc-ev { font-size: 0.72rem; font-weight: 600; padding: 1px 5px; border-radius: 3px; }
+.dc-ev.ev-top { background: rgba(0,166,81,0.25); color: var(--green-best); }
+.dc-ev.ev-high { background: rgba(0,166,81,0.12); color: var(--green-best); }
+.dc-ev.ev-mid { background: rgba(255,255,255,0.06); color: var(--ink-on-dark-3); }
+.dc-stake { font-size: 0.72rem; color: var(--fifa-blue); font-weight: 600; min-width: 32px; text-align: right; }
+.dc-icon { font-size: 0.72rem; }
+.dc-hedge {
+    display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+    font-size: 0.7rem; margin: 6px 0; padding: 4px 8px;
+    background: rgba(94,106,210,0.08); border-radius: 6px;
+}
+.hg-badge { font-size: 0.65rem; padding: 1px 6px; border-radius: 8px; font-weight: 600; white-space: nowrap; }
+.hg-badge.hg-none { background: rgba(251,191,36,0.15); color: #fbbf24; }
+.hg-badge.hg-partial { background: rgba(0,166,81,0.15); color: var(--green-best); }
+.hg-note { color: var(--ink-on-dark-4); font-size: 0.65rem; }
+.dc-stats { display: flex; gap: 12px; margin-top: 8px; }
+.dc-stat { display: flex; flex-direction: column; gap: 1px; }
+.dc-label { font-size: 0.65rem; color: var(--ink-on-dark-4); text-transform: uppercase; }
+.dc-val { font-size: 0.72rem; color: var(--ink-on-dark-2); }
+
+/* --- Approach comparison table --- */
+.approach-table .ap-best td { background: rgba(94,106,210,0.08); }
+.rec-box {
+    margin-top: 10px; padding: 10px 14px; border-radius: 8px;
+    background: rgba(94,106,210,0.08); border: 1px solid rgba(94,106,210,0.2);
+    font-size: 0.78rem; color: var(--ink-on-dark-2); line-height: 1.6;
+}
+
+/* --- 13.7 Sporttery EV 扫描 --- */
+.sporttery-section { margin-top: 20px; }
+.sp-summary {
+    display: flex; align-items: center; gap: 18px; flex-wrap: wrap;
+    padding: 12px 16px; margin-bottom: 14px;
+    background: var(--card-bg); border: 1px solid var(--card-border);
+    border-radius: 10px;
+}
+.sp-sum-cell { display: flex; flex-direction: column; gap: 2px; min-width: 60px; }
+.sp-sum-num { font-size: 1.15rem; font-weight: 700; color: var(--ink-on-dark); }
+.sp-sum-num.pos { color: var(--green-best); }
+.sp-sum-label { font-size: 0.65rem; color: var(--ink-on-dark-4); text-transform: uppercase; letter-spacing: 0.04em; }
+.sp-sum-badges { display: flex; gap: 6px; flex-wrap: wrap; }
+.sp-sum-ret { font-size: 0.72rem; color: var(--ink-on-dark-3); }
+.sp-pool-block {
+    background: var(--card-bg); border: 1px solid var(--card-border);
+    border-radius: 10px; padding: 12px 14px; margin-bottom: 12px;
+}
+.sp-pool-header {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
+    padding-bottom: 6px; border-bottom: 1px solid var(--card-border);
+}
+.sp-pool-name { font-size: 0.82rem; color: var(--ink-on-dark-3); }
+.sp-pool-count { font-size: 0.72rem; color: var(--ink-on-dark-4);
+    margin-left: auto; background: rgba(255,255,255,0.05); padding: 1px 7px; border-radius: 8px; }
+.sp-pool-badge {
+    font-size: 0.7rem; font-weight: 700; padding: 2px 9px; border-radius: 10px;
+    white-space: nowrap;
+}
+.sp-pool-badge.sp-had  { background: rgba(0,166,81,0.18);  color: var(--green-best); }
+.sp-pool-badge.sp-hhad { background: rgba(94,106,210,0.20); color: #8b95d6; }
+.sp-pool-badge.sp-crs  { background: rgba(251,146,60,0.20); color: #fb923c; }
+.sp-pool-badge.sp-ttg  { background: rgba(168,85,247,0.22); color: #c084fc; }
+.sp-table {
+    width: 100%; border-collapse: collapse; font-size: 0.78rem;
+}
+.sp-table th {
+    text-align: left; padding: 5px 8px; font-size: 0.62rem;
+    text-transform: uppercase; letter-spacing: 0.05em;
+    color: var(--ink-on-dark-4); font-weight: 500;
+    border-bottom: 1px solid var(--card-border);
+}
+.sp-table td {
+    padding: 5px 8px; border-bottom: 1px solid rgba(255,255,255,0.04);
+    color: var(--ink-on-dark-2); vertical-align: middle;
+}
+.sp-table tr:last-child td { border-bottom: none; }
+.sp-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+.sp-match { display: flex; align-items: center; gap: 4px; }
+.sp-match .flag img, .sp-match .flag-emoji { width: 18px; height: 18px; }
+.sp-sel { font-weight: 600; color: var(--ink-on-dark); padding: 1px 6px;
+    background: rgba(255,255,255,0.05); border-radius: 4px; }
+.sp-hc { font-size: 0.65rem; color: var(--ink-on-dark-4); font-weight: 400; }
+.sp-stake-note { font-size: 0.6rem; color: var(--ink-on-dark-4); display: block; }
+.sp-warn {
+    margin-top: 8px; padding: 6px 10px; border-radius: 6px;
+    background: rgba(251,191,36,0.08); border: 1px solid rgba(251,191,36,0.2);
+    font-size: 0.72rem; color: #fbbf24;
+}
+
+/* --- 13.8 体彩购买记录 + 回测 --- */
+.purchase-status {
+    font-size: 0.68rem; font-weight: 700; padding: 2px 8px; border-radius: 10px;
+    white-space: nowrap;
+}
+.purchase-status.won     { background: rgba(0,166,81,0.18);  color: var(--green-best); }
+.purchase-status.lost    { background: rgba(239,68,68,0.18); color: var(--red-live); }
+.purchase-status.pending { background: rgba(255,255,255,0.06); color: var(--ink-on-dark-3); }
+.purchase-status.manual  { background: rgba(251,191,36,0.15); color: #fbbf24; }
+.sp-score { font-size: 0.68rem; color: var(--ink-on-dark-4); display: block; }
+
+.calib-row {
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+    padding: 12px 16px; margin-bottom: 14px;
+    background: var(--card-bg); border: 1px solid var(--card-border);
+    border-radius: 10px;
+}
+.calib-row.calib-warn { border-color: rgba(251,191,36,0.3); }
+.calib-cell { display: flex; flex-direction: column; gap: 2px; }
+.calib-label { font-size: 0.62rem; color: var(--ink-on-dark-4);
+    text-transform: uppercase; letter-spacing: 0.04em; }
+.calib-value { font-size: 1.1rem; font-weight: 700; color: var(--ink-on-dark); }
+.calib-value.pos { color: var(--green-best); }
+.calib-value.neg { color: var(--red-live); }
+.calib-vs { font-size: 0.8rem; color: var(--ink-on-dark-4); font-style: italic; }
+.calib-gap { display: flex; flex-direction: column; gap: 2px; margin-left: auto; }
+.calib-note { font-size: 0.68rem; color: var(--ink-on-dark-3); }
+.calib-warn .calib-note { color: #fbbf24; }
+
+.manual-actions { display: flex; gap: 6px; align-items: center; }
+
+/* --- 13.9 模型校准曲线 + 统计显著性 + 扫描表校准 --- */
+.calib-table { margin-bottom: 14px; }
+.calib-table tr.calib-bucket-good { background: rgba(0,166,81,0.07); }
+.calib-table tr.calib-bucket-bad  { background: rgba(239,68,68,0.07); }
+.calib-table .num { font-variant-numeric: tabular-nums; }
+
+.sig-warn {
+    padding: 10px 16px; margin-bottom: 14px; border-radius: 10px;
+    background: rgba(251,191,36,0.10); border: 1px solid rgba(251,191,36,0.3);
+    color: #fbbf24; font-size: 0.82rem; line-height: 1.5;
+}
+.sig-row {
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    padding: 10px 16px; margin-bottom: 14px;
+    background: var(--card-bg); border: 1px solid var(--card-border);
+    border-radius: 10px;
+}
+.sig-row.sig-ok { border-color: rgba(0,166,81,0.3); }
+.sig-row.sig-noise { border-color: rgba(255,255,255,0.12); }
+.sig-label { font-size: 0.62rem; color: var(--ink-on-dark-4);
+    text-transform: uppercase; letter-spacing: 0.04em; }
+.sig-value { font-size: 1.05rem; font-weight: 700; color: var(--ink-on-dark);
+    font-variant-numeric: tabular-nums; }
+.sig-note { font-size: 0.68rem; color: var(--ink-on-dark-3); }
+.sig-verdict { font-size: 0.78rem; font-weight: 600; margin-left: auto; }
+.sig-ok .sig-verdict { color: var(--green-best); }
+
+.sp-pool-prio { font-size: 0.68rem; color: #fbbf24; margin-left: 6px; }
+.sp-ev-raw { display: block; font-size: 0.6rem; color: var(--ink-on-dark-4);
+    font-weight: 400; }
+.sp-pcal { font-size: 0.6rem; color: #fbbf24; margin-left: 2px; }
+
 @media (max-width: 640px) {
     .tracker-strip { grid-template-columns: repeat(2, 1fr); }
     .compare-card { grid-template-columns: 1fr; }
     .compare-card .cc-col + .cc-col { border-left: none; border-top: 1px solid var(--card-border); }
     .bet-table th:nth-child(5), .bet-table td:nth-child(5) { display: none; } /* hide p_model on mobile */
+    .dc-grid { grid-template-columns: 1fr; }
 }
+/* ==== Dark Form Widgets — overrides Streamlit white defaults ==== */
+
+/* Buttons */
+.stButton > button, button[kind="primary"], button[kind="secondary"] {
+    background: var(--bg-elevated) !important;
+    color: var(--ink-on-dark) !important;
+    border: 1px solid var(--card-border) !important;
+    border-radius: 6px !important;
+    font-weight: 510 !important;
+}
+.stButton > button:hover {
+    background: var(--fifa-blue-dim) !important;
+    border-color: var(--fifa-blue) !important;
+}
+button[kind="primary"] {
+    background: var(--fifa-blue) !important;
+    border-color: var(--fifa-blue) !important;
+}
+button[kind="primary"]:hover {
+    background: var(--fifa-blue-hover) !important;
+}
+
+/* Selectboxes */
+[data-baseweb="select"] > div {
+    background: var(--bg-dark) !important;
+    border-color: var(--card-border) !important;
+    color: var(--ink-on-dark) !important;
+}
+[data-baseweb="select"] [role="listbox"] {
+    background: var(--bg-dark) !important;
+}
+[data-baseweb="select"] [role="option"] {
+    color: var(--ink-on-dark-2) !important;
+}
+[data-baseweb="select"] [role="option"]:hover {
+    background: var(--bg-elevated) !important;
+}
+
+/* Text & Number inputs */
+.stTextInput input, .stNumberInput input, [data-baseweb="input"] input {
+    background: var(--bg-dark) !important;
+    border: 1px solid var(--card-border) !important;
+    color: var(--ink-on-dark) !important;
+    border-radius: 6px !important;
+}
+.stTextInput input:focus, .stNumberInput input:focus {
+    border-color: var(--fifa-blue) !important;
+    box-shadow: 0 0 0 2px var(--fifa-blue-dim) !important;
+}
+
+/* Form submit buttons */
+.stFormSubmitButton > button {
+    background: var(--fifa-blue) !important;
+    border-color: var(--fifa-blue) !important;
+    color: white !important;
+}
+
+/* Metric cards */
+[data-testid="stMetricValue"] {
+    color: var(--ink-on-dark) !important;
+}
+[data-testid="stMetricLabel"] {
+    color: var(--ink-on-dark-3) !important;
+}
+
+/* Expander */
+[data-testid="stExpander"] details {
+    background: var(--card-bg) !important;
+    border: 1px solid var(--card-border) !important;
+    border-radius: 8px !important;
+}
+[data-testid="stExpander"] summary {
+    color: var(--ink-on-dark-2) !important;
+}
+
+/* Tabs */
+.stTabs [data-baseweb="tab"] {
+    color: var(--ink-on-dark-3) !important;
+}
+.stTabs [data-baseweb="tab"][aria-selected="true"] {
+    color: var(--ink-on-dark) !important;
+    border-bottom-color: var(--fifa-blue) !important;
+}
+
+/* Captions & help text */
+.stCaption { color: var(--ink-on-dark-3) !important; }
+small { color: var(--ink-on-dark-4) !important; }
+
+/* Info/Warning/Success boxes */
+.stAlert { background: var(--bg-dark) !important; border: 1px solid var(--card-border) !important; }
+
+.stButton > button{background:#28282c!important;color:#f7f8f8!important;border:1px solid rgba(255,255,255,.08)!important;border-radius:6px!important}
+.stButton > button:hover{background:rgba(94,106,210,.12)!important;border-color:#5e6ad2!important}
+button[kind="primary"]{background:#5e6ad2!important;border-color:#5e6ad2!important}
+[data-baseweb="select"]>div{background:#191a1b!important;border-color:rgba(255,255,255,.08)!important;color:#f7f8f8!important}
+.stTextInput input,.stNumberInput input{background:#191a1b!important;border:1px solid rgba(255,255,255,.08)!important;color:#f7f8f8!important;border-radius:6px!important}
+.stFormSubmitButton>button{background:#5e6ad2!important;color:#fff!important}
+[data-testid="stMetricValue"]{color:#f7f8f8!important}
+.stTabs [data-baseweb="tab"][aria-selected="true"]{color:#f7f8f8!important;border-bottom-color:#5e6ad2!important}
+
+.stButton > button{background:#28282c!important;color:#f7f8f8!important;border:1px solid rgba(255,255,255,.08)!important}
+button[kind="primary"]{background:#5e6ad2!important}
+[data-baseweb="select"]>div{background:#191a1b!important;color:#f7f8f8!important}
+.stTextInput input,.stNumberInput input{background:#191a1b!important;color:#f7f8f8!important}

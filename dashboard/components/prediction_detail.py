@@ -19,7 +19,7 @@ from dashboard.common.engine_compat import get_effective_calibration
 from src.rule_engine import MULTIPLIERS, PENALTY_FLOOR, TIER_BASE
 
 
-def build_rules_triggered(target_match, ctx, guoan_matches):
+def build_rules_triggered(target_match, ctx, guoan_matches, use_dynamic=False):
     """从 match + ctx 构建规则链条目列表。"""
     opp = target_match["opponent"]
     dt = pd.Timestamp(target_match["date"])
@@ -129,7 +129,7 @@ def render_prediction_detail(target_match, guoan_matches, standings, mae, key_pr
     ctx = detect_ctx(target_match, guoan_matches, get_ctx_rounds())
 
     st.markdown("**命中规则 · 上座预测计算链**")
-    rules_triggered, tier, base = build_rules_triggered(target_match, ctx, guoan_matches)
+    rules_triggered, tier, base = build_rules_triggered(target_match, ctx, guoan_matches, use_dynamic)
     render_rule_pills(rules_triggered)
 
     final_mult = 1.0

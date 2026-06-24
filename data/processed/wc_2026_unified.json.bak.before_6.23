@@ -1,0 +1,1010 @@
+[
+  {
+    "group": "A",
+    "home_en": "Mexico",
+    "away_en": "South Africa",
+    "score": "2–0",
+    "finished": true,
+    "date": "2026-06-11",
+    "commence_time": null
+  },
+  {
+    "group": "A",
+    "home_en": "South Korea",
+    "away_en": "Czech Republic",
+    "score": "2–1",
+    "finished": true,
+    "date": "2026-06-11",
+    "commence_time": null
+  },
+  {
+    "group": "A",
+    "home_en": "Czech Republic",
+    "away_en": "South Africa",
+    "score": "1–1",
+    "finished": true,
+    "date": "2026-06-18",
+    "commence_time": null
+  },
+  {
+    "group": "A",
+    "home_en": "Mexico",
+    "away_en": "South Korea",
+    "score": "1–0",
+    "finished": true,
+    "date": "2026-06-18",
+    "commence_time": null
+  },
+  {
+    "group": "A",
+    "commence_time": "2026-06-25T01:00:00Z",
+    "date_cn": "06-25 09:00",
+    "date": "2026-06-25",
+    "home_en": "Czech Republic",
+    "away_en": "Mexico",
+    "score": null,
+    "finished": false,
+    "metrics": {
+      "n_bookmakers": 25,
+      "avg_h": 3.6756,
+      "avg_d": 3.7728,
+      "avg_a": 1.9627999999999999,
+      "p_h_mean": 0.260086828716564,
+      "p_h_std": 0.009379834021719324,
+      "avg_vig": 0.04788484285985718
+    }
+  },
+  {
+    "group": "A",
+    "commence_time": "2026-06-25T01:00:00Z",
+    "date_cn": "06-25 09:00",
+    "date": "2026-06-25",
+    "home_en": "South Africa",
+    "away_en": "South Korea",
+    "score": null,
+    "finished": false,
+    "metrics": {
+      "n_bookmakers": 25,
+      "avg_h": 5.7096,
+      "avg_d": 3.9703999999999997,
+      "avg_a": 1.6168,
+      "p_h_mean": 0.16781119750023943,
+      "p_h_std": 0.006962554987045331,
+      "avg_vig": 0.04634375861889373
+    }
+  },
+  {
+    "group": "B",
+    "home_en": "Canada",
+    "away_en": "Bosnia and Herzegovina",
+    "score": "1–1",
+    "finished": true,
+    "date": "2026-06-12",
+    "commence_time": null
+  },
+  {
+    "group": "B",
+    "home_en": "Qatar",
+    "away_en": "Switzerland",
+    "score": "1–1",
+    "finished": true,
+    "date": "2026-06-13",
+    "commence_time": null
+  },
+  {
+    "group": "B",
+    "home_en": "Switzerland",
+    "away_en": "Bosnia and Herzegovina",
+    "score": "4–1",
+    "finished": true,
+    "date": "2026-06-18",
+    "commence_time": null
+  },
+  {
+    "group": "B",
+    "home_en": "Canada",
+    "away_en": "Qatar",
+    "score": "6–0",
+    "finished": true,
+    "date": "2026-06-18",
+    "commence_time": null
+  },
+  {
+    "group": "B",
+    "commence_time": "2026-06-24T19:00:00Z",
+    "date_cn": "06-25 03:00",
+    "date": "2026-06-25",
+    "home_en": "Bosnia & Herzegovina",
+    "away_en": "Qatar",
+    "score": null,
+    "finished": false,
+    "metrics": {
+      "n_bookmakers": 23,
+      "avg_h": 1.4256521739130434,
+      "avg_d": 4.910434782608696,
+      "avg_a": 7.101739130434782,
+      "p_h_mean": 0.6702369972219548,
+      "p_h_std": 0.01028226865386406,
+      "avg_vig": 0.047129523878705434
+    }
+  },
+  {
+    "group": "B",
+    "commence_time": "2026-06-24T19:00:00Z",
+    "date_cn": "06-25 03:00",
+    "date": "2026-06-25",
+    "home_en": "Switzerland",
+    "away_en": "Canada",
+    "score": null,
+    "finished": false,
+    "metrics": {
+      "n_bookmakers": 24,
+      "avg_h": 2.44125,
+      "avg_d": 3.0775,
+      "avg_a": 3.21625,
+      "p_h_mean": 0.39177466041917186,
+      "p_h_std": 0.0033447906297203,
+      "avg_vig": 0.04622460726037945
+    }
+  },
+  {
+    "group": "C",
+    "home_en": "Brazil",
+    "away_en": "Morocco",
+    "score": "1–1",
+    "finished": true,
+    "date": "2026-06-13",
+    "commence_time": null
+  },
+  {
+    "group": "C",
+    "home_en": "Haiti",
+    "away_en": "Scotland",
+    "score": "0–1",
+    "finished": true,
+    "date": "2026-06-13",
+    "commence_time": null
+  },
+  {
+    "group": "C",
+    "home_en": "Scotland",
+    "away_en": "Morocco",
+    "score": "0–1",
+    "finished": true,
+    "date": "2026-06-19",
+    "commence_time": null
+  },
+  {
+    "group": "C",
+    "home_en": "Brazil",
+    "away_en": "Haiti",
+    "score": "3–0",
+    "finished": true,
+    "date": "2026-06-19",
+    "commence_time": null
+  },
+  {
+    "group": "C",
+    "commence_time": "2026-06-24T22:00:00Z",
+    "date_cn": "06-25 06:00",
+    "date": "2026-06-25",
+    "home_en": "Scotland",
+    "away_en": "Brazil",
+    "score": null,
+    "finished": false,
+    "metrics": {
+      "n_bookmakers": 24,
+      "avg_h": 7.651666666666666,
+      "avg_d": 5.181666666666667,
+      "avg_a": 1.38375,
+      "p_h_mean": 0.12573276172972533,
+      "p_h_std": 0.011150721833304657,
+      "avg_vig": 0.048238900000094266
+    }
+  },
+  {
+    "group": "C",
+    "commence_time": "2026-06-24T22:00:00Z",
+    "date_cn": "06-25 06:00",
+    "date": "2026-06-25",
+    "home_en": "Morocco",
+    "away_en": "Haiti",
+    "score": null,
+    "finished": false,
+    "metrics": {
+      "n_bookmakers": 24,
+      "avg_h": 1.1920833333333334,
+      "avg_d": 6.9591666666666665,
+      "avg_a": 16.47,
+      "p_h_mean": 0.8030510200489055,
+      "p_h_std": 0.010632747713463732,
+      "avg_vig": 0.045043836449780855
+    }
+  },
+  {
+    "group": "D",
+    "home_en": "USA",
+    "away_en": "Paraguay",
+    "score": "4–1",
+    "finished": true,
+    "date": "2026-06-12",
+    "commence_time": null
+  },
+  {
+    "group": "D",
+    "home_en": "Australia",
+    "away_en": "Turkey",
+    "score": "2–0",
+    "finished": true,
+    "date": "2026-06-13",
+    "commence_time": null
+  },
+  {
+    "group": "D",
+    "home_en": "USA",
+    "away_en": "Australia",
+    "score": "2–0",
+    "finished": true,
+    "date": "2026-06-19",
+    "commence_time": null
+  },
+  {
+    "group": "D",
+    "home_en": "Turkey",
+    "away_en": "Paraguay",
+    "score": "0–1",
+    "finished": true,
+    "date": "2026-06-19",
+    "commence_time": null
+  },
+  {
+    "group": "D",
+    "commence_time": "2026-06-26T02:00:00Z",
+    "date_cn": "06-26 10:00",
+    "date": "2026-06-26",
+    "home_en": "Paraguay",
+    "away_en": "Australia",
+    "score": null,
+    "finished": false,
+    "metrics": {
+      "n_bookmakers": 23,
+      "avg_h": 2.8065217391304347,
+      "avg_d": 2.28,
+      "avg_a": 3.900434782608696,
+      "p_h_mean": 0.3387359974332412,
+      "p_h_std": 0.009285503718305027,
+      "avg_vig": 0.05347831411137973
+    }
+  },
+  {
+    "group": "D",
+    "commence_time": "2026-06-26T02:00:00Z",
+    "date_cn": "06-26 10:00",
+    "date": "2026-06-26",
+    "home_en": "Turkey",
+    "away_en": "USA",
+    "score": null,
+    "finished": false,
+    "metrics": {
+      "n_bookmakers": 22,
+      "avg_h": 3.1809090909090907,
+      "avg_d": 4.0659090909090905,
+      "avg_a": 2.0504545454545453,
+      "p_h_mean": 0.30004779453757235,
+      "p_h_std": 0.010434759699953462,
+      "avg_vig": 0.04944540044400645
+    }
+  },
+  {
+    "group": "E",
+    "home_en": "Germany",
+    "away_en": "Curaçao",
+    "score": "7–1",
+    "finished": true,
+    "date": "2026-06-14",
+    "commence_time": null
+  },
+  {
+    "group": "E",
+    "home_en": "Ivory Coast",
+    "away_en": "Ecuador",
+    "score": "1–0",
+    "finished": true,
+    "date": "2026-06-14",
+    "commence_time": null
+  },
+  {
+    "group": "E",
+    "home_en": "Germany",
+    "away_en": "Ivory Coast",
+    "score": "2–1",
+    "finished": true,
+    "date": "2026-06-20",
+    "commence_time": null
+  },
+  {
+    "group": "E",
+    "home_en": "Ecuador",
+    "away_en": "Curaçao",
+    "score": "0–0",
+    "finished": true,
+    "date": "2026-06-20",
+    "commence_time": null
+  },
+  {
+    "group": "E",
+    "commence_time": "2026-06-25T20:00:00Z",
+    "date_cn": "06-26 04:00",
+    "date": "2026-06-26",
+    "home_en": "Curaçao",
+    "away_en": "Ivory Coast",
+    "score": null,
+    "finished": false,
+    "metrics": {
+      "n_bookmakers": 20,
+      "avg_h": 19.691,
+      "avg_d": 8.615,
+      "avg_a": 1.141,
+      "p_h_mean": 0.04897235049813842,
+      "p_h_std": 0.0041310933539985255,
+      "avg_vig": 0.044520315815299805
+    }
+  },
+  {
+    "group": "E",
+    "commence_time": "2026-06-25T20:00:00Z",
+    "date_cn": "06-26 04:00",
+    "date": "2026-06-26",
+    "home_en": "Ecuador",
+    "away_en": "Germany",
+    "score": null,
+    "finished": false,
+    "metrics": {
+      "n_bookmakers": 21,
+      "avg_h": 3.6923809523809523,
+      "avg_d": 3.7004761904761905,
+      "avg_a": 1.9538095238095239,
+      "p_h_mean": 0.2573262646818778,
+      "p_h_std": 0.007977974320794029,
+      "avg_vig": 0.054659289235886574
+    }
+  },
+  {
+    "group": "F",
+    "home_en": "Netherlands",
+    "away_en": "Japan",
+    "score": "2–2",
+    "finished": true,
+    "date": "2026-06-14",
+    "commence_time": null
+  },
+  {
+    "group": "F",
+    "home_en": "Sweden",
+    "away_en": "Tunisia",
+    "score": "5–1",
+    "finished": true,
+    "date": "2026-06-14",
+    "commence_time": null
+  },
+  {
+    "group": "F",
+    "home_en": "Netherlands",
+    "away_en": "Sweden",
+    "score": "5–1",
+    "finished": true,
+    "date": "2026-06-20",
+    "commence_time": null
+  },
+  {
+    "group": "F",
+    "home_en": "Tunisia",
+    "away_en": "Japan",
+    "score": "0–4",
+    "finished": true,
+    "date": "2026-06-21",
+    "commence_time": null
+  },
+  {
+    "group": "F",
+    "commence_time": "2026-06-25T23:00:00Z",
+    "date_cn": "06-26 07:00",
+    "date": "2026-06-26",
+    "home_en": "Japan",
+    "away_en": "Sweden",
+    "score": null,
+    "finished": false,
+    "metrics": {
+      "n_bookmakers": 20,
+      "avg_h": 2.0815,
+      "avg_d": 3.298,
+      "avg_a": 3.667,
+      "p_h_mean": 0.45463798952554957,
+      "p_h_std": 0.007296798672048628,
+      "avg_vig": 0.05793628936497651
+    }
+  },
+  {
+    "group": "F",
+    "commence_time": "2026-06-25T23:00:00Z",
+    "date_cn": "06-26 07:00",
+    "date": "2026-06-26",
+    "home_en": "Tunisia",
+    "away_en": "Netherlands",
+    "score": null,
+    "finished": false,
+    "metrics": {
+      "n_bookmakers": 19,
+      "avg_h": 15.896315789473684,
+      "avg_d": 7.1968421052631575,
+      "avg_a": 1.174736842105263,
+      "p_h_mean": 0.060708099878655296,
+      "p_h_std": 0.007663964142478949,
+      "avg_vig": 0.05630589048218469
+    }
+  },
+  {
+    "group": "G",
+    "home_en": "Belgium",
+    "away_en": "Egypt",
+    "score": "1–1",
+    "finished": true,
+    "date": "2026-06-15",
+    "commence_time": null
+  },
+  {
+    "group": "G",
+    "home_en": "Iran",
+    "away_en": "New Zealand",
+    "score": "2–2",
+    "finished": true,
+    "date": "2026-06-15",
+    "commence_time": null
+  },
+  {
+    "group": "G",
+    "commence_time": "2026-06-21T19:00:00Z",
+    "date_cn": "06-22 03:00",
+    "date": "2026-06-22",
+    "home_en": "Belgium",
+    "away_en": "Iran",
+    "score": "0–0",
+    "finished": true,
+    "metrics": {
+      "n_bookmakers": 24,
+      "avg_h": 1.4370833333333333,
+      "avg_d": 4.67875,
+      "avg_a": 7.681666666666667,
+      "p_h_mean": 0.66891340487412,
+      "p_h_std": 0.008278369459835426,
+      "avg_vig": 0.04064772675426353
+    }
+  },
+  {
+    "group": "G",
+    "commence_time": "2026-06-22T01:00:00Z",
+    "date_cn": "06-22 09:00",
+    "date": "2026-06-22",
+    "home_en": "New Zealand",
+    "away_en": "Egypt",
+    "score": "1–3",
+    "finished": true,
+    "metrics": {
+      "n_bookmakers": 23,
+      "avg_h": 5.966521739130434,
+      "avg_d": 4.081304347826087,
+      "avg_a": 1.5960869565217393,
+      "p_h_mean": 0.16147339753450915,
+      "p_h_std": 0.006402980341527284,
+      "avg_vig": 0.03997063939176431
+    }
+  },
+  {
+    "group": "G",
+    "commence_time": "2026-06-27T03:00:00Z",
+    "date_cn": "06-27 11:00",
+    "date": "2026-06-27",
+    "home_en": "New Zealand",
+    "away_en": "Belgium",
+    "score": null,
+    "finished": false,
+    "metrics": {
+      "n_bookmakers": 20,
+      "avg_h": 12.9535,
+      "avg_d": 6.3229999999999995,
+      "avg_a": 1.2305,
+      "p_h_mean": 0.07390777473624521,
+      "p_h_std": 0.004429585362261944,
+      "avg_vig": 0.04919504876370828
+    }
+  },
+  {
+    "group": "G",
+    "commence_time": "2026-06-27T03:00:00Z",
+    "date_cn": "06-27 11:00",
+    "date": "2026-06-27",
+    "home_en": "Egypt",
+    "away_en": "Iran",
+    "score": null,
+    "finished": false,
+    "metrics": {
+      "n_bookmakers": 19,
+      "avg_h": 2.0736842105263156,
+      "avg_d": 3.16,
+      "avg_a": 3.9405263157894734,
+      "p_h_mean": 0.45813861995854294,
+      "p_h_std": 0.004861767572185067,
+      "avg_vig": 0.05352605973872601
+    }
+  },
+  {
+    "group": "H",
+    "home_en": "Spain",
+    "away_en": "Cape Verde",
+    "score": "0–0",
+    "finished": true,
+    "date": "2026-06-15",
+    "commence_time": null
+  },
+  {
+    "group": "H",
+    "home_en": "Saudi Arabia",
+    "away_en": "Uruguay",
+    "score": "1–1",
+    "finished": true,
+    "date": "2026-06-15",
+    "commence_time": null
+  },
+  {
+    "group": "H",
+    "commence_time": "2026-06-21T16:00:00Z",
+    "date_cn": "06-22 00:00",
+    "date": "2026-06-22",
+    "home_en": "Spain",
+    "away_en": "Saudi Arabia",
+    "score": "4–0",
+    "finished": true,
+    "metrics": {
+      "n_bookmakers": 25,
+      "avg_h": 1.102,
+      "avg_d": 10.5424,
+      "avg_a": 26.662,
+      "p_h_mean": 0.8711567346676897,
+      "p_h_std": 0.011505257700807724,
+      "avg_vig": 0.04202204719034033
+    }
+  },
+  {
+    "group": "H",
+    "commence_time": "2026-06-21T22:00:00Z",
+    "date_cn": "06-22 06:00",
+    "date": "2026-06-22",
+    "home_en": "Uruguay",
+    "away_en": "Cape Verde",
+    "score": "2–2",
+    "finished": true,
+    "metrics": {
+      "n_bookmakers": 25,
+      "avg_h": 1.46,
+      "avg_d": 4.1932,
+      "avg_a": 8.2888,
+      "p_h_mean": 0.6556121606357502,
+      "p_h_std": 0.010155814450346998,
+      "avg_vig": 0.04517138309374093
+    }
+  },
+  {
+    "group": "H",
+    "commence_time": "2026-06-27T00:00:00Z",
+    "date_cn": "06-27 08:00",
+    "date": "2026-06-27",
+    "home_en": "Cape Verde",
+    "away_en": "Saudi Arabia",
+    "score": null,
+    "finished": false,
+    "metrics": {
+      "n_bookmakers": 21,
+      "avg_h": 2.7347619047619047,
+      "avg_d": 3.6233333333333335,
+      "avg_a": 2.401904761904762,
+      "p_h_mean": 0.3455141653472391,
+      "p_h_std": 0.005325134811699805,
+      "avg_vig": 0.060025566386964865
+    }
+  },
+  {
+    "group": "H",
+    "commence_time": "2026-06-27T00:00:00Z",
+    "date_cn": "06-27 08:00",
+    "date": "2026-06-27",
+    "home_en": "Uruguay",
+    "away_en": "Spain",
+    "score": null,
+    "finished": false,
+    "metrics": {
+      "n_bookmakers": 20,
+      "avg_h": 6.122,
+      "avg_d": 4.236,
+      "avg_a": 1.544,
+      "p_h_mean": 0.15612801674907342,
+      "p_h_std": 0.0049611701989519304,
+      "avg_vig": 0.04796591307145982
+    }
+  },
+  {
+    "group": "I",
+    "home_en": "France",
+    "away_en": "Senegal",
+    "score": "3–1",
+    "finished": true,
+    "date": "2026-06-16",
+    "commence_time": null
+  },
+  {
+    "group": "I",
+    "home_en": "Iraq",
+    "away_en": "Norway",
+    "score": "1–4",
+    "finished": true,
+    "date": "2026-06-16",
+    "commence_time": null
+  },
+  {
+    "group": "I",
+    "commence_time": null,
+    "date_cn": "06-23 05:00",
+    "date": "2026-06-23",
+    "home_en": "France",
+    "away_en": "Iraq",
+    "score": "3–0",
+    "finished": true,
+    "metrics": {
+      "n_bookmakers": 25,
+      "avg_h": 1.0852000000000002,
+      "avg_d": 11.6052,
+      "avg_a": 30.17,
+      "p_h_mean": 0.8842204810299696,
+      "p_h_std": 0.008732575271307467,
+      "avg_vig": 0.04245490577420614
+    }
+  },
+  {
+    "group": "I",
+    "commence_time": null,
+    "date_cn": "06-23 08:00",
+    "date": "2026-06-23",
+    "home_en": "Norway",
+    "away_en": "Senegal",
+    "score": "3–2",
+    "finished": true,
+    "metrics": {
+      "n_bookmakers": 21,
+      "avg_h": 2.279047619047619,
+      "avg_d": 3.4995238095238097,
+      "avg_a": 3.140952380952381,
+      "p_h_mean": 0.42067616965538135,
+      "p_h_std": 0.003374874822481632,
+      "avg_vig": 0.04357017792196963
+    }
+  },
+  {
+    "group": "I",
+    "commence_time": "2026-06-26T19:00:00Z",
+    "date_cn": "06-27 03:00",
+    "date": "2026-06-27",
+    "home_en": "Norway",
+    "away_en": "France",
+    "score": null,
+    "finished": false,
+    "metrics": {
+      "n_bookmakers": 20,
+      "avg_h": 4.3465,
+      "avg_d": 3.7705,
+      "avg_a": 1.8045,
+      "p_h_mean": 0.2192929166449431,
+      "p_h_std": 0.0038742604713806164,
+      "avg_vig": 0.05026566157697267
+    }
+  },
+  {
+    "group": "I",
+    "commence_time": "2026-06-26T19:00:00Z",
+    "date_cn": "06-27 03:00",
+    "date": "2026-06-27",
+    "home_en": "Senegal",
+    "away_en": "Iraq",
+    "score": null,
+    "finished": false,
+    "metrics": {
+      "n_bookmakers": 19,
+      "avg_h": 1.3036842105263158,
+      "avg_d": 5.396842105263158,
+      "avg_a": 10.660526315789474,
+      "p_h_mean": 0.7326971041744466,
+      "p_h_std": 0.009437556835206034,
+      "avg_vig": 0.047338912174838155
+    }
+  },
+  {
+    "group": "J",
+    "home_en": "Argentina",
+    "away_en": "Algeria",
+    "score": "3–0",
+    "finished": true,
+    "date": "2026-06-16",
+    "commence_time": null
+  },
+  {
+    "group": "J",
+    "home_en": "Austria",
+    "away_en": "Jordan",
+    "score": "3–1",
+    "finished": true,
+    "date": "2026-06-16",
+    "commence_time": null
+  },
+  {
+    "group": "J",
+    "commence_time": null,
+    "date_cn": "06-23 01:00",
+    "date": "2026-06-23",
+    "home_en": "Argentina",
+    "away_en": "Austria",
+    "score": "2–0",
+    "finished": true,
+    "metrics": {
+      "n_bookmakers": 20,
+      "avg_h": 1.558,
+      "avg_d": 4.046,
+      "avg_a": 6.407,
+      "p_h_mean": 0.61386585625346,
+      "p_h_std": 0.006128065302885543,
+      "avg_vig": 0.045863626392203094
+    }
+  },
+  {
+    "group": "J",
+    "commence_time": null,
+    "date_cn": "06-23 11:00",
+    "date": "2026-06-23",
+    "home_en": "Jordan",
+    "away_en": "Algeria",
+    "score": "1–2",
+    "finished": true,
+    "metrics": {
+      "n_bookmakers": 25,
+      "avg_h": 6.0040000000000004,
+      "avg_d": 4.144,
+      "avg_a": 1.5688,
+      "p_h_mean": 0.15968946623214963,
+      "p_h_std": 0.008011440165182607,
+      "avg_vig": 0.04671575029174276
+    }
+  },
+  {
+    "group": "J",
+    "commence_time": "2026-06-28T02:00:00Z",
+    "date_cn": "06-28 10:00",
+    "date": "2026-06-28",
+    "home_en": "Algeria",
+    "away_en": "Austria",
+    "score": null,
+    "finished": false,
+    "metrics": {
+      "n_bookmakers": 21,
+      "avg_h": 3.0361904761904763,
+      "avg_d": 3.0376190476190477,
+      "avg_a": 2.4761904761904763,
+      "p_h_mean": 0.3102097754612163,
+      "p_h_std": 0.007010524147308189,
+      "avg_vig": 0.0642442482316118
+    }
+  },
+  {
+    "group": "J",
+    "commence_time": "2026-06-28T02:00:00Z",
+    "date_cn": "06-28 10:00",
+    "date": "2026-06-28",
+    "home_en": "Jordan",
+    "away_en": "Argentina",
+    "score": null,
+    "finished": false,
+    "metrics": {
+      "n_bookmakers": 19,
+      "avg_h": 13.835263157894737,
+      "avg_d": 7.015789473684211,
+      "avg_a": 1.1989473684210525,
+      "p_h_mean": 0.06901225855397894,
+      "p_h_std": 0.0034015233939525048,
+      "avg_vig": 0.05047915478149423
+    }
+  },
+  {
+    "group": "K",
+    "home_en": "Portugal",
+    "away_en": "DR Congo",
+    "score": "1–1",
+    "finished": true,
+    "date": "2026-06-17",
+    "commence_time": null
+  },
+  {
+    "group": "K",
+    "home_en": "Uzbekistan",
+    "away_en": "Colombia",
+    "score": "1–3",
+    "finished": true,
+    "date": "2026-06-17",
+    "commence_time": null
+  },
+  {
+    "group": "K",
+    "commence_time": "2026-06-23T17:00:00Z",
+    "date_cn": "06-24 01:00",
+    "date": "2026-06-24",
+    "home_en": "Portugal",
+    "away_en": "Uzbekistan",
+    "score": null,
+    "finished": false,
+    "metrics": {
+      "n_bookmakers": 25,
+      "avg_h": 1.2064,
+      "avg_d": 6.8224,
+      "avg_a": 14.9428,
+      "p_h_mean": 0.7943000995656773,
+      "p_h_std": 0.01141614164806452,
+      "avg_vig": 0.04408070068665318
+    }
+  },
+  {
+    "group": "K",
+    "commence_time": "2026-06-24T02:00:00Z",
+    "date_cn": "06-24 10:00",
+    "date": "2026-06-24",
+    "home_en": "Colombia",
+    "away_en": "DR Congo",
+    "score": null,
+    "finished": false,
+    "metrics": {
+      "n_bookmakers": 21,
+      "avg_h": 1.5176190476190476,
+      "avg_d": 4.174285714285714,
+      "avg_a": 6.939047619047619,
+      "p_h_mean": 0.6317923312620399,
+      "p_h_std": 0.00690316637860015,
+      "avg_vig": 0.04341542659577861
+    }
+  },
+  {
+    "group": "K",
+    "commence_time": "2026-06-27T23:30:00Z",
+    "date_cn": "06-28 07:30",
+    "date": "2026-06-28",
+    "home_en": "Colombia",
+    "away_en": "Portugal",
+    "score": null,
+    "finished": false,
+    "metrics": {
+      "n_bookmakers": 21,
+      "avg_h": 3.557142857142857,
+      "avg_d": 3.4452380952380954,
+      "avg_a": 2.045714285714286,
+      "p_h_mean": 0.26516905270319324,
+      "p_h_std": 0.005816957264047169,
+      "avg_vig": 0.06217818954245796
+    }
+  },
+  {
+    "group": "K",
+    "commence_time": "2026-06-27T23:30:00Z",
+    "date_cn": "06-28 07:30",
+    "date": "2026-06-28",
+    "home_en": "DR Congo",
+    "away_en": "Uzbekistan",
+    "score": null,
+    "finished": false,
+    "metrics": {
+      "n_bookmakers": 21,
+      "avg_h": 2.0690476190476192,
+      "avg_d": 3.566666666666667,
+      "avg_a": 3.354761904761905,
+      "p_h_mean": 0.4549406192219197,
+      "p_h_std": 0.009836293482314845,
+      "avg_vig": 0.06393850556503476
+    }
+  },
+  {
+    "group": "L",
+    "home_en": "England",
+    "away_en": "Croatia",
+    "score": "4–2",
+    "finished": true,
+    "date": "2026-06-17",
+    "commence_time": null
+  },
+  {
+    "group": "L",
+    "home_en": "Ghana",
+    "away_en": "Panama",
+    "score": "1–0",
+    "finished": true,
+    "date": "2026-06-17",
+    "commence_time": null
+  },
+  {
+    "group": "L",
+    "commence_time": "2026-06-23T20:00:00Z",
+    "date_cn": "06-24 04:00",
+    "date": "2026-06-24",
+    "home_en": "England",
+    "away_en": "Ghana",
+    "score": null,
+    "finished": false,
+    "metrics": {
+      "n_bookmakers": 25,
+      "avg_h": 1.2172,
+      "avg_d": 6.5652,
+      "avg_a": 14.154,
+      "p_h_mean": 0.7857230490470529,
+      "p_h_std": 0.009824448793208613,
+      "avg_vig": 0.04600638390662212
+    }
+  },
+  {
+    "group": "L",
+    "commence_time": "2026-06-23T23:00:00Z",
+    "date_cn": "06-24 07:00",
+    "date": "2026-06-24",
+    "home_en": "Panama",
+    "away_en": "Croatia",
+    "score": null,
+    "finished": false,
+    "metrics": {
+      "n_bookmakers": 25,
+      "avg_h": 6.7816,
+      "avg_d": 4.0036,
+      "avg_a": 1.5408,
+      "p_h_mean": 0.14127979126107162,
+      "p_h_std": 0.007113191639907687,
+      "avg_vig": 0.0472155145283566
+    }
+  },
+  {
+    "group": "L",
+    "commence_time": "2026-06-27T21:00:00Z",
+    "date_cn": "06-28 05:00",
+    "date": "2026-06-28",
+    "home_en": "Croatia",
+    "away_en": "Ghana",
+    "score": null,
+    "finished": false,
+    "metrics": {
+      "n_bookmakers": 21,
+      "avg_h": 1.608095238095238,
+      "avg_d": 3.782380952380952,
+      "avg_a": 5.788095238095238,
+      "p_h_mean": 0.5867792582814002,
+      "p_h_std": 0.007205396967101409,
+      "avg_vig": 0.061198966216752006
+    }
+  },
+  {
+    "group": "L",
+    "commence_time": "2026-06-27T21:00:00Z",
+    "date_cn": "06-28 05:00",
+    "date": "2026-06-28",
+    "home_en": "Panama",
+    "away_en": "England",
+    "score": null,
+    "finished": false,
+    "metrics": {
+      "n_bookmakers": 15,
+      "avg_h": 11.468666666666667,
+      "avg_d": 6.6033333333333335,
+      "avg_a": 1.2393333333333334,
+      "p_h_mean": 0.08358208410336543,
+      "p_h_std": 0.005135926344238626,
+      "avg_vig": 0.04756578109948265
+    }
+  }
+]

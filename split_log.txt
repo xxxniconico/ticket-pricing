@@ -1,0 +1,16 @@
+split_app_v8 @ 2026-06-13T21:50:24.225375
+backup -> app_v8.py.bak.20260613_215024
+wrote dashboard/common/setup.py (73 lines)
+wrote dashboard/common/constants.py (23 lines)
+wrote dashboard/common/brand.py (81 lines)
+wrote dashboard/common/data_cache.py (134 lines)
+wrote dashboard/components/pricing_ui.py (458 lines)
+wrote dashboard/tabs/tab_next_match.py (143 lines)
+wrote dashboard/tabs/tab_history.py (276 lines)
+wrote dashboard/tabs/tab_opponent.py (113 lines)
+wrote dashboard/components/waterfall.py (773 lines)
+wrote dashboard/tabs/tab_h2_strategy.py (243 lines)
+wrote dashboard/tabs/tab_standings.py (65 lines)
+wrote dashboard/tabs/tab_heatmap.py (144 lines)
+wrote dashboard/tabs/tab_validation.py (225 lines)
+new app_v8.py (181 lines)

@@ -20,6 +20,13 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).parent))
 from src.rule_engine import predict, MULTIPLIERS, OPP_DEVIATION, TIER_BASE, PENALTY_FLOOR
 from src.classify import classify_opponent_tier, DERBY_RIVALS
+from src.csl_context import detect_ctx as csl_detect_ctx
+
+CTX_PRINT_FLAGS = [
+    "derby", "consecutive_home_losses", "heavy_home_loss",
+    "away_winless", "away_winless_losses", "top3_form", "midseason_restart",
+    "saturday", "late_season", "season_opener", "short_rest", "midweek", "summer",
+]
 
 
 # ── 1. Load data ──────────────────────────────────────────
@@ -112,28 +119,17 @@ def get_standings_before(all_matches_df, target_date):
     return {t["team"]: i+1 for i, t in enumerate(table)}
 
 
-# ── 4. Detect context (replicating dashboard/app.py detect_ctx + extras) ──
+# ── 4. Detect context (canonical csl_context.detect_ctx) ──
+def _derby_flag(opp_name: str) -> bool:
+    if opp_name in DERBY_RIVALS:
+        return True
+    return any(dr in opp_name or opp_name in dr for dr in DERBY_RIVALS)
+
+
 def detect_ctx_match(match, all_matches_df, target_date, season):
-    """
-    Replicate the dashboard's detect_ctx logic.
-    Returns dict with all context flags needed by predict().
-    
-    all_matches_df: DataFrame of ALL CSL matches (not just 国安), sorted by date.
-    """
-    ctx = {}
+    """复用 src.csl_context.detect_ctx，与看板 V8 一致（无 lost_bottom / unbeaten_3）。"""
     md = pd.Timestamp(target_date)
-    
-    # Get all completed matches before target date
-    prev_all = all_matches_df[
-        (all_matches_df["status"] == "finished") & 
-        (all_matches_df["date"] < md)
-    ].copy()
-    
-    # Filter to 国安 matches for context detection
     guoan_all = df_raw[df_raw["date"] < md].copy()
-    
-    # Build prev list for the dashboard-style detect_ctx
-    # The dashboard's detect_ctx uses guoan_matches list with specific keys
     guoan_before = []
     for _, r in guoan_all.iterrows():
         guoan_before.append({
@@ -145,85 +141,39 @@ def detect_ctx_match(match, all_matches_df, target_date, season):
             "completed": r["status"] == "finished",
             "round": r["round"],
         })
-    
-    # Dashboard detect_ctx logic
-    prev = [m for m in guoan_before if m["completed"] and pd.Timestamp(m["date"]) < md]
-    last3 = prev[-3:] if len(prev) >= 3 else prev
-    
-    # away_winless
-    away3 = [m for m in last3 if not m["is_home"]]
-    if len(away3) >= 2:
-        away_wins = sum(1 for m in away3 if (
-            (m["is_home"] and m["hg"] > m["ag"]) or 
-            (not m["is_home"] and m["ag"] > m["hg"])
-        ))
-        if away_wins == 0:
-            ctx["away_winless"] = True
-    
-    # lost_bottom & heavy_home_loss
-    for m in last3:
-        is_loss = (m["is_home"] and m["hg"] < m["ag"]) or (not m["is_home"] and m["ag"] < m["hg"])
-        if not is_loss:
-            continue
-        
-        opp = m["opponent"]
-        standings = get_standings_before(df_raw, target_date)
-        opp_rank = standings.get(opp, 8)
-        
-        if opp_rank >= 12:
-            opp_tier = classify_opponent_tier(opp)
-            if opp_tier in ("C1", "C2"):
-                ctx["lost_bottom"] = True
-        
-        if m["is_home"] and abs(m["hg"] - m["ag"]) >= 2:
-            # Check if there's a subsequent win to "wash" it
-            idx = -1
-            for i, pm in enumerate(prev):
-                if pm["date"] == m["date"] and pm["opponent"] == m["opponent"]:
-                    idx = i; break
-            later = prev[idx+1:] if idx >= 0 else []
-            has_win = any(
-                (lm["is_home"] and lm["hg"] > lm["ag"]) or 
-                (not lm["is_home"] and lm["ag"] > lm["hg"])
-                for lm in later
-            )
-            if not has_win:
-                ctx["heavy_home_loss"] = True
-    
-    # short_rest: <=5 days since last home match
-    hp = [m for m in prev if m["is_home"]]
-    if hp:
-        days_since = (md - pd.Timestamp(hp[-1]["date"])).days
-        if days_since <= 5:
-            ctx["short_rest"] = True
-    
-    # Additional context from dashboard render_home_card:
-    # derby
+
+    standings = {f"{season}_99": get_standings_before(df_raw, target_date)}
     opp_name = match.get("away_club", "")
-    if opp_name in DERBY_RIVALS:
-        ctx["derby"] = True
-    else:
-        # Also check bidirectional
-        for dr in DERBY_RIVALS:
-            if dr in opp_name or opp_name in dr:
-                ctx["derby"] = True
-                break
-    
-    # saturday, late_season, midweek, season_opener
+    mock = {"date": str(md)[:10], "opponent": opp_name, "is_home": True, "completed": True}
+    ctx = csl_detect_ctx(mock, guoan_before, standings)
+
+    ctx["derby"] = _derby_flag(opp_name)
     ctx["saturday"] = md.weekday() == 5
     ctx["late_season"] = md.month >= 10
     ctx["midweek"] = md.weekday() in (1, 2, 3)
-    
-    # season_opener: first home match of season
-    if season == 2025:
-        home_before = [m for m in prev if m["is_home"]]
-        ctx["season_opener"] = len(home_before) == 0
-    else:
-        # For 2026, check if first home of the season
-        home_before_26 = [m for m in prev if m["is_home"] and pd.Timestamp(m["date"]).year == 2026]
-        ctx["season_opener"] = len(home_before_26) == 0
-    
+    ctx["summer"] = md.month in (7, 8)
+    ctx["match_year"] = str(season)
     return ctx
+
+
+def predict_kwargs_from_ctx(ctx: dict) -> dict:
+    """构建 rule_engine.predict() 参数字典。"""
+    return {
+        "derby": ctx.get("derby", False),
+        "consecutive_home_losses": ctx.get("consecutive_home_losses", False),
+        "heavy_home_loss": ctx.get("heavy_home_loss", False),
+        "away_winless": ctx.get("away_winless", False),
+        "away_winless_losses": ctx.get("away_winless_losses", False),
+        "saturday": ctx.get("saturday", False),
+        "late_season": ctx.get("late_season", False),
+        "season_opener": ctx.get("season_opener", False),
+        "short_rest": ctx.get("short_rest", False),
+        "midweek": ctx.get("midweek", False),
+        "summer": ctx.get("summer", False),
+        "midseason_restart": ctx.get("midseason_restart", False),
+        "top3_form": ctx.get("top3_form", False),
+        "match_year": ctx.get("match_year"),
+    }
 
 
 # ── 5. Normalize opponent names for matching ───────────────
@@ -287,19 +237,7 @@ for _, match in completed_home.iterrows():
     
     # Detect context
     ctx = detect_ctx_match(match, df_raw, md, season)
-    
-    # Build predict() kwargs
-    pred_kwargs = {
-        "derby": ctx.get("derby", False),
-        "lost_bottom": ctx.get("lost_bottom", False),
-        "heavy_home_loss": ctx.get("heavy_home_loss", False),
-        "away_winless": ctx.get("away_winless", False),
-        "saturday": ctx.get("saturday", False),
-        "late_season": ctx.get("late_season", False),
-        "season_opener": ctx.get("season_opener", False),
-        "short_rest": ctx.get("short_rest", False),
-        "midweek": ctx.get("midweek", False),
-    }
+    pred_kwargs = predict_kwargs_from_ctx(ctx)
     
     pred = predict(opp_short, **pred_kwargs)
     tier = classify_opponent_tier(opp_short)
@@ -346,8 +284,7 @@ print("-" * 130)
 
 for _, r in df_results.iterrows():
     ctx_parts = []
-    for flag in ["derby", "lost_bottom", "heavy_home_loss", "away_winless", 
-                 "saturday", "late_season", "season_opener", "short_rest", "midweek"]:
+    for flag in CTX_PRINT_FLAGS:
         if r.get(flag):
             ctx_parts.append(flag[:4])
     ctx_str = ",".join(ctx_parts) if ctx_parts else "none"
@@ -392,9 +329,7 @@ worst = valid.nlargest(5, "ape_pct")
 for _, r in worst.iterrows():
     print(f"\n  {r['season']} {r['date']} vs {r['opponent']} (Tier {r['tier']})")
     print(f"    Predicted: {r['predicted']:.0f} | Actual: {r['actual']:.0f} | Error: {r['error']:.0f} ({r['ape_pct']:.1f}%)")
-    ctx_active = [k for k in ["derby","lost_bottom","heavy_home_loss","away_winless",
-                              "saturday","late_season","season_opener","short_rest","midweek"] 
-                  if r.get(k)]
+    ctx_active = [k for k in CTX_PRINT_FLAGS if r.get(k)]
     print(f"    Active context: {ctx_active if ctx_active else 'none'}")
     print(f"    Deviation factor: {r['dev_factor']:.2f}")
     tier = r['tier']
@@ -422,12 +357,15 @@ def predict_no_dev(opponent, **kwargs):
         else:
             mult *= MULTIPLIERS["derby"]
     
-    if kwargs.get("lost_bottom"):
-        mult *= MULTIPLIERS["lost_bottom"]
+    if kwargs.get("consecutive_home_losses"):
+        mult *= MULTIPLIERS["consecutive_home_losses"]
     elif kwargs.get("heavy_home_loss"):
         mult *= MULTIPLIERS["heavy_home_loss"]
     
-    if kwargs.get("away_winless"):
+    if kwargs.get("away_winless_losses"):
+        tier = classify_opponent_tier(opponent)
+        mult *= 0.77 if tier in ("S", "A") else MULTIPLIERS["away_winless_losses"]
+    elif kwargs.get("away_winless"):
         mult *= MULTIPLIERS["away_winless"]
     if kwargs.get("saturday"):
         mult *= MULTIPLIERS["saturday"]
@@ -435,10 +373,16 @@ def predict_no_dev(opponent, **kwargs):
         mult *= MULTIPLIERS["late_season"]
     if kwargs.get("season_opener"):
         mult *= MULTIPLIERS["season_opener"]
-    if kwargs.get("midweek") and not kwargs.get("lost_bottom") and not kwargs.get("heavy_home_loss"):
+    if kwargs.get("midseason_restart") and not kwargs.get("season_opener"):
+        mult *= MULTIPLIERS["midseason_restart"]
+    if kwargs.get("midweek") and not kwargs.get("consecutive_home_losses"):
         mult *= MULTIPLIERS["midweek"]
-    if kwargs.get("short_rest") and not kwargs.get("lost_bottom") and not kwargs.get("heavy_home_loss"):
+    if kwargs.get("short_rest") and not kwargs.get("consecutive_home_losses") and not kwargs.get("heavy_home_loss"):
         mult *= MULTIPLIERS["short_rest"]
+    if kwargs.get("summer") and classify_opponent_tier(opponent) in ("B", "C"):
+        mult *= MULTIPLIERS["summer"]
+    if kwargs.get("top3_form") and classify_opponent_tier(opponent) in ("B", "C"):
+        mult *= MULTIPLIERS["top3_form"]
     
     if mult < PENALTY_FLOOR:
         mult = PENALTY_FLOOR
@@ -450,18 +394,7 @@ for _, match in completed_home.iterrows():
     opp_raw = match["away_club"]
     opp_short = normalize_opp(opp_raw)
     ctx = detect_ctx_match(match, df_raw, match["date"], match["season"])
-    
-    pred_kwargs = {
-        "derby": ctx.get("derby", False),
-        "lost_bottom": ctx.get("lost_bottom", False),
-        "heavy_home_loss": ctx.get("heavy_home_loss", False),
-        "away_winless": ctx.get("away_winless", False),
-        "saturday": ctx.get("saturday", False),
-        "late_season": ctx.get("late_season", False),
-        "season_opener": ctx.get("season_opener", False),
-        "short_rest": ctx.get("short_rest", False),
-        "midweek": ctx.get("midweek", False),
-    }
+    pred_kwargs = predict_kwargs_from_ctx(ctx)
     
     pred = predict_no_dev(opp_short, **pred_kwargs)
     
@@ -497,7 +430,7 @@ print("="*80)
 param_grid = {
     "derby": [1.15, 1.20, 1.25, 1.30, 1.35],
     "derby_B": [1.05, 1.10, 1.12, 1.15, 1.18],
-    "lost_bottom": [0.45, 0.50, 0.55, 0.60, 0.65],
+    "consecutive_home_losses": [0.75, 0.78, 0.82, 0.85, 0.88],
     "heavy_home_loss": [0.60, 0.65, 0.70, 0.75, 0.80],
     "away_winless": [0.70, 0.75, 0.78, 0.82, 0.88],
     "saturday": [1.05, 1.10, 1.12, 1.15, 1.20],
@@ -521,12 +454,16 @@ def predict_with_multipliers(opponent, multipliers, **kwargs):
         else:
             mult *= multipliers.get("derby", MULTIPLIERS["derby"])
     
-    if kwargs.get("lost_bottom"):
-        mult *= multipliers.get("lost_bottom", MULTIPLIERS["lost_bottom"])
+    if kwargs.get("consecutive_home_losses"):
+        mult *= multipliers.get("consecutive_home_losses", MULTIPLIERS["consecutive_home_losses"])
     elif kwargs.get("heavy_home_loss"):
         mult *= multipliers.get("heavy_home_loss", MULTIPLIERS["heavy_home_loss"])
     
-    if kwargs.get("away_winless"):
+    if kwargs.get("away_winless_losses"):
+        mult *= 0.77 if tier in ("S", "A") else multipliers.get(
+            "away_winless_losses", MULTIPLIERS["away_winless_losses"]
+        )
+    elif kwargs.get("away_winless"):
         mult *= multipliers.get("away_winless", MULTIPLIERS["away_winless"])
     if kwargs.get("saturday"):
         mult *= multipliers.get("saturday", MULTIPLIERS["saturday"])
@@ -534,10 +471,16 @@ def predict_with_multipliers(opponent, multipliers, **kwargs):
         mult *= multipliers.get("late_season", MULTIPLIERS["late_season"])
     if kwargs.get("season_opener"):
         mult *= multipliers.get("season_opener", MULTIPLIERS["season_opener"])
-    if kwargs.get("midweek") and not kwargs.get("lost_bottom") and not kwargs.get("heavy_home_loss"):
+    if kwargs.get("midseason_restart") and not kwargs.get("season_opener"):
+        mult *= multipliers.get("midseason_restart", MULTIPLIERS["midseason_restart"])
+    if kwargs.get("midweek") and not kwargs.get("consecutive_home_losses"):
         mult *= multipliers.get("midweek", MULTIPLIERS["midweek"])
-    if kwargs.get("short_rest") and not kwargs.get("lost_bottom") and not kwargs.get("heavy_home_loss"):
+    if kwargs.get("short_rest") and not kwargs.get("consecutive_home_losses") and not kwargs.get("heavy_home_loss"):
         mult *= multipliers.get("short_rest", MULTIPLIERS["short_rest"])
+    if kwargs.get("summer") and tier in ("B", "C"):
+        mult *= multipliers.get("summer", MULTIPLIERS["summer"])
+    if kwargs.get("top3_form") and tier in ("B", "C"):
+        mult *= multipliers.get("top3_form", MULTIPLIERS["top3_form"])
     
     if mult < PENALTY_FLOOR:
         mult = PENALTY_FLOOR
@@ -568,17 +511,7 @@ def evaluate_multipliers(mults, match_contexts):
     for mc in match_contexts:
         if mc["actual"] is None:
             continue
-        kwargs = {
-            "derby": mc["ctx"].get("derby", False),
-            "lost_bottom": mc["ctx"].get("lost_bottom", False),
-            "heavy_home_loss": mc["ctx"].get("heavy_home_loss", False),
-            "away_winless": mc["ctx"].get("away_winless", False),
-            "saturday": mc["ctx"].get("saturday", False),
-            "late_season": mc["ctx"].get("late_season", False),
-            "season_opener": mc["ctx"].get("season_opener", False),
-            "short_rest": mc["ctx"].get("short_rest", False),
-            "midweek": mc["ctx"].get("midweek", False),
-        }
+        kwargs = predict_kwargs_from_ctx(mc["ctx"])
         pred = predict_with_multipliers(mc["opponent"], mults, **kwargs)
         errors.append(abs(pred - mc["actual"]))
     return np.mean(errors) if errors else float("inf")
@@ -615,7 +548,7 @@ Proposal 1: Update MULTIPLIERS based on grid search
 Proposal 2: Add big_win_prev multiplier
   - The rule_engine.py already has 'big_win_prev=0.82' in docstring but not in MULTIPLIERS dict
   - Add as a positive boost (e.g., 1.08-1.12x) when last match was a big win (3+ goal margin)
-  - This counteracts the "lost_bottom" pessimism when team is on a hot streak
+  - This counteracts pessimism when team is on a hot streak (consecutive_home_losses / heavy_home_loss)
   - Expected MAE improvement: 50-150 tickets depending on how many matches trigger
 
 Proposal 3: Tier-specific late_season multipliers

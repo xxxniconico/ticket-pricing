@@ -1,0 +1,58 @@
+[
+  {
+    "date": "2026-06-25",
+    "team": "天津津门虎",
+    "from": "A",
+    "to": "C",
+    "type": "static_diff",
+    "reason": "Dynamic vs static: A -> C"
+  },
+  {
+    "date": "2026-06-25",
+    "team": "上海海港",
+    "from": "A",
+    "to": "B",
+    "type": "static_diff",
+    "reason": "Dynamic vs static: A -> B"
+  },
+  {
+    "date": "2026-06-25",
+    "team": "深圳新鹏城",
+    "from": "B",
+    "to": "C",
+    "type": "static_diff",
+    "reason": "Dynamic vs static: B -> C"
+  },
+  {
+    "date": "2026-06-25",
+    "team": "武汉三镇",
+    "from": "B",
+    "to": "C",
+    "type": "static_diff",
+    "reason": "Dynamic vs static: B -> C"
+  },
+  {
+    "date": "2026-06-25",
+    "team": "青岛西海岸",
+    "from": "B",
+    "to": "C",
+    "type": "static_diff",
+    "reason": "Dynamic vs static: B -> C"
+  },
+  {
+    "date": "2026-06-25",
+    "team": "辽宁铁人",
+    "from": "C",
+    "to": "B",
+    "type": "static_diff",
+    "reason": "Dynamic vs static: C -> B"
+  },
+  {
+    "date": "2026-06-25",
+    "team": "重庆铜梁龙",
+    "from": "C",
+    "to": "B",
+    "type": "static_diff",
+    "reason": "Dynamic vs static: C -> B"
+  }
+]

@@ -1,0 +1,788 @@
+{
+  "as_of": "2026-06-20",
+  "n_bets": 14,
+  "n_days": 8,
+  "days": [
+    {
+      "date": "2026-06-21",
+      "n_bets": 1,
+      "bets": [
+        {
+          "match": "Netherlands vs Sweden",
+          "group": "F",
+          "selection": "D",
+          "odds": 4.08,
+          "p_model": 0.2109,
+          "ev": -0.1398,
+          "bet_variance": 3.5524,
+          "kelly_stake": 0.03,
+          "global_optimal_stake": 0.0126
+        }
+      ],
+      "global": {
+        "stakes": [
+          0.0126
+        ],
+        "stake": 0.0126,
+        "ev": -0.001761,
+        "sigma": 0.023748,
+        "sharpe": -0.0742
+      },
+      "kelly": {
+        "stakes": [
+          0.03
+        ],
+        "stake": 0.03,
+        "ev": -0.004194,
+        "sigma": 0.056543,
+        "sharpe": -0.0742
+      },
+      "per_day_slsqp": {
+        "0.06": {
+          "stakes": [
+            0.0
+          ],
+          "stake": 0.0,
+          "ev": 0.0,
+          "sigma": 0.0,
+          "sharpe": 0.0
+        },
+        "0.08": {
+          "stakes": [
+            0.0
+          ],
+          "stake": 0.0,
+          "ev": 0.0,
+          "sigma": 0.0,
+          "sharpe": 0.0
+        },
+        "0.1": {
+          "stakes": [
+            0.0
+          ],
+          "stake": 0.0,
+          "ev": 0.0,
+          "sigma": 0.0,
+          "sharpe": 0.0
+        },
+        "0.12": {
+          "stakes": [
+            0.0
+          ],
+          "stake": 0.0,
+          "ev": 0.0,
+          "sigma": 0.0,
+          "sharpe": 0.0
+        }
+      },
+      "hedging": [],
+      "diversification_benefit": 0.0
+    },
+    {
+      "date": "2026-06-22",
+      "n_bets": 1,
+      "bets": [
+        {
+          "match": "New Zealand vs Egypt",
+          "group": "G",
+          "selection": "H",
+          "odds": 5.743,
+          "p_model": 0.2436,
+          "ev": 0.3991,
+          "bet_variance": 7.1506,
+          "kelly_stake": 0.03,
+          "global_optimal_stake": 0.0199
+        }
+      ],
+      "global": {
+        "stakes": [
+          0.0199
+        ],
+        "stake": 0.0199,
+        "ev": 0.007942,
+        "sigma": 0.053214,
+        "sharpe": 0.1492
+      },
+      "kelly": {
+        "stakes": [
+          0.03
+        ],
+        "stake": 0.03,
+        "ev": 0.011973,
+        "sigma": 0.080222,
+        "sharpe": 0.1492
+      },
+      "per_day_slsqp": {
+        "0.06": {
+          "stakes": [
+            0.022438
+          ],
+          "stake": 0.022438,
+          "ev": 0.008955,
+          "sigma": 0.06,
+          "sharpe": 0.1492
+        },
+        "0.08": {
+          "stakes": [
+            0.029917
+          ],
+          "stake": 0.029917,
+          "ev": 0.01194,
+          "sigma": 0.08,
+          "sharpe": 0.1492
+        },
+        "0.1": {
+          "stakes": [
+            0.03
+          ],
+          "stake": 0.03,
+          "ev": 0.011973,
+          "sigma": 0.080222,
+          "sharpe": 0.1492
+        },
+        "0.12": {
+          "stakes": [
+            0.03
+          ],
+          "stake": 0.03,
+          "ev": 0.011973,
+          "sigma": 0.080222,
+          "sharpe": 0.1492
+        }
+      },
+      "hedging": [],
+      "diversification_benefit": 0.0
+    },
+    {
+      "date": "2026-06-23",
+      "n_bets": 1,
+      "bets": [
+        {
+          "match": "Jordan vs Algeria",
+          "group": "J",
+          "selection": "H",
+          "odds": 5.901,
+          "p_model": 0.1906,
+          "ev": 0.1248,
+          "bet_variance": 6.5343,
+          "kelly_stake": 0.03,
+          "global_optimal_stake": 0.0126
+        }
+      ],
+      "global": {
+        "stakes": [
+          0.0126
+        ],
+        "stake": 0.0126,
+        "ev": 0.001572,
+        "sigma": 0.032208,
+        "sharpe": 0.0488
+      },
+      "kelly": {
+        "stakes": [
+          0.03
+        ],
+        "stake": 0.03,
+        "ev": 0.003744,
+        "sigma": 0.076687,
+        "sharpe": 0.0488
+      },
+      "per_day_slsqp": {
+        "0.06": {
+          "stakes": [
+            0.023472
+          ],
+          "stake": 0.023472,
+          "ev": 0.002929,
+          "sigma": 0.06,
+          "sharpe": 0.0488
+        },
+        "0.08": {
+          "stakes": [
+            0.03
+          ],
+          "stake": 0.03,
+          "ev": 0.003744,
+          "sigma": 0.076687,
+          "sharpe": 0.0488
+        },
+        "0.1": {
+          "stakes": [
+            0.03
+          ],
+          "stake": 0.03,
+          "ev": 0.003744,
+          "sigma": 0.076687,
+          "sharpe": 0.0488
+        },
+        "0.12": {
+          "stakes": [
+            0.03
+          ],
+          "stake": 0.03,
+          "ev": 0.003744,
+          "sigma": 0.076687,
+          "sharpe": 0.0488
+        }
+      },
+      "hedging": [],
+      "diversification_benefit": 0.0
+    },
+    {
+      "date": "2026-06-24",
+      "n_bets": 1,
+      "bets": [
+        {
+          "match": "Panama vs Croatia",
+          "group": "L",
+          "selection": "H",
+          "odds": 6.78,
+          "p_model": 0.1206,
+          "ev": -0.1824,
+          "bet_variance": 7.2439,
+          "kelly_stake": 0.0285,
+          "global_optimal_stake": 0.0078
+        }
+      ],
+      "global": {
+        "stakes": [
+          0.0078
+        ],
+        "stake": 0.0078,
+        "ev": -0.001423,
+        "sigma": 0.020993,
+        "sharpe": -0.0678
+      },
+      "kelly": {
+        "stakes": [
+          0.0285
+        ],
+        "stake": 0.0285,
+        "ev": -0.005198,
+        "sigma": 0.076706,
+        "sharpe": -0.0678
+      },
+      "per_day_slsqp": {
+        "0.06": {
+          "stakes": [
+            0.0
+          ],
+          "stake": 0.0,
+          "ev": -0.0,
+          "sigma": 0.0,
+          "sharpe": -0.0678
+        },
+        "0.08": {
+          "stakes": [
+            0.0
+          ],
+          "stake": 0.0,
+          "ev": -0.0,
+          "sigma": 0.0,
+          "sharpe": -0.0678
+        },
+        "0.1": {
+          "stakes": [
+            0.0
+          ],
+          "stake": 0.0,
+          "ev": -0.0,
+          "sigma": 0.0,
+          "sharpe": -0.0678
+        },
+        "0.12": {
+          "stakes": [
+            0.0
+          ],
+          "stake": 0.0,
+          "ev": -0.0,
+          "sigma": 0.0,
+          "sharpe": -0.0678
+        }
+      },
+      "hedging": [],
+      "diversification_benefit": 0.0
+    },
+    {
+      "date": "2026-06-25",
+      "n_bets": 1,
+      "bets": [
+        {
+          "match": "Scotland vs Brazil",
+          "group": "C",
+          "selection": "H",
+          "odds": 7.951,
+          "p_model": 0.0955,
+          "ev": -0.2404,
+          "bet_variance": 9.0447,
+          "kelly_stake": 0.027,
+          "global_optimal_stake": 0.0071
+        }
+      ],
+      "global": {
+        "stakes": [
+          0.0071
+        ],
+        "stake": 0.0071,
+        "ev": -0.001707,
+        "sigma": 0.021353,
+        "sharpe": -0.0799
+      },
+      "kelly": {
+        "stakes": [
+          0.027
+        ],
+        "stake": 0.027,
+        "ev": -0.006491,
+        "sigma": 0.081201,
+        "sharpe": -0.0799
+      },
+      "per_day_slsqp": {
+        "0.06": {
+          "stakes": [
+            0.0
+          ],
+          "stake": 0.0,
+          "ev": -0.0,
+          "sigma": 0.0,
+          "sharpe": -0.0799
+        },
+        "0.08": {
+          "stakes": [
+            0.0
+          ],
+          "stake": 0.0,
+          "ev": -0.0,
+          "sigma": 0.0,
+          "sharpe": -0.0799
+        },
+        "0.1": {
+          "stakes": [
+            0.0
+          ],
+          "stake": 0.0,
+          "ev": -0.0,
+          "sigma": 0.0,
+          "sharpe": -0.0799
+        },
+        "0.12": {
+          "stakes": [
+            0.0
+          ],
+          "stake": 0.0,
+          "ev": -0.0,
+          "sigma": 0.0,
+          "sharpe": -0.0799
+        }
+      },
+      "hedging": [],
+      "diversification_benefit": 0.0
+    },
+    {
+      "date": "2026-06-26",
+      "n_bets": 3,
+      "bets": [
+        {
+          "match": "Curacao vs Ivory Coast",
+          "group": "E",
+          "selection": "H",
+          "odds": 20.386,
+          "p_model": 0.0863,
+          "ev": 0.7592,
+          "bet_variance": 58.3649,
+          "kelly_stake": 0.03,
+          "global_optimal_stake": 0.0072
+        },
+        {
+          "match": "Ecuador vs Germany",
+          "group": "E",
+          "selection": "H",
+          "odds": 4.944,
+          "p_model": 0.3132,
+          "ev": 0.5486,
+          "bet_variance": 5.8204,
+          "kelly_stake": 0.03,
+          "global_optimal_stake": 0.0276
+        },
+        {
+          "match": "Turkey vs United States",
+          "group": "D",
+          "selection": "D",
+          "odds": 3.932,
+          "p_model": 0.2763,
+          "ev": 0.0863,
+          "bet_variance": 3.4062,
+          "kelly_stake": 0.03,
+          "global_optimal_stake": 0.0146
+        }
+      ],
+      "global": {
+        "stakes": [
+          0.0072,
+          0.0276,
+          0.0146
+        ],
+        "stake": 0.0494,
+        "ev": 0.021868,
+        "sigma": 0.090473,
+        "sharpe": 0.2417
+      },
+      "kelly": {
+        "stakes": [
+          0.03,
+          0.03,
+          0.03
+        ],
+        "stake": 0.09,
+        "ev": 0.041823,
+        "sigma": 0.246642,
+        "sharpe": 0.1696
+      },
+      "per_day_slsqp": {
+        "0.06": {
+          "stakes": [
+            0.003091,
+            0.022395,
+            0.00602
+          ],
+          "stake": 0.031505,
+          "ev": 0.015152,
+          "sigma": 0.06,
+          "sharpe": 0.2525
+        },
+        "0.08": {
+          "stakes": [
+            0.004121,
+            0.02986,
+            0.008027
+          ],
+          "stake": 0.042007,
+          "ev": 0.020202,
+          "sigma": 0.08,
+          "sharpe": 0.2525
+        },
+        "0.1": {
+          "stakes": [
+            0.008173,
+            0.03,
+            0.015919
+          ],
+          "stake": 0.054092,
+          "ev": 0.024037,
+          "sigma": 0.1,
+          "sharpe": 0.2404
+        },
+        "0.12": {
+          "stakes": [
+            0.011337,
+            0.03,
+            0.022081
+          ],
+          "stake": 0.063417,
+          "ev": 0.02697,
+          "sigma": 0.12,
+          "sharpe": 0.2248
+        }
+      },
+      "hedging": [
+        {
+          "group": "E",
+          "matches": [
+            "Curacao vs Ivory Coast",
+            "Ecuador vs Germany"
+          ],
+          "selections": [
+            "H",
+            "H"
+          ],
+          "hedge_type": "none",
+          "model_correlation": "analyzed",
+          "note": "同组第三轮同时开赛, 战术相关性 > 模型 cov≈0"
+        }
+      ],
+      "diversification_benefit": 0.5534
+    },
+    {
+      "date": "2026-06-27",
+      "n_bets": 2,
+      "bets": [
+        {
+          "match": "Cape Verde vs Saudi Arabia",
+          "group": "H",
+          "selection": "D",
+          "odds": 3.605,
+          "p_model": 0.3798,
+          "ev": 0.3692,
+          "bet_variance": 2.9983,
+          "kelly_stake": 0.03,
+          "global_optimal_stake": 0.0173
+        },
+        {
+          "match": "Egypt vs Iran",
+          "group": "G",
+          "selection": "D",
+          "odds": 3.12,
+          "p_model": 0.3529,
+          "ev": 0.101,
+          "bet_variance": 2.2215,
+          "kelly_stake": 0.0235,
+          "global_optimal_stake": 0.0077
+        }
+      ],
+      "global": {
+        "stakes": [
+          0.0173,
+          0.0077
+        ],
+        "stake": 0.025,
+        "ev": 0.007165,
+        "sigma": 0.032079,
+        "sharpe": 0.2233
+      },
+      "kelly": {
+        "stakes": [
+          0.03,
+          0.0235
+        ],
+        "stake": 0.0535,
+        "ev": 0.013449,
+        "sigma": 0.062652,
+        "sharpe": 0.2147
+      },
+      "per_day_slsqp": {
+        "0.06": {
+          "stakes": [
+            0.03,
+            0.020145
+          ],
+          "stake": 0.050145,
+          "ev": 0.013111,
+          "sigma": 0.06,
+          "sharpe": 0.2185
+        },
+        "0.08": {
+          "stakes": [
+            0.03,
+            0.03
+          ],
+          "stake": 0.06,
+          "ev": 0.014106,
+          "sigma": 0.068541,
+          "sharpe": 0.2058
+        },
+        "0.1": {
+          "stakes": [
+            0.03,
+            0.03
+          ],
+          "stake": 0.06,
+          "ev": 0.014106,
+          "sigma": 0.068541,
+          "sharpe": 0.2058
+        },
+        "0.12": {
+          "stakes": [
+            0.03,
+            0.03
+          ],
+          "stake": 0.06,
+          "ev": 0.014106,
+          "sigma": 0.068541,
+          "sharpe": 0.2058
+        }
+      },
+      "hedging": [],
+      "diversification_benefit": 0.0
+    },
+    {
+      "date": "2026-06-28",
+      "n_bets": 4,
+      "bets": [
+        {
+          "match": "Jordan vs Argentina",
+          "group": "J",
+          "selection": "H",
+          "odds": 13.935,
+          "p_model": 0.054,
+          "ev": -0.2473,
+          "bet_variance": 24.7857,
+          "kelly_stake": 0.03,
+          "global_optimal_stake": 0.0076
+        },
+        {
+          "match": "Panama vs England",
+          "group": "L",
+          "selection": "H",
+          "odds": 11.475,
+          "p_model": 0.0982,
+          "ev": 0.1269,
+          "bet_variance": 19.2747,
+          "kelly_stake": 0.03,
+          "global_optimal_stake": 0.0093
+        },
+        {
+          "match": "Colombia vs Portugal",
+          "group": "K",
+          "selection": "H",
+          "odds": 3.493,
+          "p_model": 0.336,
+          "ev": 0.1738,
+          "bet_variance": 2.9056,
+          "kelly_stake": 0.03,
+          "global_optimal_stake": 0.0217
+        },
+        {
+          "match": "DR Congo vs Uzbekistan",
+          "group": "K",
+          "selection": "D",
+          "odds": 3.538,
+          "p_model": 0.4137,
+          "ev": 0.464,
+          "bet_variance": 2.9198,
+          "kelly_stake": 0.03,
+          "global_optimal_stake": 0.0183
+        }
+      ],
+      "global": {
+        "stakes": [
+          0.0076,
+          0.0093,
+          0.0217,
+          0.0183
+        ],
+        "stake": 0.0569,
+        "ev": 0.011563,
+        "sigma": 0.073788,
+        "sharpe": 0.1567
+      },
+      "kelly": {
+        "stakes": [
+          0.03,
+          0.03,
+          0.03,
+          0.03
+        ],
+        "stake": 0.12,
+        "ev": 0.015522,
+        "sigma": 0.21189,
+        "sharpe": 0.0733
+      },
+      "per_day_slsqp": {
+        "0.06": {
+          "stakes": [
+            0.0,
+            0.001937,
+            0.017598,
+            0.03
+          ],
+          "stake": 0.049535,
+          "ev": 0.017224,
+          "sigma": 0.06,
+          "sharpe": 0.2871
+        },
+        "0.08": {
+          "stakes": [
+            0.0,
+            0.007748,
+            0.03,
+            0.03
+          ],
+          "stake": 0.067748,
+          "ev": 0.020117,
+          "sigma": 0.08,
+          "sharpe": 0.2515
+        },
+        "0.1": {
+          "stakes": [
+            0.0,
+            0.01571,
+            0.03,
+            0.03
+          ],
+          "stake": 0.07571,
+          "ev": 0.021128,
+          "sigma": 0.1,
+          "sharpe": 0.2113
+        },
+        "0.12": {
+          "stakes": [
+            0.0,
+            0.021796,
+            0.03,
+            0.03
+          ],
+          "stake": 0.081796,
+          "ev": 0.0219,
+          "sigma": 0.12,
+          "sharpe": 0.1825
+        }
+      },
+      "hedging": [
+        {
+          "group": "K",
+          "matches": [
+            "Colombia vs Portugal",
+            "DR Congo vs Uzbekistan"
+          ],
+          "selections": [
+            "H",
+            "D"
+          ],
+          "hedge_type": "partial",
+          "model_correlation": "analyzed",
+          "note": "同组第三轮同时开赛, 战术相关性 > 模型 cov≈0"
+        }
+      ],
+      "diversification_benefit": 0.4606
+    }
+  ],
+  "summary": {
+    "approaches": {
+      "A_global": {
+        "label": "全局优化 (σ²≤0.02)",
+        "total_stake": 0.1913,
+        "total_ev": 0.116169,
+        "sigma": 0.1414,
+        "sharpe": 0.8216
+      },
+      "B_kelly": {
+        "label": "每日 Kelly (仅3%/注+15%/日上限)",
+        "total_stake": 0.409,
+        "total_ev": 0.070628,
+        "sigma": 0.371007,
+        "sharpe": 0.1904
+      },
+      "C_slsqp_6%": {
+        "label": "每日 SLSQP (σ≤6%/日)",
+        "total_stake": 0.177095,
+        "total_ev": 0.057371,
+        "sigma": 0.134164,
+        "sharpe": 0.4276
+      },
+      "C_slsqp_8%": {
+        "label": "每日 SLSQP (σ≤8%/日)",
+        "total_stake": 0.229672,
+        "total_ev": 0.070109,
+        "sigma": 0.172565,
+        "sharpe": 0.4063
+      },
+      "C_slsqp_10%": {
+        "label": "每日 SLSQP (σ≤10%/日)",
+        "total_stake": 0.249802,
+        "total_ev": 0.074987,
+        "sigma": 0.192391,
+        "sharpe": 0.3898
+      },
+      "C_slsqp_12%": {
+        "label": "每日 SLSQP (σ≤12%/日)",
+        "total_stake": 0.265214,
+        "total_ev": 0.078693,
+        "sigma": 0.214043,
+        "sharpe": 0.3677
+      }
+    },
+    "best_sharpe": "全局优化 (σ²≤0.02)",
+    "best_ev": "全局优化 (σ²≤0.02)",
+    "recommendation": "风险调整最优: 全局优化 (σ²≤0.02) (Sharpe=0.82). 绝对收益最高: 全局优化 (σ²≤0.02) (EV=+0.1162, σ=14.1%). 对冲: 同组同日下注 (6-26 Group E, 6-28 Group K) 有战术相关性, 但模型 cov≈0 无法量化; 分散化是主要降险手段."
+  }
+}

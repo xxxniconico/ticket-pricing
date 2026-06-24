@@ -1,0 +1,578 @@
+[
+  {
+    "date": "TBD",
+    "home_en": "Mexico",
+    "away_en": "South Africa",
+    "score": "2–0",
+    "finished": true,
+    "group": "A"
+  },
+  {
+    "date": "TBD",
+    "home_en": "South Korea",
+    "away_en": "Czech Republic",
+    "score": "2–1",
+    "finished": true,
+    "group": "A"
+  },
+  {
+    "date": "TBD",
+    "home_en": "Czech Republic",
+    "away_en": "South Africa",
+    "score": "1–1",
+    "finished": true,
+    "group": "A"
+  },
+  {
+    "date": "TBD",
+    "home_en": "Mexico",
+    "away_en": "South Korea",
+    "score": "1–0",
+    "finished": true,
+    "group": "A"
+  },
+  {
+    "date": "TBD",
+    "home_en": "Czech Republic",
+    "away_en": "Mexico",
+    "score": null,
+    "finished": false,
+    "group": "A"
+  },
+  {
+    "date": "TBD",
+    "home_en": "South Africa",
+    "away_en": "South Korea",
+    "score": null,
+    "finished": false,
+    "group": "A"
+  },
+  {
+    "date": "TBD",
+    "home_en": "Canada men&#39;s",
+    "away_en": "Bosnia and Herzegovina",
+    "score": "1–1",
+    "finished": true,
+    "group": "B"
+  },
+  {
+    "date": "TBD",
+    "home_en": "Qatar",
+    "away_en": "Switzerland",
+    "score": "1–1",
+    "finished": true,
+    "group": "B"
+  },
+  {
+    "date": "TBD",
+    "home_en": "Switzerland",
+    "away_en": "Bosnia and Herzegovina",
+    "score": "4–1",
+    "finished": true,
+    "group": "B"
+  },
+  {
+    "date": "TBD",
+    "home_en": "Canada men&#39;s",
+    "away_en": "Qatar",
+    "score": "6–0",
+    "finished": true,
+    "group": "B"
+  },
+  {
+    "date": "TBD",
+    "home_en": "Switzerland",
+    "away_en": "Canada men&#39;s",
+    "score": null,
+    "finished": false,
+    "group": "B"
+  },
+  {
+    "date": "TBD",
+    "home_en": "Bosnia and Herzegovina",
+    "away_en": "Qatar",
+    "score": null,
+    "finished": false,
+    "group": "B"
+  },
+  {
+    "date": "TBD",
+    "home_en": "Brazil",
+    "away_en": "Morocco",
+    "score": "1–1",
+    "finished": true,
+    "group": "C"
+  },
+  {
+    "date": "TBD",
+    "home_en": "Haiti",
+    "away_en": "Scotland",
+    "score": "0–1",
+    "finished": true,
+    "group": "C"
+  },
+  {
+    "date": "TBD",
+    "home_en": "Scotland",
+    "away_en": "Morocco",
+    "score": "0–1",
+    "finished": true,
+    "group": "C"
+  },
+  {
+    "date": "TBD",
+    "home_en": "Brazil",
+    "away_en": "Haiti",
+    "score": "3–0",
+    "finished": true,
+    "group": "C"
+  },
+  {
+    "date": "TBD",
+    "home_en": "Scotland",
+    "away_en": "Brazil",
+    "score": null,
+    "finished": false,
+    "group": "C"
+  },
+  {
+    "date": "TBD",
+    "home_en": "Morocco",
+    "away_en": "Haiti",
+    "score": null,
+    "finished": false,
+    "group": "C"
+  },
+  {
+    "date": "TBD",
+    "home_en": "United States men&#39;s",
+    "away_en": "Paraguay",
+    "score": "4–1",
+    "finished": true,
+    "group": "D"
+  },
+  {
+    "date": "TBD",
+    "home_en": "Australia men&#39;s",
+    "away_en": "Turkey",
+    "score": "2–0",
+    "finished": true,
+    "group": "D"
+  },
+  {
+    "date": "TBD",
+    "home_en": "United States men&#39;s",
+    "away_en": "Australia men&#39;s",
+    "score": "2–0",
+    "finished": true,
+    "group": "D"
+  },
+  {
+    "date": "TBD",
+    "home_en": "Turkey",
+    "away_en": "Paraguay",
+    "score": "0–1",
+    "finished": true,
+    "group": "D"
+  },
+  {
+    "date": "TBD",
+    "home_en": "Turkey",
+    "away_en": "United States men&#39;s",
+    "score": null,
+    "finished": false,
+    "group": "D"
+  },
+  {
+    "date": "TBD",
+    "home_en": "Paraguay",
+    "away_en": "Australia men&#39;s",
+    "score": null,
+    "finished": false,
+    "group": "D"
+  },
+  {
+    "date": "TBD",
+    "home_en": "Germany",
+    "away_en": "Curaçao",
+    "score": "7–1",
+    "finished": true,
+    "group": "E"
+  },
+  {
+    "date": "TBD",
+    "home_en": "Ivory Coast",
+    "away_en": "Ecuador",
+    "score": "1–0",
+    "finished": true,
+    "group": "E"
+  },
+  {
+    "date": "TBD",
+    "home_en": "Germany",
+    "away_en": "Ivory Coast",
+    "score": null,
+    "finished": false,
+    "group": "E"
+  },
+  {
+    "date": "TBD",
+    "home_en": "Ecuador",
+    "away_en": "Curaçao",
+    "score": null,
+    "finished": false,
+    "group": "E"
+  },
+  {
+    "date": "TBD",
+    "home_en": "Curaçao",
+    "away_en": "Ivory Coast",
+    "score": null,
+    "finished": false,
+    "group": "E"
+  },
+  {
+    "date": "TBD",
+    "home_en": "Ecuador",
+    "away_en": "Germany",
+    "score": null,
+    "finished": false,
+    "group": "E"
+  },
+  {
+    "date": "TBD",
+    "home_en": "Netherlands",
+    "away_en": "Japan",
+    "score": "2–2",
+    "finished": true,
+    "group": "F"
+  },
+  {
+    "date": "TBD",
+    "home_en": "Sweden men&#39;s",
+    "away_en": "Tunisia",
+    "score": "5–1",
+    "finished": true,
+    "group": "F"
+  },
+  {
+    "date": "TBD",
+    "home_en": "Netherlands",
+    "away_en": "Sweden men&#39;s",
+    "score": null,
+    "finished": false,
+    "group": "F"
+  },
+  {
+    "date": "TBD",
+    "home_en": "Tunisia",
+    "away_en": "Japan",
+    "score": null,
+    "finished": false,
+    "group": "F"
+  },
+  {
+    "date": "TBD",
+    "home_en": "Japan",
+    "away_en": "Sweden men&#39;s",
+    "score": null,
+    "finished": false,
+    "group": "F"
+  },
+  {
+    "date": "TBD",
+    "home_en": "Tunisia",
+    "away_en": "Netherlands",
+    "score": null,
+    "finished": false,
+    "group": "F"
+  },
+  {
+    "date": "TBD",
+    "home_en": "Belgium",
+    "away_en": "Egypt",
+    "score": "1–1",
+    "finished": true,
+    "group": "G"
+  },
+  {
+    "date": "TBD",
+    "home_en": "Iran",
+    "away_en": "New Zealand men&#39;s",
+    "score": "2–2",
+    "finished": true,
+    "group": "G"
+  },
+  {
+    "date": "TBD",
+    "home_en": "Belgium",
+    "away_en": "Iran",
+    "score": null,
+    "finished": false,
+    "group": "G"
+  },
+  {
+    "date": "TBD",
+    "home_en": "New Zealand men&#39;s",
+    "away_en": "Egypt",
+    "score": null,
+    "finished": false,
+    "group": "G"
+  },
+  {
+    "date": "TBD",
+    "home_en": "Egypt",
+    "away_en": "Iran",
+    "score": null,
+    "finished": false,
+    "group": "G"
+  },
+  {
+    "date": "TBD",
+    "home_en": "New Zealand men&#39;s",
+    "away_en": "Belgium",
+    "score": null,
+    "finished": false,
+    "group": "G"
+  },
+  {
+    "date": "TBD",
+    "home_en": "Spain",
+    "away_en": "Cape Verde",
+    "score": "0–0",
+    "finished": true,
+    "group": "H"
+  },
+  {
+    "date": "TBD",
+    "home_en": "Saudi Arabia",
+    "away_en": "Uruguay",
+    "score": "1–1",
+    "finished": true,
+    "group": "H"
+  },
+  {
+    "date": "TBD",
+    "home_en": "Spain",
+    "away_en": "Saudi Arabia",
+    "score": null,
+    "finished": false,
+    "group": "H"
+  },
+  {
+    "date": "TBD",
+    "home_en": "Uruguay",
+    "away_en": "Cape Verde",
+    "score": null,
+    "finished": false,
+    "group": "H"
+  },
+  {
+    "date": "TBD",
+    "home_en": "Cape Verde",
+    "away_en": "Saudi Arabia",
+    "score": null,
+    "finished": false,
+    "group": "H"
+  },
+  {
+    "date": "TBD",
+    "home_en": "Uruguay",
+    "away_en": "Spain",
+    "score": null,
+    "finished": false,
+    "group": "H"
+  },
+  {
+    "date": "TBD",
+    "home_en": "France",
+    "away_en": "Senegal",
+    "score": "3–1",
+    "finished": true,
+    "group": "I"
+  },
+  {
+    "date": "TBD",
+    "home_en": "Iraq",
+    "away_en": "Norway",
+    "score": "1–4",
+    "finished": true,
+    "group": "I"
+  },
+  {
+    "date": "TBD",
+    "home_en": "France",
+    "away_en": "Iraq",
+    "score": null,
+    "finished": false,
+    "group": "I"
+  },
+  {
+    "date": "TBD",
+    "home_en": "Norway",
+    "away_en": "Senegal",
+    "score": null,
+    "finished": false,
+    "group": "I"
+  },
+  {
+    "date": "TBD",
+    "home_en": "Norway",
+    "away_en": "France",
+    "score": null,
+    "finished": false,
+    "group": "I"
+  },
+  {
+    "date": "TBD",
+    "home_en": "Senegal",
+    "away_en": "Iraq",
+    "score": null,
+    "finished": false,
+    "group": "I"
+  },
+  {
+    "date": "TBD",
+    "home_en": "Argentina",
+    "away_en": "Algeria",
+    "score": "3–0",
+    "finished": true,
+    "group": "J"
+  },
+  {
+    "date": "TBD",
+    "home_en": "Austria",
+    "away_en": "Jordan",
+    "score": "3–1",
+    "finished": true,
+    "group": "J"
+  },
+  {
+    "date": "TBD",
+    "home_en": "Argentina",
+    "away_en": "Austria",
+    "score": null,
+    "finished": false,
+    "group": "J"
+  },
+  {
+    "date": "TBD",
+    "home_en": "Jordan",
+    "away_en": "Algeria",
+    "score": null,
+    "finished": false,
+    "group": "J"
+  },
+  {
+    "date": "TBD",
+    "home_en": "Algeria",
+    "away_en": "Austria",
+    "score": null,
+    "finished": false,
+    "group": "J"
+  },
+  {
+    "date": "TBD",
+    "home_en": "Jordan",
+    "away_en": "Argentina",
+    "score": null,
+    "finished": false,
+    "group": "J"
+  },
+  {
+    "date": "TBD",
+    "home_en": "Portugal",
+    "away_en": "DR Congo",
+    "score": "1–1",
+    "finished": true,
+    "group": "K"
+  },
+  {
+    "date": "TBD",
+    "home_en": "Uzbekistan",
+    "away_en": "Colombia",
+    "score": "1–3",
+    "finished": true,
+    "group": "K"
+  },
+  {
+    "date": "TBD",
+    "home_en": "Portugal",
+    "away_en": "Uzbekistan",
+    "score": null,
+    "finished": false,
+    "group": "K"
+  },
+  {
+    "date": "TBD",
+    "home_en": "Colombia",
+    "away_en": "DR Congo",
+    "score": null,
+    "finished": false,
+    "group": "K"
+  },
+  {
+    "date": "TBD",
+    "home_en": "Colombia",
+    "away_en": "Portugal",
+    "score": null,
+    "finished": false,
+    "group": "K"
+  },
+  {
+    "date": "TBD",
+    "home_en": "DR Congo",
+    "away_en": "Uzbekistan",
+    "score": null,
+    "finished": false,
+    "group": "K"
+  },
+  {
+    "date": "TBD",
+    "home_en": "England",
+    "away_en": "Croatia",
+    "score": "4–2",
+    "finished": true,
+    "group": "L"
+  },
+  {
+    "date": "TBD",
+    "home_en": "Ghana",
+    "away_en": "Panama",
+    "score": "1–0",
+    "finished": true,
+    "group": "L"
+  },
+  {
+    "date": "TBD",
+    "home_en": "England",
+    "away_en": "Ghana",
+    "score": null,
+    "finished": false,
+    "group": "L"
+  },
+  {
+    "date": "TBD",
+    "home_en": "Panama",
+    "away_en": "Croatia",
+    "score": null,
+    "finished": false,
+    "group": "L"
+  },
+  {
+    "date": "TBD",
+    "home_en": "Panama",
+    "away_en": "England",
+    "score": null,
+    "finished": false,
+    "group": "L"
+  },
+  {
+    "date": "TBD",
+    "home_en": "Croatia",
+    "away_en": "Ghana",
+    "score": null,
+    "finished": false,
+    "group": "L"
+  }
+]

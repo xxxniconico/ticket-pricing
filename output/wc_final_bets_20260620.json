@@ -1,0 +1,644 @@
+{
+  "as_of": "2026-06-20",
+  "calibrated": true,
+  "risk_params": {
+    "single_bet_cap": 0.03,
+    "daily_cap": 0.15,
+    "sigma2_target": 0.02,
+    "kelly_fraction": 0.5
+  },
+  "optimization": {
+    "method": "SLSQP",
+    "kelly_portfolio_variance": 0.137656,
+    "kelly_portfolio_std": 0.371,
+    "optimal_portfolio_variance": 0.02,
+    "optimal_portfolio_std": 0.1414,
+    "kelly_total_ev": 0.27224,
+    "optimal_total_ev": 0.116186,
+    "variance_constraint_binding": true
+  },
+  "risk_rules": {
+    "single_bet_cap": "3% — enforced in optimizer",
+    "daily_cap": "15% — enforced in optimizer",
+    "variance_cap": "σ² ≤ 0.02 (std ≤ 14.1%) — enforced in optimizer",
+    "drawdown_stop": "20% peak drawdown → pause 1 round (operational, manual)",
+    "consecutive_losses": "6 consecutive losses → pause, calibration check (operational, manual)",
+    "model_inconsistency": "Elo-Poisson gap >8% → manual review (applied in P4)",
+    "high_dispersion": "p_h_std >3% → manual review (applied in P4)"
+  },
+  "daily_summary": [
+    {
+      "date": "2026-06-21",
+      "n_bets": 1,
+      "total_stake": 0.0126,
+      "total_ev": 0.0033
+    },
+    {
+      "date": "2026-06-22",
+      "n_bets": 1,
+      "total_stake": 0.0199,
+      "total_ev": 0.0164
+    },
+    {
+      "date": "2026-06-23",
+      "n_bets": 1,
+      "total_stake": 0.0126,
+      "total_ev": 0.006
+    },
+    {
+      "date": "2026-06-24",
+      "n_bets": 1,
+      "total_stake": 0.0078,
+      "total_ev": 0.0026
+    },
+    {
+      "date": "2026-06-25",
+      "n_bets": 1,
+      "total_stake": 0.0071,
+      "total_ev": 0.0027
+    },
+    {
+      "date": "2026-06-26",
+      "n_bets": 3,
+      "total_stake": 0.0494,
+      "total_ev": 0.0476
+    },
+    {
+      "date": "2026-06-27",
+      "n_bets": 2,
+      "total_stake": 0.025,
+      "total_ev": 0.006
+    },
+    {
+      "date": "2026-06-28",
+      "n_bets": 4,
+      "total_stake": 0.0569,
+      "total_ev": 0.0317
+    }
+  ],
+  "final_bets": [
+    {
+      "group": "F",
+      "date": "2026-06-21",
+      "home": "Netherlands",
+      "away": "Sweden",
+      "match": "Netherlands vs Sweden",
+      "selection": "D",
+      "p_model": 0.2109,
+      "p_model_calibrated": 0.3087,
+      "p_market": 0.2365,
+      "odds": 4.08,
+      "ev": -0.1398,
+      "ev_calibrated": 0.2595,
+      "edge": 0.0722,
+      "elo_poisson_gap": 0.0035,
+      "inconsistent": false,
+      "p_h_std": 0.005340502611014756,
+      "n_bookmakers": 20,
+      "all_evs": {
+        "H": 0.0745,
+        "D": -0.1398,
+        "A": -0.2172
+      },
+      "all_evs_calibrated": {
+        "H": -0.0094,
+        "D": 0.2595,
+        "A": -0.4517
+      },
+      "kelly_fraction": 0.03,
+      "status": "bet",
+      "note": "",
+      "correlated_same_day_group": [
+        "Netherlands vs Sweden",
+        "Tunisia vs Japan"
+      ],
+      "optimal_stake": 0.0126,
+      "kelly_stake": 0.03,
+      "stake": 0.0126,
+      "bet_variance": 3.5524
+    },
+    {
+      "group": "G",
+      "date": "2026-06-22",
+      "home": "New Zealand",
+      "away": "Egypt",
+      "match": "New Zealand vs Egypt",
+      "selection": "H",
+      "p_model": 0.2436,
+      "p_model_calibrated": 0.3178,
+      "p_market": 0.1674,
+      "odds": 5.743,
+      "ev": 0.3991,
+      "ev_calibrated": 0.8251,
+      "edge": 0.1504,
+      "elo_poisson_gap": 0.0714,
+      "inconsistent": false,
+      "p_h_std": 0.006563897351793828,
+      "n_bookmakers": 21,
+      "all_evs": {
+        "H": 0.3991,
+        "D": 0.4002,
+        "A": -0.3321
+      },
+      "all_evs_calibrated": {
+        "H": 0.8251,
+        "D": 0.4001,
+        "A": -0.451
+      },
+      "kelly_fraction": 0.03,
+      "status": "bet",
+      "note": "",
+      "correlated_same_day_group": [
+        "Belgium vs Iran",
+        "New Zealand vs Egypt"
+      ],
+      "optimal_stake": 0.0199,
+      "kelly_stake": 0.03,
+      "stake": 0.0199,
+      "bet_variance": 7.1506
+    },
+    {
+      "group": "J",
+      "date": "2026-06-23",
+      "home": "Jordan",
+      "away": "Algeria",
+      "match": "Jordan vs Algeria",
+      "selection": "H",
+      "p_model": 0.1906,
+      "p_model_calibrated": 0.2503,
+      "p_market": 0.1618,
+      "odds": 5.901,
+      "ev": 0.1248,
+      "ev_calibrated": 0.4769,
+      "edge": 0.0885,
+      "elo_poisson_gap": 0.0086,
+      "inconsistent": false,
+      "p_h_std": 0.00758124754656125,
+      "n_bookmakers": 22,
+      "all_evs": {
+        "H": 0.1248,
+        "D": 0.0975,
+        "A": -0.1453
+      },
+      "all_evs_calibrated": {
+        "H": 0.4769,
+        "D": 0.249,
+        "A": -0.2972
+      },
+      "kelly_fraction": 0.03,
+      "status": "bet",
+      "note": "",
+      "correlated_same_day_group": [
+        "Argentina vs Austria",
+        "Jordan vs Algeria"
+      ],
+      "optimal_stake": 0.0126,
+      "kelly_stake": 0.03,
+      "stake": 0.0126,
+      "bet_variance": 6.5343
+    },
+    {
+      "group": "L",
+      "date": "2026-06-24",
+      "home": "Panama",
+      "away": "Croatia",
+      "match": "Panama vs Croatia",
+      "selection": "H",
+      "p_model": 0.1206,
+      "p_model_calibrated": 0.196,
+      "p_market": 0.1409,
+      "odds": 6.78,
+      "ev": -0.1824,
+      "ev_calibrated": 0.329,
+      "edge": 0.0551,
+      "elo_poisson_gap": 0.0013,
+      "inconsistent": false,
+      "p_h_std": 0.007482530404748285,
+      "n_bookmakers": 24,
+      "all_evs": {
+        "H": -0.1824,
+        "D": -0.0422,
+        "A": -0.014
+      },
+      "all_evs_calibrated": {
+        "H": 0.329,
+        "D": 0.1314,
+        "A": -0.1971
+      },
+      "kelly_fraction": 0.0285,
+      "status": "bet",
+      "note": "",
+      "correlated_same_day_group": [
+        "England vs Ghana",
+        "Panama vs Croatia"
+      ],
+      "optimal_stake": 0.0078,
+      "kelly_stake": 0.0285,
+      "stake": 0.0078,
+      "bet_variance": 7.2439
+    },
+    {
+      "group": "C",
+      "date": "2026-06-25",
+      "home": "Scotland",
+      "away": "Brazil",
+      "match": "Scotland vs Brazil",
+      "selection": "H",
+      "p_model": 0.0955,
+      "p_model_calibrated": 0.173,
+      "p_market": 0.1205,
+      "odds": 7.951,
+      "ev": -0.2404,
+      "ev_calibrated": 0.3756,
+      "edge": 0.0526,
+      "elo_poisson_gap": 0.0106,
+      "inconsistent": false,
+      "p_h_std": 0.0055305992984021664,
+      "n_bookmakers": 19,
+      "all_evs": {
+        "H": -0.2404,
+        "D": -0.0321,
+        "A": -0.0105
+      },
+      "all_evs_calibrated": {
+        "H": 0.3756,
+        "D": 0.3536,
+        "A": -0.2231
+      },
+      "kelly_fraction": 0.027,
+      "status": "bet",
+      "note": "",
+      "correlated_same_day_group": [
+        "Scotland vs Brazil",
+        "Morocco vs Haiti"
+      ],
+      "optimal_stake": 0.0071,
+      "kelly_stake": 0.027,
+      "stake": 0.0071,
+      "bet_variance": 9.0447
+    },
+    {
+      "group": "E",
+      "date": "2026-06-26",
+      "home": "Curacao",
+      "away": "Ivory Coast",
+      "match": "Curacao vs Ivory Coast",
+      "selection": "H",
+      "p_model": 0.0863,
+      "p_model_calibrated": 0.169,
+      "p_market": 0.0469,
+      "odds": 20.386,
+      "ev": 0.7592,
+      "ev_calibrated": 2.446,
+      "edge": 0.1221,
+      "elo_poisson_gap": 0.0272,
+      "inconsistent": false,
+      "p_h_std": 0.004054854287774774,
+      "n_bookmakers": 18,
+      "all_evs": {
+        "H": 0.7592,
+        "D": 0.7453,
+        "A": -0.1879
+      },
+      "all_evs_calibrated": {
+        "H": 2.446,
+        "D": 1.3729,
+        "A": -0.3613
+      },
+      "kelly_fraction": 0.03,
+      "status": "bet",
+      "note": "",
+      "correlated_same_day_group": [
+        "Curacao vs Ivory Coast",
+        "Ecuador vs Germany"
+      ],
+      "optimal_stake": 0.0072,
+      "kelly_stake": 0.03,
+      "stake": 0.0072,
+      "bet_variance": 58.3649
+    },
+    {
+      "group": "E",
+      "date": "2026-06-26",
+      "home": "Ecuador",
+      "away": "Germany",
+      "match": "Ecuador vs Germany",
+      "selection": "H",
+      "p_model": 0.3132,
+      "p_model_calibrated": 0.391,
+      "p_market": 0.1913,
+      "odds": 4.944,
+      "ev": 0.5486,
+      "ev_calibrated": 0.9334,
+      "edge": 0.1997,
+      "elo_poisson_gap": 0.0475,
+      "inconsistent": false,
+      "p_h_std": 0.006477241952848452,
+      "n_bookmakers": 21,
+      "all_evs": {
+        "H": 0.5486,
+        "D": 0.4124,
+        "A": -0.4669
+      },
+      "all_evs_calibrated": {
+        "H": 0.9334,
+        "D": 0.3646,
+        "A": -0.5771
+      },
+      "kelly_fraction": 0.03,
+      "status": "bet",
+      "note": "",
+      "correlated_same_day_group": [
+        "Curacao vs Ivory Coast",
+        "Ecuador vs Germany"
+      ],
+      "optimal_stake": 0.0276,
+      "kelly_stake": 0.03,
+      "stake": 0.0276,
+      "bet_variance": 5.8204
+    },
+    {
+      "group": "D",
+      "date": "2026-06-26",
+      "home": "Turkey",
+      "away": "United States",
+      "match": "Turkey vs United States",
+      "selection": "D",
+      "p_model": 0.2763,
+      "p_model_calibrated": 0.3277,
+      "p_market": 0.2426,
+      "odds": 3.932,
+      "ev": 0.0863,
+      "ev_calibrated": 0.2887,
+      "edge": 0.0851,
+      "elo_poisson_gap": 0.0203,
+      "inconsistent": false,
+      "p_h_std": 0.005063622472705958,
+      "n_bookmakers": 15,
+      "all_evs": {
+        "H": 0.0566,
+        "D": 0.0863,
+        "A": -0.1887
+      },
+      "all_evs_calibrated": {
+        "H": 0.1726,
+        "D": 0.2887,
+        "A": -0.3785
+      },
+      "kelly_fraction": 0.03,
+      "status": "bet",
+      "note": "",
+      "correlated_same_day_group": [
+        "Paraguay vs Australia",
+        "Turkey vs United States"
+      ],
+      "optimal_stake": 0.0146,
+      "kelly_stake": 0.03,
+      "stake": 0.0146,
+      "bet_variance": 3.4062
+    },
+    {
+      "group": "H",
+      "date": "2026-06-27",
+      "home": "Cape Verde",
+      "away": "Saudi Arabia",
+      "match": "Cape Verde vs Saudi Arabia",
+      "selection": "D",
+      "p_model": 0.3798,
+      "p_model_calibrated": 0.3611,
+      "p_market": 0.2611,
+      "odds": 3.605,
+      "ev": 0.3692,
+      "ev_calibrated": 0.3018,
+      "edge": 0.1,
+      "elo_poisson_gap": 0.0388,
+      "inconsistent": false,
+      "p_h_std": 0.005061655800983248,
+      "n_bookmakers": 19,
+      "all_evs": {
+        "H": -0.1679,
+        "D": 0.3692,
+        "A": -0.2467
+      },
+      "all_evs_calibrated": {
+        "H": 0.0557,
+        "D": 0.3018,
+        "A": -0.3983
+      },
+      "kelly_fraction": 0.03,
+      "status": "bet",
+      "note": "",
+      "correlated_same_day_group": [
+        "Cape Verde vs Saudi Arabia",
+        "Uruguay vs Spain"
+      ],
+      "optimal_stake": 0.0173,
+      "kelly_stake": 0.03,
+      "stake": 0.0173,
+      "bet_variance": 2.9983
+    },
+    {
+      "group": "G",
+      "date": "2026-06-27",
+      "home": "Egypt",
+      "away": "Iran",
+      "match": "Egypt vs Iran",
+      "selection": "D",
+      "p_model": 0.3529,
+      "p_model_calibrated": 0.3524,
+      "p_market": 0.3016,
+      "odds": 3.12,
+      "ev": 0.101,
+      "ev_calibrated": 0.0994,
+      "edge": 0.0508,
+      "elo_poisson_gap": 0.0472,
+      "inconsistent": false,
+      "p_h_std": 0.009582741463548913,
+      "n_bookmakers": 19,
+      "all_evs": {
+        "H": -0.3393,
+        "D": 0.101,
+        "A": 0.2614
+      },
+      "all_evs_calibrated": {
+        "H": -0.1931,
+        "D": 0.0994,
+        "A": -0.0065
+      },
+      "kelly_fraction": 0.0235,
+      "status": "bet",
+      "note": "",
+      "correlated_same_day_group": [
+        "New Zealand vs Belgium",
+        "Egypt vs Iran"
+      ],
+      "optimal_stake": 0.0077,
+      "kelly_stake": 0.0235,
+      "stake": 0.0077,
+      "bet_variance": 2.2215
+    },
+    {
+      "group": "J",
+      "date": "2026-06-28",
+      "home": "Jordan",
+      "away": "Argentina",
+      "match": "Jordan vs Argentina",
+      "selection": "H",
+      "p_model": 0.054,
+      "p_model_calibrated": 0.1502,
+      "p_market": 0.0682,
+      "odds": 13.935,
+      "ev": -0.2473,
+      "ev_calibrated": 1.0934,
+      "edge": 0.082,
+      "elo_poisson_gap": 0.0314,
+      "inconsistent": false,
+      "p_h_std": 0.0035518197412778164,
+      "n_bookmakers": 17,
+      "all_evs": {
+        "H": -0.2473,
+        "D": 0.1854,
+        "A": -0.0735
+      },
+      "all_evs_calibrated": {
+        "H": 1.0934,
+        "D": 0.7745,
+        "A": -0.2913
+      },
+      "kelly_fraction": 0.03,
+      "status": "bet",
+      "note": "",
+      "correlated_same_day_group": [
+        "Algeria vs Austria",
+        "Jordan vs Argentina"
+      ],
+      "optimal_stake": 0.0076,
+      "kelly_stake": 0.03,
+      "stake": 0.0076,
+      "bet_variance": 24.7857
+    },
+    {
+      "group": "L",
+      "date": "2026-06-28",
+      "home": "Panama",
+      "away": "England",
+      "match": "Panama vs England",
+      "selection": "H",
+      "p_model": 0.0982,
+      "p_model_calibrated": 0.1781,
+      "p_market": 0.0831,
+      "odds": 11.475,
+      "ev": 0.1269,
+      "ev_calibrated": 1.0437,
+      "edge": 0.095,
+      "elo_poisson_gap": 0.0561,
+      "inconsistent": false,
+      "p_h_std": 0.004052843136331503,
+      "n_bookmakers": 14,
+      "all_evs": {
+        "H": 0.1269,
+        "D": 0.3728,
+        "A": -0.1454
+      },
+      "all_evs_calibrated": {
+        "H": 1.0437,
+        "D": 0.7548,
+        "A": -0.3181
+      },
+      "kelly_fraction": 0.03,
+      "status": "bet",
+      "note": "",
+      "correlated_same_day_group": [
+        "Croatia vs Ghana",
+        "Panama vs England"
+      ],
+      "optimal_stake": 0.0093,
+      "kelly_stake": 0.03,
+      "stake": 0.0093,
+      "bet_variance": 19.2747
+    },
+    {
+      "group": "K",
+      "date": "2026-06-28",
+      "home": "Colombia",
+      "away": "Portugal",
+      "match": "Colombia vs Portugal",
+      "selection": "H",
+      "p_model": 0.336,
+      "p_model_calibrated": 0.3911,
+      "p_market": 0.2685,
+      "odds": 3.493,
+      "ev": 0.1738,
+      "ev_calibrated": 0.3663,
+      "edge": 0.1226,
+      "elo_poisson_gap": 0.0423,
+      "inconsistent": false,
+      "p_h_std": 0.0046432181203751996,
+      "n_bookmakers": 15,
+      "all_evs": {
+        "H": 0.1738,
+        "D": 0.0882,
+        "A": -0.2907
+      },
+      "all_evs_calibrated": {
+        "H": 0.3663,
+        "D": 0.1668,
+        "A": -0.4512
+      },
+      "kelly_fraction": 0.03,
+      "status": "bet",
+      "note": "",
+      "correlated_same_day_group": [
+        "Colombia vs Portugal",
+        "DR Congo vs Uzbekistan"
+      ],
+      "optimal_stake": 0.0217,
+      "kelly_stake": 0.03,
+      "stake": 0.0217,
+      "bet_variance": 2.9056
+    },
+    {
+      "group": "K",
+      "date": "2026-06-28",
+      "home": "DR Congo",
+      "away": "Uzbekistan",
+      "match": "DR Congo vs Uzbekistan",
+      "selection": "D",
+      "p_model": 0.4137,
+      "p_model_calibrated": 0.3706,
+      "p_market": 0.265,
+      "odds": 3.538,
+      "ev": 0.464,
+      "ev_calibrated": 0.3114,
+      "edge": 0.1056,
+      "elo_poisson_gap": 0.0388,
+      "inconsistent": false,
+      "p_h_std": 0.00934292903804175,
+      "n_bookmakers": 19,
+      "all_evs": {
+        "H": -0.4625,
+        "D": 0.464,
+        "A": 0.088
+      },
+      "all_evs_calibrated": {
+        "H": -0.2565,
+        "D": 0.3114,
+        "A": -0.1007
+      },
+      "kelly_fraction": 0.03,
+      "status": "bet",
+      "note": "",
+      "correlated_same_day_group": [
+        "Colombia vs Portugal",
+        "DR Congo vs Uzbekistan"
+      ],
+      "optimal_stake": 0.0183,
+      "kelly_stake": 0.03,
+      "stake": 0.0183,
+      "bet_variance": 2.9198
+    }
+  ],
+  "n_bets": 14,
+  "total_stake": 0.1913,
+  "total_ev": 0.116169
+}

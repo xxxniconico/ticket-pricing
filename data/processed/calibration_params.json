@@ -1,0 +1,25 @@
+{
+  "method": "platt_scaling",
+  "classes": {
+    "H": [
+      1.7960972854892172,
+      -3.3127885775714585
+    ],
+    "D": [
+      0.6809108847294767,
+      -0.1
+    ],
+    "A": [
+      2.696468549615015,
+      -5.0
+    ]
+  },
+  "meta": {
+    "n_matches": 38,
+    "source": "run_comparison",
+    "draw_inflate": 1.01,
+    "deflate_away": 0.62,
+    "xg_enabled": false,
+    "xg_brier_pass": false
+  }
+}

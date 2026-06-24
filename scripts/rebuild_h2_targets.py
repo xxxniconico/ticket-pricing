@@ -1,26 +1,33 @@
 #!/usr/bin/env python3
 """Rebuild H2 targets with latest model (rule_engine V5.4 + optimizer V8.2 + pricing V8.1)."""
 import sys
-sys.path.insert(0, '/home/xxxsuli/ticket-pricing')
-sys.path.insert(0, '/mnt/c/Users/xxxsu/.openclaw/workspace/csl_project_v2')
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
 
 import json
-import pandas as pd
-import numpy as np
-from pathlib import Path
 from datetime import datetime
-from src.csl_context import load_csl_data, get_guoan_matches, detect_ctx
-from src.rule_engine import predict as rule_predict
-from src.classify import classify_opponent_tier, DERBY_RIVALS
+
+import pandas as pd
+
+from dashboard.components.ctx_builder import build_pred_args
+from src.classify import DERBY_RIVALS, classify_opponent_tier
+from src.csl_context import detect_ctx, get_guoan_matches, load_csl_data
 from src.dynamic_optimizer import DynamicPricingOptimizer
-from src.pricing_v5 import get_pricing_tier, build_price_matrix, ZONE_TIERS
 from src.match_notes import get_adjusted_actual
+from src.pricing_v5 import ZONE_TIERS, build_price_matrix, get_pricing_tier
+from src.rule_engine import predict as rule_predict
+
+_CTX_OUTPUT_KEYS = (
+    "away_winless", "away_winless_losses", "consecutive_home_losses", "heavy_home_loss",
+    "short_rest", "midseason_restart", "season_opener", "top3_form",
+)
 
 all_matches, rounds, deductions = load_csl_data()
 guoan_matches = get_guoan_matches(all_matches)
-guoan_matches = [m for m in guoan_matches if 'cfl_fixtures_api' in m.get('source','') or 'wikipedia' in m.get('source','')]
+guoan_matches = [m for m in guoan_matches if 'cfl_fixtures_api' in m.get('source', '') or 'wikipedia' in m.get('source', '')]
 _ctx_rounds = rounds
-ROOT = Path('/home/xxxsuli/ticket-pricing')
 
 df = pd.read_parquet(ROOT / 'data/processed/all_unified.parquet')
 csl = df[(df['competition']=='CSL') & (~df['is_partial']) & (~df['is_bundle'])]
@@ -50,10 +57,10 @@ total_r = 0
 total_q = 0
 simulated = []  # 累积已处理的 H2 mock，确保后续场次看到正确的比赛间隔
 
-ctx_keys = ['away_winless', 'lost_bottom', 'heavy_home_loss', 'short_rest', 'midseason_restart', 'season_opener', 'unbeaten_3']
+ctx_keys = list(_CTX_OUTPUT_KEYS)
 
 for m in remaining:
-    mock = {**m, 'completed': True, 'hg': 0, 'ag': 0}  # 补全比分字段避免 detect_ctx None 比较
+    mock = {**m, 'completed': True, 'hg': 0, 'ag': 0}
     ctx = detect_ctx(mock, guoan_matches + simulated + [mock], _ctx_rounds)
     simulated.append(mock)
     dt = pd.Timestamp(m['date'])
@@ -61,15 +68,7 @@ for m in remaining:
     tier = classify_opponent_tier(opp)
     pt = get_pricing_tier(opp)
 
-    pred_args = dict(
-        derby=opp in DERBY_RIVALS,
-        saturday=dt.weekday() == 5,
-        late_season=dt.month >= 10,
-        midweek=dt.weekday() in (1, 2, 3),
-        summer=dt.month in (7, 8),
-        match_year='2026',
-        **{k: ctx.get(k, False) for k in ctx_keys}
-    )
+    pred_args = build_pred_args(m, ctx, {'match_year': '2026', 'summer': dt.month in (7, 8)})
     pred = rule_predict(opp, **pred_args)
     r = optimizer.optimize(opp, **pred_args)
 
@@ -106,7 +105,7 @@ for m in remaining:
         'target_quantity': target_qty,
         'target_avg_price': round(avg_price, 0),
         'base_prices': {zt: prices[zt] for zt in ZONE_TIERS},
-        'context': [k for k, v in ctx.items() if v],
+        'context': [k for k in _CTX_OUTPUT_KEYS if ctx.get(k)],
         'risks': risks,
         'model_version': 'V5.4+V8.2',
     })

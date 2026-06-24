@@ -13,9 +13,10 @@ ticket-pricing/
 │   ├── elasticity.py      # 需求弹性
 │   ├── pricing_matrix.py  # 10档×4级调价矩阵
 │   ├── optimize.py        # 6档/10档优化器
+│   ├── csl_context.py     # detect_ctx 情境检测（与 rule_engine 对齐）
 │   ├── data_feeds.py      # 2026 实时积分榜/赛程（勿改拉取逻辑）
 │   └── cli.py
-├── dashboard/app.py       # Streamlit 看板
+├── dashboard/app_v8.py    # Streamlit 看板 V8（唯一看板，:8506）
 ├── tests/
 └── docs/plans/            # 任务单与计划
 ```

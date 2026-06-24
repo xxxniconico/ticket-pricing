@@ -1,2 +1,4 @@
 fonts-wqy-microhei
 fonts-wqy-zenhei
+libcairo2
+librsvg2-bin

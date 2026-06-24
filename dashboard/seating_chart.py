@@ -1,7 +1,11 @@
 """
-工体座位热力图 V23 — SVG模板 + 销量着色 + 热力色阶图例
+工体座位热力图 V24 — SVG模板 + 销量着色 + Streamlit 内联 img（无 iframe）
+
+⚠️ 已归档：看板 V8 使用 dashboard/seating_heatmap.py（components.html iframe）。
+本文件保留供离线调试 / 历史参考，serve.sh 不再引用。
 """
-import re, math
+import re, math, base64, shutil, subprocess, tempfile
+from io import BytesIO
 from pathlib import Path
 
 _SVG_PATH = Path(__file__).parent.parent / "assets" / "stadium_seating_b_class.svg"
@@ -29,17 +33,17 @@ _LEGEND_ITEMS = (
     ("#e07030", "65%"),
     ("#f0c040", "50%"),
     ("#2d7ab0", "30%"),
-    ("#1a4a7a", "&lt;30%"),
+    ("#1a4a7a", "<30%"),
     ("#14161c", "无售"),
 )
 
 
 def _legend_html() -> str:
     chips = "".join(
-        f'<span class="lg-chip"><i style="background:{c}"></i>{lbl}</span>'
+        f'<span class="seat-heatmap-legend-chip"><i style="background:{c}"></i>{lbl}</span>'
         for c, lbl in _LEGEND_ITEMS
     )
-    return f'<div class="lg-bar"><span class="lg-title">上座率</span>{chips}</div>'
+    return f'<div class="seat-heatmap-legend"><span class="seat-heatmap-legend-title">上座率</span>{chips}</div>'
 
 
 def _strip_template_decorations(svg: str) -> str:
@@ -57,6 +61,8 @@ def _strip_template_decorations(svg: str) -> str:
 
 def _make_svg_responsive(svg: str) -> str:
     svg = _strip_template_decorations(svg)
+    svg = re.sub(r'<\?xml[^>]*\?>\s*', '', svg, count=1)
+    svg = re.sub(r'<!--.*?-->\s*', '', svg, count=1, flags=re.DOTALL)
     svg = re.sub(r'viewBox="0 0 1024 686"', f'viewBox="{_HEATMAP_VIEWBOX}"', svg, count=1)
     svg = re.sub(r'\s+width="[^"]*"', '', svg, count=1)
     svg = re.sub(r'\s+height="[^"]*"', '', svg, count=1)
@@ -65,153 +71,235 @@ def _make_svg_responsive(svg: str) -> str:
     return svg
 
 
-def render_gongti_heatmap(section_fills=None, _unused=None, match_label="", total_fill=0.0):
+def svg_to_png_bytes(svg: str, output_width: int = 960) -> bytes | None:
+    """SVG → PNG。优先 cairosvg，其次 svglib / rsvg / ImageMagick。"""
+    try:
+        import cairosvg
+        png = cairosvg.svg2png(
+            bytestring=svg.encode("utf-8"),
+            output_width=output_width,
+            background_color="#0b0c0f",
+        )
+        if png and len(png) > 500:
+            return png
+    except Exception:
+        pass
+
+    try:
+        from svglib.svglib import svg2rlg
+        from reportlab.graphics import renderPM
+        drawing = svg2rlg(BytesIO(svg.encode("utf-8")))
+        if drawing:
+            buf = BytesIO()
+            renderPM.drawToFile(drawing, buf, fmt="PNG")
+            data = buf.getvalue()
+            if data and len(data) > 500:
+                return data
+    except Exception:
+        pass
+
+    rsvg = shutil.which("rsvg-convert")
+    if rsvg:
+        try:
+            proc = subprocess.run(
+                [rsvg, "-f", "png", "--background-color=#0b0c0f"],
+                input=svg.encode("utf-8"),
+                capture_output=True,
+                timeout=8,
+                check=False,
+            )
+            if proc.returncode == 0 and proc.stdout:
+                return proc.stdout
+        except (OSError, subprocess.SubprocessError):
+            pass
+    convert = shutil.which("convert")
+    if convert:
+        svg_path = png_path = None
+        try:
+            with tempfile.NamedTemporaryFile(suffix=".svg", delete=False) as sf:
+                sf.write(svg.encode("utf-8"))
+                svg_path = sf.name
+            with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as pf:
+                png_path = pf.name
+            proc = subprocess.run(
+                [convert, svg_path, png_path],
+                capture_output=True,
+                timeout=8,
+                check=False,
+            )
+            if proc.returncode == 0:
+                data = Path(png_path).read_bytes()
+                if data:
+                    return data
+        except (OSError, subprocess.SubprocessError):
+            pass
+        finally:
+            for p in (svg_path, png_path):
+                if p:
+                    try:
+                        Path(p).unlink(missing_ok=True)
+                    except OSError:
+                        pass
+    return None
+
+
+def _svg_as_img(svg: str) -> str:
+    """优先 PNG data URI（手机 Streamlit 兼容），否则回退 SVG data URI。"""
+    png = svg_to_png_bytes(svg)
+    if png:
+        b64 = base64.b64encode(png).decode("ascii")
+        mime = "image/png"
+    else:
+        b64 = base64.b64encode(svg.encode("utf-8")).decode("ascii")
+        mime = "image/svg+xml"
+    return (
+        f'<img class="seat-heatmap-img" '
+        f'src="data:{mime};base64,{b64}" '
+        f'alt="工体座位热力图" loading="lazy" />'
+    )
+
+
+def _norm_section_id(sec) -> str:
+    """Parquet 分区号可能是 301.0，统一为 SVG 用的 '301'。"""
+    s = str(sec).strip()
+    try:
+        return str(int(float(s)))
+    except (TypeError, ValueError):
+        return s
+
+
+def build_gongti_heatmap_svg(section_fills=None) -> str:
+    """生成着色后的 SVG 字符串（内联 HTML 或 PNG 渲染）。"""
     if section_fills is None:
         section_fills = {}
+    fills = {_norm_section_id(k): v for k, v in section_fills.items()}
+
     svg = _SVG_PATH.read_text()
     svg = svg.replace('fill="#fafafa"', 'fill="transparent"')
     svg = _make_svg_responsive(svg)
 
-    # 替换每个分区颜色 (数据来源: dict的value = 实际上座率 0-1)
-    for m in re.finditer(r'<path id="sec-(\d+)" (d="[^"]*")[^>]*fill="([^"]*)"([^/]*)/>', svg):
-        sec = m.group(1); d_attr = m.group(2); orig_fill = m.group(3); rest = m.group(4); old = m.group(0)
-        val = section_fills.get(sec, 0)
+    # 深色背景，避免 PNG/暗色主题下「全黑看不见」
+    bg = (
+        f'<rect x="118" y="32" width="808" height="628" fill="#0b0c0f"/>'
+    )
+    svg = re.sub(r"(<svg[^>]*>)", r"\1" + bg, svg, count=1)
+
+    path_re = re.compile(
+        r'<path id="sec-(\d+)" (d="[^"]*")[^>]*fill="([^"]*)"([^/]*)/>'
+    )
+    for m in path_re.finditer(svg):
+        sec = m.group(1)
+        d_attr = m.group(2)
+        orig_fill = m.group(3)
+        rest = m.group(4)
+        old = m.group(0)
+        val = fills.get(sec, 0)
         if isinstance(val, (int, float)) and val > 0:
             new_fill = _heat(val)
-        elif orig_fill in ('#ffffff', '#fafafa', '#fff'):
-            new_fill = '#e8e8e8'
+        elif orig_fill in ("#ffffff", "#fafafa", "#fff"):
+            new_fill = "#3a3f48"
         else:
-            continue
+            new_fill = orig_fill
         new_tag = f'<path id="sec-{sec}" {d_attr} fill="{new_fill}"{rest}/>'
         svg = svg.replace(old, new_tag, 1)
+    return svg
 
-    title_html = ""
-    if match_label:
-        sub = (
-            f'<span class="hm-sub">总上座率 {total_fill * 100:.1f}%</span>'
-            if total_fill > 0
-            else ""
-        )
-        title_html = (
-            f'<div class="hm-title"><span class="hm-match">{match_label}</span>{sub}</div>'
-        )
 
-    # viewBox 宽高比 808:628 — 用于 JS 按容器宽度推算高度
-    html = f'''<!DOCTYPE html>
-<html><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
-<style>
-* {{ box-sizing: border-box; }}
-html, body {{
-  margin: 0; padding: 0; width: 100%; max-width: 100%;
-  overflow-x: hidden; background: #0b0c0f;
-  font-family: Inter, system-ui, sans-serif;
-}}
-.hm-wrap {{ width: 100%; max-width: 100%; padding: 4px 6px 6px; }}
-.hm-title {{ text-align: center; padding: 4px 0 2px; line-height: 1.35; }}
-.hm-match {{ color: #f0f2f5; font-size: clamp(0.78rem, 3.2vw, 1.1rem); font-weight: 600; }}
-.hm-sub {{ display: block; color: #8a8f98; font-size: clamp(0.68rem, 2.8vw, 0.88rem); margin-top: 2px; }}
-@media (min-width: 480px) {{
-  .hm-sub {{ display: inline; margin-top: 0; margin-left: 8px; }}
-}}
-.chart-box {{
-  width: 100%; margin: 0 auto; overflow: hidden;
-  max-width: min(100%, var(--hm-chart-max-w, 960px));
-}}
-.chart-box svg {{
-  display: block; width: 100%; height: auto; max-width: 100%;
-  max-height: var(--hm-chart-max-h, clamp(240px, 55vh, 720px));
-}}
-/* CSS 断点兜底（无 JS 时） */
-@media (max-width: 479px) {{
-  .chart-box svg {{ max-height: min(56vh, 380px); }}
-}}
-@media (min-width: 480px) and (max-width: 767px) {{
-  .chart-box svg {{ max-height: min(58vh, 440px); }}
-}}
-@media (min-width: 768px) and (max-width: 1199px) {{
-  .chart-box {{ max-width: min(100%, 820px); }}
-  .chart-box svg {{ max-height: min(68vh, 620px); }}
-}}
-@media (min-width: 1200px) {{
-  .chart-box {{ max-width: min(100%, 1024px); }}
-  .chart-box svg {{ max-height: min(78vh, 860px); }}
-}}
-.lg-bar {{
-  display: flex; flex-wrap: wrap; align-items: center; justify-content: center;
-  gap: 6px 12px; padding: 8px 4px 2px;
-}}
-.lg-title {{ color: #8a8f98; font-size: clamp(0.62rem, 2vw, 0.75rem); font-weight: 600; margin-right: 2px; }}
-.lg-chip {{
-  display: inline-flex; align-items: center; gap: 4px;
-  color: #a0a4a8; font-size: clamp(0.58rem, 1.8vw, 0.7rem); white-space: nowrap;
-}}
-.lg-chip i {{
-  display: inline-block; width: 10px; height: 8px; border-radius: 2px; opacity: 0.9;
-}}
-</style></head>
-<body>
-<div class="hm-wrap">
+def render_heatmap_title(match_label: str, total_fill: float = 0.0) -> str:
+    if not match_label:
+        return ""
+    sub = (
+        f'<span class="seat-heatmap-sub">总上座率 {total_fill * 100:.1f}%</span>'
+        if total_fill > 0 else ""
+    )
+    return (
+        f'<div class="seat-heatmap-title">'
+        f'<span class="seat-heatmap-match">{match_label}</span>{sub}</div>'
+    )
+
+
+def render_heatmap_chart(svg: str) -> str:
+    """仅返回热力图图片区域 HTML。"""
+    return f'<div class="seat-heatmap-chart">{_svg_as_img(svg)}</div>'
+
+
+def render_heatmap_legend() -> str:
+    return _legend_html()
+
+
+def heatmap_legend_caption() -> str:
+    """Streamlit App 可用的纯文本图例（不依赖 HTML）。"""
+    parts = " · ".join(lbl for _, lbl in _LEGEND_ITEMS)
+    return f"上座率图例: {parts}（由低到高: 无售→蓝→黄→红）"
+
+
+def render_gongti_heatmap(section_fills=None, _unused=None, match_label="", total_fill=0.0):
+    """内联 SVG HTML（供 iframe / 静态预览；勿直接 st.markdown，Streamlit 会剥离 svg）。"""
+    svg = build_gongti_heatmap_svg(section_fills)
+    title_html = render_heatmap_title(match_label, total_fill)
+    return f'''<div class="seat-heatmap">
 {title_html}
-<div class="chart-box">{svg}</div>
+<div class="seat-heatmap-chart">{svg}</div>
 {_legend_html()}
-</div>
-<script>
-(function() {{
-  var VB_W = 808, VB_H = 628;
+</div>'''
 
-  function chartLimits() {{
-    var vw = window.innerWidth, vh = window.innerHeight;
-    var maxW, maxH;
-    if (vw < 480) {{
-      maxW = vw - 16;
-      maxH = Math.min(vh * 0.56, 380);
-    }} else if (vw < 768) {{
-      maxW = vw - 24;
-      maxH = Math.min(vh * 0.58, 440);
-    }} else if (vw < 1200) {{
-      maxW = Math.min(vw - 48, 820);
-      maxH = Math.min(vh * 0.68, 620);
-    }} else {{
-      maxW = Math.min(vw - 64, 1024);
-      maxH = Math.min(vh * 0.78, 860);
-    }}
-    var box = document.querySelector(".chart-box");
-    var wrapW = box ? box.clientWidth : maxW;
-    if (wrapW > 0) maxW = Math.min(maxW, wrapW);
-    var byAspect = maxW * (VB_H / VB_W);
-    maxH = Math.max(200, Math.min(maxH, byAspect));
-    return {{ maxW: maxW, maxH: maxH }};
-  }}
 
-  function applyChartSize() {{
-    var lim = chartLimits();
-    var root = document.documentElement;
-    root.style.setProperty("--hm-chart-max-w", lim.maxW + "px");
-    root.style.setProperty("--hm-chart-max-h", lim.maxH + "px");
-  }}
+def _heatmap_iframe_html(section_fills=None, match_label="", total_fill=0.0) -> str:
+    """自包含 HTML，供 streamlit.components.v1.html 使用。"""
+    svg = build_gongti_heatmap_svg(section_fills)
+    title = match_label or "工体座位热力图"
+    if total_fill > 0:
+        title += f" · 总上座率 {total_fill * 100:.1f}%"
+    chips = "".join(
+        f'<span style="display:inline-flex;align-items:center;gap:4px;margin:2px 5px;'
+        f'color:#a0a4a8;font-size:10px;white-space:nowrap">'
+        f'<i style="display:inline-block;width:10px;height:8px;border-radius:2px;background:{c}"></i>'
+        f'{lbl}</span>'
+        for c, lbl in _LEGEND_ITEMS
+    )
+    return f"""<!DOCTYPE html>
+<html><head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<style>
+  html,body{{margin:0;padding:0;background:#0c0d0f}}
+  body{{font-family:system-ui,-apple-system,sans-serif;padding:6px 4px 4px}}
+  .title{{text-align:center;color:#f0f2f5;font-size:13px;font-weight:600;line-height:1.35;padding:2px 0 8px}}
+  svg{{display:block;width:100%;height:auto;max-width:100%}}
+  .legend{{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;padding:6px 2px 2px}}
+  .legend-label{{color:#8a8f98;font-size:10px;font-weight:600;margin-right:4px}}
+</style>
+</head><body>
+<div class="title">{title}</div>
+{svg}
+<div class="legend"><span class="legend-label">上座率</span>{chips}</div>
+</body></html>"""
 
-  function reportHeight() {{
-    var h = Math.ceil(document.documentElement.scrollHeight) + 6;
-    window.parent.postMessage({{type: "streamlit:setFrameHeight", height: h}}, "*");
-  }}
 
-  function onLayout() {{
-    applyChartSize();
-    requestAnimationFrame(reportHeight);
-  }}
+def show_heatmap_in_streamlit(section_fills=None, match_label="", total_fill=0.0, height: int = 660):
+    """在看板中显示热力图。
 
-  onLayout();
-  window.addEventListener("resize", onLayout);
-  if (window.ResizeObserver) {{
-    var box = document.querySelector(".chart-box");
-    if (box) new ResizeObserver(onLayout).observe(box);
-  }}
-  if (document.fonts && document.fonts.ready) document.fonts.ready.then(onLayout);
-}})();
-</script>
-</body></html>'''
-    return html
+    Streamlit 的 st.markdown 会剥离 <svg>，约 40KB 内联 SVG 也可能触发消息截断。
+    因此：优先 st.image(PNG)；否则 components.html iframe 内嵌完整 SVG。
+    """
+    import streamlit as st
+    import streamlit.components.v1 as components
+
+    if section_fills is None:
+        section_fills = {}
+
+    svg = build_gongti_heatmap_svg(section_fills)
+    png = svg_to_png_bytes(svg)
+
+    if png and len(png) > 500:
+        st.image(png, use_container_width=True)
+        st.caption(heatmap_legend_caption())
+        return
+
+    components.html(_heatmap_iframe_html(section_fills, match_label, total_fill), height=height, scrolling=False)
+    st.caption(heatmap_legend_caption())
+    if not png:
+        st.caption("ℹ️ PNG 引擎未就绪，当前为 SVG 模式（已自动切换，无需安装 cairo）")
 
 
 # ── 兼容 ──

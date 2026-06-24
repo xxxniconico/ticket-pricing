@@ -2,4 +2,4 @@
 Python 3.11, pandas, numpy, scipy, openpyxl, pytest, Streamlit
 数据: 25年座位级Excel销售记录
 目标: max(0.6×revenue + 0.4×attendance_rate)
-看板端口: 8504, Sentry暗色主题 (#1f1633 + #c2ef4e)
+看板端口: 8506, Sentry暗色主题 (#1f1633 + #c2ef4e)

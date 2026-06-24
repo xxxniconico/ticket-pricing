@@ -56,6 +56,13 @@ DEFAULT_PACE = {
 
 SNAPSHOT_PATH = ROOT / "data" / "processed" / "sales_snapshots.json"
 
+# 校准基值计算时剥离的乘数（timing + 战绩情境）
+_CALIB_STRIP_KEYS = frozenset({
+    "saturday", "midweek", "late_season", "season_opener", "short_rest", "summer",
+    "away_winless", "away_winless_losses", "consecutive_home_losses", "heavy_home_loss", "derby",
+    "midseason_restart", "top3_form",
+})
+
 # 最小数据量才能用学习曲线
 MIN_SNAPSHOTS_FOR_LEARNING = 3
 
@@ -165,10 +172,7 @@ class LiveCalibrator:
         if partial_qty is not None and partial_qty > 0:
             # 用不带 Saturday 乘数的纯基值来做校准修正
             context_no_cal = {k: v for k, v in context.items()
-                             if k not in ("saturday", "midweek", "late_season",
-                                          "season_opener", "short_rest",
-                                          "away_winless", "lost_bottom",
-                                          "heavy_home_loss", "derby")}
+                             if k not in _CALIB_STRIP_KEYS}
             base_only = rule_predict(opponent, **context_no_cal)
             
             live_est = self.estimate_final(partial_qty, hours_remaining)

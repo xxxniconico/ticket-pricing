@@ -1,0 +1,43 @@
+{
+  "timestamp": "2026-06-08 20:29",
+  "model_version": "V5.4+V8.2",
+  "match": {
+    "date": "2026-06-27",
+    "opponent": "武汉三镇"
+  },
+  "prediction": {
+    "tier": "B",
+    "pricing_tier": "S_B",
+    "predicted_quantity": 9200,
+    "context": {
+      "midseason_restart": true
+    },
+    "context_args": {
+      "derby": false,
+      "saturday": true,
+      "midweek": false,
+      "summer": false,
+      "late_season": false,
+      "match_year": "2026",
+      "away_winless": false,
+      "lost_bottom": false,
+      "heavy_home_loss": false,
+      "short_rest": false,
+      "midseason_restart": true,
+      "season_opener": false
+    }
+  },
+  "optimization": {
+    "revenue_weight": 0.5,
+    "target_revenue": 2626285,
+    "target_quantity": 9086,
+    "base_prices": {
+      "T1": 160,
+      "T2": 220,
+      "T3": 300,
+      "T4": 460,
+      "T5": 540,
+      "T6": 1080
+    }
+  }
+}

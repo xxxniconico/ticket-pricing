@@ -114,7 +114,7 @@ from src.pricing_v5 import ZONE_TIERS, classify_opponent, get_pricing_tier
 
 ### 运行方式
 ```bash
-cd ~/ticket-pricing && ~/.hermes/hermes-agent/venv/bin/streamlit run dashboard/app_v8.py --server.port 8506 --server.headless true
+cd ~/ticket-pricing && streamlit run dashboard/app_v8.py --server.port 8504 --server.headless true
 ```
 
 ## 输出要求
