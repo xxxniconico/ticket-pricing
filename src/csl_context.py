@@ -327,6 +327,19 @@ def predict_with_context(opponent: str, match_date: str,
         "short_rest", "midseason_restart", "season_opener",
         "top3_form",
     ]}
+    # Dynamic tier with continuous base + 国安状态乘数
+    try:
+        from src.opponent_rating import (get_opponent_scorecard, load_elo_history,
+            compute_continuous_base, compute_guoan_form_multiplier)
+        elo_hist = load_elo_history()
+        card = get_opponent_scorecard(opponent, match_date, elo_history=elo_hist,
+                                       standings_by_round=standings, matches=matches)
+        dyn_base = compute_continuous_base(card[ST], card[AP], tier=card[tier])
+        guoan_mult = compute_guoan_form_multiplier(match_date, elo_history=elo_hist,
+                                                    standings_by_round=standings, matches=matches)
+        dyn_base = round(dyn_base * guoan_mult, 0)
+    except Exception:
+        dyn_base = None
     return predict(
         opponent,
         derby=opponent in DERBY_RIVALS,
@@ -334,5 +347,7 @@ def predict_with_context(opponent: str, match_date: str,
         midweek=dt.weekday() in (1, 2, 3),
         summer=dt.month in (7, 8),
         match_year=match_date[:4],
+        opponent_tier_override=dyn_base,
+        opponent_st=card[ST] if dyn_base else None,
         **ctx_kwargs,
     )

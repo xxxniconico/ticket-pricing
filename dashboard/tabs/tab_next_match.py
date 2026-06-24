@@ -10,10 +10,23 @@ from src.classify import DERBY_RIVALS, classify_opponent_tier
 from src.pricing_v5 import get_pricing_tier
 
 
-def render_tab1(target_match, home_preds, guoan_matches, standings, mae):
+def render_tab1(target_match, home_preds, guoan_matches, standings, mae, use_dynamic=False):
     opp = target_match["opponent"]
     dt = pd.Timestamp(target_match["date"])
-    tier = classify_opponent_tier(opp)
+    if use_dynamic:
+        from src.opponent_rating import get_opponent_scorecard, load_elo_history
+        try:
+            elo = load_elo_history()
+            card = get_opponent_scorecard(opp, target_match["date"], elo_history=elo,
+                                           standings_by_round=standings, matches=guoan_matches)
+            tier = card["tier"]
+            st_score = card["ST"]
+            ap_score = card["AP"]
+            st.caption(f"📊 动态评级: ST={st_score:.1f} | AP={ap_score:.1f} | Tier={tier}")
+        except Exception:
+            tier = classify_opponent_tier(opp)
+    else:
+        tier = classify_opponent_tier(opp)
     pt = get_pricing_tier(opp)
 
     crest_html = team_crest_html(opp, "lg")
@@ -29,4 +42,4 @@ def render_tab1(target_match, home_preds, guoan_matches, standings, mae):
         st.caption("🔥 德比战 · 球迷关注度最高 · 建议收入优先策略")
 
     render_recent_results(target_match, guoan_matches, standings)
-    render_prediction_detail(target_match, guoan_matches, standings, mae, key_prefix="tab1")
+    render_prediction_detail(target_match, guoan_matches, standings, mae, key_prefix="tab1", use_dynamic=use_dynamic)

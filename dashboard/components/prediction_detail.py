@@ -23,7 +23,10 @@ def build_rules_triggered(target_match, ctx, guoan_matches):
     """从 match + ctx 构建规则链条目列表。"""
     opp = target_match["opponent"]
     dt = pd.Timestamp(target_match["date"])
-    tier = classify_opponent_tier(opp)
+    if use_dynamic:
+        tier = classify_opponent_tier(opp, match_date=target_match["date"])
+    else:
+        tier = classify_opponent_tier(opp)
     derby = opp in DERBY_RIVALS
     sat = dt.weekday() == 5
     late = dt.month >= 10
@@ -116,10 +119,13 @@ def build_rules_triggered(target_match, ctx, guoan_matches):
     return rules, tier, base
 
 
-def render_prediction_detail(target_match, guoan_matches, standings, mae, key_prefix="tab1"):
+def render_prediction_detail(target_match, guoan_matches, standings, mae, key_prefix="tab1", use_dynamic=False):
     """渲染单个场次的完整预测：规则链 + 置信 + 策略 + 定价 + What-If。"""
     opp = target_match["opponent"]
-    tier = classify_opponent_tier(opp)
+    if use_dynamic:
+        tier = classify_opponent_tier(opp, match_date=target_match["date"])
+    else:
+        tier = classify_opponent_tier(opp)
     ctx = detect_ctx(target_match, guoan_matches, get_ctx_rounds())
 
     st.markdown("**命中规则 · 上座预测计算链**")

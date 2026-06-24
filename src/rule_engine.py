@@ -77,22 +77,36 @@ def predict(opponent, derby=False, lost_bottom=False, heavy_home_loss=False,
             short_rest=False, midweek=False, summer=False,
             midseason_restart=False, top3_form=False,
             opponent_tier_override=None,
+            opponent_st=None,
             match_year=None, **__) -> float:
-    tier = opponent_tier_override or classify_opponent_tier(opponent)
-    base = TIER_BASE.get(tier, 8100)
+    if opponent_tier_override is not None and isinstance(opponent_tier_override, (int, float)):
+        base = float(opponent_tier_override)
+        tier = None  # continuous mode, no tier
+    else:
+        tier = opponent_tier_override or classify_opponent_tier(opponent)
+        base = TIER_BASE.get(tier, 8100)
+    # Determine if opponent is "strong" (for penalty rules)
+    # Priority: ST score > Tier > default False
+    if opponent_st is not None:
+        is_strong = opponent_st >= 55
+    elif tier is not None:
+        is_strong = tier in ("S", "A")
+    else:
+        is_strong = False
+
     for key, val in OPP_DEVIATION.items():
         if key in opponent or opponent in key: base *= val; break
     mult = 1.0
     if match_year == "2023" and tier != "S":
         mult *= YEAR_2023
     if derby and tier != "S":
-        mult *= MULTIPLIERS["derby_B"] if tier == "A" else MULTIPLIERS["derby"]
-    if lost_bottom: mult *= 0.78 if tier in ("S","A") else MULTIPLIERS["lost_bottom"]
+        mult *= MULTIPLIERS["derby_B"] if tier in ("A", None) else MULTIPLIERS["derby"]  # None=continuous default to derby
+    if lost_bottom: mult *= 0.78 if is_strong else MULTIPLIERS["lost_bottom"]
     elif consecutive_home_losses: mult *= MULTIPLIERS["consecutive_home_losses"]
-    elif poor_home_form: mult *= 0.77 if tier in ("S", "A") else MULTIPLIERS["poor_home_form"]
+    elif poor_home_form: mult *= 0.77 if is_strong else MULTIPLIERS["poor_home_form"]
     elif heavy_home_loss: mult *= MULTIPLIERS["heavy_home_loss"]
     if away_winless_losses:
-        mult *= 0.77 if tier in ("S", "A") else MULTIPLIERS["away_winless_losses"]
+        mult *= 0.77 if is_strong else MULTIPLIERS["away_winless_losses"]
     elif away_winless:
         mult *= MULTIPLIERS["away_winless"]
     if saturday: mult *= MULTIPLIERS["saturday"]
@@ -100,8 +114,8 @@ def predict(opponent, derby=False, lost_bottom=False, heavy_home_loss=False,
     if midseason_restart and not season_opener: mult *= MULTIPLIERS["midseason_restart"]
     if midweek and not lost_bottom: mult *= MULTIPLIERS["midweek"]
     if short_rest and not lost_bottom and not heavy_home_loss: mult *= MULTIPLIERS["short_rest"]
-    if summer and tier in ("B","C"): mult *= MULTIPLIERS["summer"]
-    if top3_form and tier in ("B","C"): mult *= MULTIPLIERS["top3_form"]
+    if summer and tier in ("B","C", None): mult *= MULTIPLIERS["summer"]  # None=continuous→apply
+    if top3_form and tier in ("B","C", None): mult *= MULTIPLIERS["top3_form"]
     if mult < PENALTY_FLOOR: mult = PENALTY_FLOOR
     return min(base * mult, 20000.0)
 

@@ -30,6 +30,9 @@ from dashboard.tabs.tab_h2_strategy import render_h2_strategy
 from dashboard.tabs.tab_heatmap import render_heatmap_tab
 from dashboard.tabs.tab_validation import render_validation_tab
 from dashboard.tabs.tab_odds import render_odds_tab
+from dashboard.tabs.tab_team_ratings import render_team_ratings
+from dashboard.tabs.tab_guoan_monitor import render_guoan_monitor
+from dashboard.components.shadow_toggle import render_shadow_toggle
 
 import numpy as np
 import streamlit as st
@@ -120,7 +123,8 @@ def main():
       <div class="progress-track"><div class="progress-fill" style="width:{pct}%"></div></div>
     </div>""", unsafe_allow_html=True)
 
-    tab_names = ["🎯 下一场预测", "📋 历史定价", "🔍 对手分析", "🏆 积分榜", "📊 H2策略", "🔥 座位热力图", "📐 模型验证", "🎲 赔率信号"]
+    use_dynamic = render_shadow_toggle()
+    tab_names = ["🎯 下一场预测", "📋 历史定价", "🔍 对手分析", "🏆 积分榜", "📊 H2策略", "🔥 座位热力图", "📐 模型验证", "🎲 赔率信号", "📊 球队评级", "📈 国安监控"]
     active_tab = st.radio("导航", tab_names, horizontal=True, label_visibility="collapsed", key="main_tab")
 
     if active_tab == tab_names[0]:
@@ -129,7 +133,7 @@ def main():
             if next_home:
                 st.caption(f"最近主场：{next_home['date']} vs {next_home['opponent']}")
         if target_match:
-            render_tab1(target_match, home_preds, guoan_matches, standings, mae)
+            render_tab1(target_match, home_preds, guoan_matches, standings, mae, use_dynamic)
         else:
             st.info("无未来主场")
         st.caption("💡 详细场景切换 + 瀑布图 → **H2策略** TAB")
@@ -172,6 +176,10 @@ def main():
         render_validation_tab(home_preds, guoan_matches, all_matches)
     if active_tab == tab_names[7]:
         render_odds_tab()
+    if active_tab == tab_names[8]:
+        render_team_ratings(all_matches, standings, use_dynamic)
+    if active_tab == tab_names[9]:
+        render_guoan_monitor(all_matches, standings)
 
     st.caption(f"V8.1 · 国安绿品牌 · 决策工作台 · 赛程引擎 {SCHEDULE_ENGINE_VERSION}")
 

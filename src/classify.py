@@ -15,13 +15,42 @@ C_TIER = {"大连英博", "大连英博海发",
 A_TIER_OPPONENTS = S_TIER | A_TIER
 DERBY_RIVALS = {"上海申花", "山东泰山"}
 
-def classify_opponent_tier(opponent: str) -> str:
-    o = str(opponent).strip()
-    if any(t in o or o in t for t in S_TIER): return "S"
-    if any(t in o or o in t for t in A_TIER): return "A"
-    if any(t in o or o in t for t in B_TIER): return "B"
-    if any(t in o or o in t for t in C_TIER): return "C"
-    return "B"
+def classify_opponent_tier(opponent: str, match_date: str | None = None,
+                          dynamic: bool = True) -> str:
+    """对手分级。默认走静态分级（向后兼容）。
+
+    Args:
+        opponent: 对手队名
+        match_date: 比赛日期 (YYYY-MM-DD)，提供后启用动态评分
+        dynamic: 是否启用动态评分（Phase 2 影子模式默认 False）
+    """
+    # Backward-compatible: no match_date or dynamic=False -> static
+    if not dynamic or not match_date:
+        o = str(opponent).strip()
+        if any(t in o or o in t for t in S_TIER): return "S"
+        if any(t in o or o in t for t in A_TIER): return "A"
+        if any(t in o or o in t for t in B_TIER): return "B"
+        if any(t in o or o in t for t in C_TIER): return "C"
+        return "B"
+
+    # Dynamic mode: use opponent_rating engine
+    try:
+        from src.opponent_rating import get_effective_tier, load_elo_history
+        from src.csl_context import load_csl_data as _load_csl
+        elo_history = load_elo_history()
+        matches, standings, _ = _load_csl()
+        return get_effective_tier(opponent, match_date,
+                                  elo_history=elo_history,
+                                  standings_by_round=standings,
+                                  matches=matches)
+    except Exception:
+        # Fallback to static on any error
+        o = str(opponent).strip()
+        if any(t in o or o in t for t in S_TIER): return "S"
+        if any(t in o or o in t for t in A_TIER): return "A"
+        if any(t in o or o in t for t in B_TIER): return "B"
+        if any(t in o or o in t for t in C_TIER): return "C"
+        return "B"
 
 # ── 向后兼容代码同前 ──
 def classify_match_v4(opponent: str, **kwargs) -> tuple[str, float]:
