@@ -1,21 +1,23 @@
-"""影子模式开关"""
+"""影子模式开关"
 import streamlit as st
 
 def render_shadow_toggle():
+    """在主区域显示，确保可见"
     if "use_dynamic_tier" not in st.session_state:
         st.session_state.use_dynamic_tier = False
     
-    st.sidebar.divider()
-    use_dynamic = st.sidebar.checkbox(
-        "🔬 启用动态对手分级",
-        value=st.session_state.use_dynamic_tier,
-        help="开启后使用 ELO+ST+AP 动态评分替代静态 S/A/B/C 分级"
-    )
+    col1, col2 = st.columns([1, 4])
+    with col1:
+        use_dynamic = st.checkbox(
+            "🔬 动态评级",
+            value=st.session_state.use_dynamic_tier,
+            help="开启后使用 ELO+ST+AP 动态评分"
+        )
+    with col2:
+        if use_dynamic:
+            st.caption("✅ 动态评级生效 — 对手分级基于实时 ST/AP 计算")
+        else:
+            st.caption("📋 静态分级 — 使用传统 S/A/B/C 固定分级")
+    
     st.session_state.use_dynamic_tier = use_dynamic
-    
-    if use_dynamic:
-        st.sidebar.caption("✅ 动态评级生效中")
-    else:
-        st.sidebar.caption("📋 使用静态分级")
-    
     return use_dynamic
