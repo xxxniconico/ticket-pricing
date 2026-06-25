@@ -260,7 +260,7 @@ def render_h2_strategy(guoan_matches, standings, mae=0):
     )
     selected_h2 = next(m for m in matches if f"{m['date']} vs {m['opponent']}" == selected_label)
     selected_match = _resolve_match(selected_h2, guoan_matches)
-    render_prediction_detail(selected_match, guoan_matches, standings, mae, key_prefix="h2")
+    render_prediction_detail(selected_match, guoan_matches, standings, mae, key_prefix="h2", use_dynamic=st.session_state.get("use_dynamic_tier", False))
 
     # ══ H1 + H2 Waterfall ══
     st.divider()
