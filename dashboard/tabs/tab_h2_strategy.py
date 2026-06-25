@@ -90,6 +90,40 @@ def render_h2_strategy(guoan_matches, standings, mae=0):
         if next_target:
             live_gap = live_opt.total_revenue - next_target["target_revenue"]
 
+    # ══ Dynamic Rating Override: re-run all remaining matches with live optimizer ══
+    try:
+        import streamlit as st
+        if st.session_state.get('use_dynamic_tier', False):
+            from src.opponent_rating import get_opponent_scorecard, load_elo_history
+            elo_hist = load_elo_history()
+            dyn_sum_rev = 0; dyn_sum_qty = 0
+            for m in matches:
+                if m.get('completed'):
+                    dyn_sum_rev += m.get('target_revenue', 0)
+                    dyn_sum_qty += m.get('target_quantity', 0)
+                    continue
+                # Build live prediction for this match
+                mock = {'date': m['date'], 'opponent': m['opponent'], 'is_home': True, 'completed': True}
+                ctx = detect_ctx(mock, guoan_matches + [mock], get_ctx_rounds())
+                pred_args = build_pred_args(mock, ctx, {'season_opener': False, 'match_year': '2026'})
+                card = get_opponent_scorecard(m['opponent'], m['date'], elo_history=elo_hist,
+                                               standings_by_round=get_ctx_rounds(), matches=None)
+                dyn_tier = card['tier']
+                opt_result = optimizer.optimize(m['opponent'], match_date=m['date'], 
+                                                 opponent_tier_override=dyn_tier, **pred_args)
+                m['tier'] = dyn_tier
+                m['predicted_quantity'] = int(opt_result.predicted_total)
+                m['target_revenue'] = int(opt_result.total_revenue)
+                m['target_quantity'] = int(opt_result.total_attendance)
+                dyn_sum_rev += opt_result.total_revenue
+                dyn_sum_qty += opt_result.total_attendance
+            summary['annual_projection_revenue'] = dyn_sum_rev
+            summary['annual_projection_quantity'] = dyn_sum_qty
+            summary['total_target_revenue'] = sum(m['target_revenue'] for m in matches if not m.get('completed'))
+            summary['total_target_quantity'] = sum(m['target_quantity'] for m in matches if not m.get('completed'))
+    except Exception:
+        pass
+
     # ══ KPI Row ══
     c1, c2, c3, c4 = st.columns(4)
     REV_2025_CSL = 42_035_000  # 2025 CSL散票全年（15场，剔除足协杯+亚冠）
