@@ -38,6 +38,17 @@ def build_pred_args(match, ctx, overrides=None):
     }
     if overrides:
         args.update(overrides)
+    # Dynamic tier passthrough
+    try:
+        import streamlit as st
+        if st.session_state.get('use_dynamic_tier', False):
+            from src.opponent_rating import get_opponent_scorecard, load_elo_history
+            elo_hist = load_elo_history()
+            card = get_opponent_scorecard(opp, match['date'], elo_history=elo_hist,
+                                           standings_by_round=None, matches=None)
+            args['opponent_tier_override'] = card['tier']
+    except Exception:
+        pass
     return args
 
 

@@ -144,7 +144,7 @@ class DynamicPricingOptimizer:
         # S级德比可以激进涨价，A级适度，B/C级保守
         # 防止 上海海港 类 case：预测上座高但实际价格弹性大 → 涨价驱客
         from src.classify import classify_opponent_tier
-        opp_tier = opponent_tier_override or classify_opponent_tier(opponent)
+        opp_tier = opponent_tier_override or classify_opponent_tier(opponent, match_date=match_date)
         tier_rw_cap = {"S": 1.0, "A": 0.75, "B": 0.50, "C": 0.35}
         if rw > tier_rw_cap.get(opp_tier, 1.0):
             rw = tier_rw_cap[opp_tier]
