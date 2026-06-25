@@ -85,7 +85,7 @@ def render_h2_strategy(guoan_matches, standings, mae=0):
         except Exception:
             pass
         live_pred = rule_predict(opp, opponent_tier_override=opponent_tier, **pred_args)
-        live_opt = optimizer.optimize(opp, **pred_args)
+        live_opt = optimizer.optimize(opp, match_date=next_home[date], **pred_args)
         next_target = next((m for m in matches if m["date"] == next_home["date"]), None)
         if next_target:
             live_gap = live_opt.total_revenue - next_target["target_revenue"]

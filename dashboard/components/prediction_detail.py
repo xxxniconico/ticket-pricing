@@ -159,7 +159,7 @@ def render_prediction_detail(target_match, guoan_matches, standings, mae, key_pr
 
     pred_args = build_pred_args(target_match, ctx)
     optimizer = get_optimizer()
-    r = optimizer.optimize(opp, strategy=strategy_mode, **pred_args)
+    r = optimizer.optimize(opp, match_date=target_match[date], strategy=strategy_mode, **pred_args)
 
     render_strategy_card(r, pred_args)
     render_pricing_table(r)
