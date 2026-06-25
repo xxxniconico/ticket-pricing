@@ -115,6 +115,7 @@ def predict(opponent, derby=False, lost_bottom=False, heavy_home_loss=False,
     if midweek and not lost_bottom: mult *= MULTIPLIERS["midweek"]
     if short_rest and not lost_bottom and not heavy_home_loss: mult *= MULTIPLIERS["short_rest"]
     if summer and tier in ("B","C", None): mult *= MULTIPLIERS["summer"]  # None=continuous→apply
+    elif summer and tier in ("S","A"): mult *= 1.08
     if top3_form and tier in ("B","C", None): mult *= MULTIPLIERS["top3_form"]
     if mult < PENALTY_FLOOR: mult = PENALTY_FLOOR
     return min(base * mult, 20000.0)
