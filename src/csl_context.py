@@ -257,9 +257,11 @@ def detect_ctx(match: dict, guoan_all: list[dict], standings: dict) -> dict:
     hp = [m for m in prev if m["is_home"]]
     if hp and (md - pd.Timestamp(hp[-1]["date"])).days <= 4:
         ctx["short_rest"] = True
-    # midseason_restart: >=28 days since last match, months 6-7, not season opener
-    if prev and md.month in (6, 7):
-        if (md - pd.Timestamp(prev[-1]["date"])).days >= 28:
+    # midseason_restart: >=28 days since last SCHEDULED match, months 6-7
+    all_prev = [m for m in guoan_all if pd.Timestamp(m["date"]) < md]
+    if all_prev and md.month in (6, 7):
+        last_scheduled = max(m["date"] for m in all_prev)
+        if (md - pd.Timestamp(last_scheduled)).days >= 28:
             ctx["midseason_restart"] = True
     # season_opener: 该自然年首场主场比赛
     same_year_home = [m for m in prev if m["is_home"] and pd.Timestamp(m["date"]).year == md.year]
