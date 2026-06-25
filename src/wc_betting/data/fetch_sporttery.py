@@ -186,7 +186,7 @@ CN_TO_EN: dict[str, str] = _build_cn_to_en_map()
 
 
 def _fetch_text(url: str, cache: Path | None = None,
-                delay: float = REQUEST_DELAY, timeout: int = 30) -> str:
+                delay: float = REQUEST_DELAY, timeout: int = 8) -> str:
     """Fetch URL as text, caching to disk. Tries network first, falls back to
     cache on failure. Pass cache=None to skip caching entirely."""
     # Try network first
@@ -205,12 +205,12 @@ def _fetch_text(url: str, cache: Path | None = None,
         if cache is not None:
             cache.parent.mkdir(parents=True, exist_ok=True)
             cache.write_text(text, encoding="utf-8")
+        time.sleep(delay)
+        return text
     except Exception:
         if cache is not None and cache.exists():
             return cache.read_text(encoding="utf-8")
         raise
-    time.sleep(delay)
-    return text
 
 
 def _to_float(x) -> float | None:

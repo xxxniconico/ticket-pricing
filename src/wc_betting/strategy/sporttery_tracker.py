@@ -142,6 +142,7 @@ def add_purchase(op: dict, stake_cny: float,
         "ev": op.get("ev", 0.0),
         "stake_cny": float(stake_cny),
         "status": "pending",
+        "settled": False,
         "score": None,
         "won": None,
         "payout_cny": 0.0,
@@ -299,19 +300,23 @@ def settle_purchases(finished_matches: list[dict]) -> dict:
 
         p["score"] = score
         p["settled_at"] = _now_iso()
+        p["settled"] = True
         if result is None:
             # crs OTHER bucket — needs user manual confirmation
             p["status"] = "manual"
             p["won"] = None
+            p["settled"] = False
             continue
         if result:
             p["status"] = "won"
             p["won"] = True
+            p["result"] = "WON"
             p["payout_cny"] = round(p["stake_cny"] * float(p["odds"]), 2)
             p["profit_cny"] = round(p["payout_cny"] - p["stake_cny"], 2)
         else:
             p["status"] = "lost"
             p["won"] = False
+            p["result"] = "LOST"
             p["payout_cny"] = 0.0
             p["profit_cny"] = round(-p["stake_cny"], 2)
 
@@ -327,7 +332,9 @@ def set_manual_result(purchase_id: str, won: bool) -> dict:
         if p["id"] == purchase_id:
             p["status"] = "won" if won else "lost"
             p["won"] = won
+            p["result"] = "WON" if won else "LOST"
             p["settled_at"] = _now_iso()
+            p["settled"] = True
             if won:
                 p["payout_cny"] = round(p["stake_cny"] * float(p["odds"]), 2)
                 p["profit_cny"] = round(p["payout_cny"] - p["stake_cny"], 2)

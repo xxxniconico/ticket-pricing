@@ -486,9 +486,22 @@ def run(odds_rows: list[dict] | None = None,
                 is_longshot = (price_f > MAX_ODDS_AUTO)
                 
                 # Manual review if inconsistent OR cold mismatch OR extreme longshot.
-                # Exception: draw (D) bets pass regardless of Elo gap — draw prediction
-                # is the model's strongest signal (34.4% vs actual 34.2% in backtest).
+                # Draw quality checks (6/25 backtest: all draws lost when p<25%):
+                # - p_model < 25% → auto-review (model too uncertain)
+                # - model #1 pick != D → model prefers another outcome (weak signal)
                 is_manual = (inconsistent and key != "D") or mismatch_cold or is_longshot
+                # Draw-specific quality filter
+                if pool == "had" and key == "D":
+                    if p < 0.25:
+                        is_manual = True
+                        reasons.append(f"low_draw_p({p:.0%})")
+                    if poisson_1x2:
+                        po_h_d = poisson_1x2.get("h", 0)
+                        po_d_d = poisson_1x2.get("d", 0)
+                        po_a_d = poisson_1x2.get("a", 0)
+                        if po_d_d <= po_h_d or po_d_d <= po_a_d:
+                            is_manual = True
+                            reasons.append("draw_not_top_pick")
                 reasons = []
                 if inconsistent:
                     reasons.append(f"elo_poisson_gap={elo_gap:.1%}" if elo_gap is not None else "inconsistent")

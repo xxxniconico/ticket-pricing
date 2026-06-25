@@ -891,7 +891,7 @@ def _render_bet_table(final_bets: dict, tracker_by_match: dict, today_bj: str) -
           <td><span class="badge group">{b['group']}</span></td><td>{mh}</td>
           <td><span class="sel-badge {_sel_class(b['selection'])}">{b['selection']}</span></td>
           <td class="num">{b['p_model']:.1%}</td><td class="num">{b['odds']:.2f}</td>
-          <td class="num"><span class="ev-badge {_ev_class(b['ev'])}">{b['ev']:+.1%}</span></td>
+          <td class="num"><span class="ev-badge {_ev_class(b.get('ev_calibrated', b['ev']))}">{b.get('ev_calibrated', b['ev']):+.1%}</span></td>
           <td class="num">{sh}</td><td>{sb}</td></tr>"""
     render_html(f"""<table class="bet-table"><thead><tr>
       <th>日期</th><th>组</th><th>比赛</th><th>选</th><th>模型P</th>
@@ -1035,7 +1035,7 @@ def _render_daily_combinations(daily: dict, tracker_by_match: dict) -> None:
             bet_rows += (f'<div class="dc-bet"><span class="dc-sel {_sel_class(b["selection"])}">'
                          f'{b["selection"]}</span><span class="dc-match">{b["match"]}</span>'
                          f'<span class="dc-odds">@{b["odds"]:.2f}</span>'
-                         f'<span class="dc-ev {_ev_class(b["ev"])}">{b["ev"]:+.0%}</span>'
+                         f'<span class="dc-ev {_ev_class(b.get("ev_calibrated", b["ev"]))}">{b.get("ev_calibrated", b["ev"]):+.0%}</span>'
                          f'<span class="dc-stake">{b["global_optimal_stake"]:.1%}</span>'
                          f'<span class="dc-icon">{st_icon}</span></div>')
 
@@ -1814,6 +1814,31 @@ def _render_sporttery_value_crossref(finished: list[dict] | None = None) -> None
         st.caption(f"⏳ 体彩尚未开盘: {names}" + (f" 等{len(future)}场" if len(future) > 8 else ""))
 
 
+
+def _get_upcoming_dates() -> list[str]:
+    """从 unified 数据中提取未来 7 天的未赛日期."""
+    try:
+        data = _load_unified()
+        if not data:
+            return ["2026-06-26", "2026-06-27", "2026-06-28"]
+        now = _now_utc_naive()
+        dates = set()
+        for m in data:
+            if m.get("finished"):
+                continue
+            iso = m.get("commence_time")
+            if not iso:
+                continue
+            try:
+                utc = datetime.fromisoformat(iso.replace("Z", ""))
+                if utc.replace(tzinfo=None) >= now:
+                    dates.add(utc.strftime("%Y-%m-%d"))
+            except Exception:
+                pass
+        return sorted(dates)[:7] if dates else ["2026-06-26", "2026-06-27", "2026-06-28"]
+    except Exception:
+        return ["2026-06-26", "2026-06-27", "2026-06-28"]
+
 def render_smart_betting_tab() -> None:
     """智能投注：每日推荐 + 购买操作 + 战绩追踪 → 操作闭环."""
     import json as _json
@@ -1823,13 +1848,9 @@ def render_smart_betting_tab() -> None:
     now_bj = _dt.now(_tz(_td(hours=8)))
     today_str = now_bj.strftime("%Y-%m-%d")
 
-    port_path = _Path(__file__).resolve().parent.parent / "output" / "wc_sporttery_portfolio.json"
-    pur_path = _Path(__file__).resolve().parent.parent / "output" / "wc_sporttery_purchases.json"
-    opp_path = _Path(__file__).resolve().parent.parent / "output" / "wc_sporttery_opportunities.json"
-
-    portfolio = _json.loads(port_path.read_text()) if port_path.exists() else None
-    purchases = _json.loads(pur_path.read_text()) if pur_path.exists() else None
-    sporttery_data = _json.loads(opp_path.read_text()) if opp_path.exists() else None
+    portfolio = _load_sporttery_portfolio()
+    purchases = _load_sporttery_purchases()
+    sporttery_data = _load_sporttery()
 
     # ==========================================
 
@@ -1859,6 +1880,36 @@ def render_smart_betting_tab() -> None:
     else:
         st.info("暂无组合优化结果。请先运行体彩扫描 + 组合优化。")
 
+    # ── 让球机会 (hhad with positive EV from scanner data) ──
+    if sporttery_data:
+        hhad_ops = [o for o in sporttery_data.get("opportunities", [])
+                     if o.get("pool_code") == "hhad" and o.get("ev_calibrated", o.get("ev", 0)) > 0
+                     and o.get("date", "") >= today_str]
+        if hhad_ops:
+            st.markdown('---')
+            st.markdown('### 🔄 让球机会（正EV但组合优化仓位为0）')
+            rows = ""
+            for a in sorted(hhad_ops, key=lambda x: -x.get("ev_calibrated", x.get("ev", 0))):
+                d = a.get("date", "")[5:] if a.get("date") else "?"
+                match_cn = a.get("match_cn", a.get("match", ""))
+                sel = a.get("selection_cn", str(a.get("selection", "")))
+                odds = a.get("odds", 0)
+                ev = a.get("ev_calibrated", a.get("ev", 0))
+                hcap = a.get("handicap")
+                hcap_s = f"{hcap:+.0f}" if hcap is not None else "?"
+                rev = a.get("review", "")
+                tag = " ⚠️" if rev else ""
+                ht = _get_elo_tiers().get(a.get("home_en",""),4); at = _get_elo_tiers().get(a.get("away_en",""),4)
+                rows += "<tr><td>" + d + "</td><td>T" + str(ht) + "vT" + str(at) + "</td><td>" + match_cn[:18] + "</td><td><span class='sp-pool-badge sp-hhad'>hhad</span></td><td>" + sel + "(" + hcap_s + ")" + tag + "</td><td class='num'>" + f"{odds:.2f}" + "</td><td class='num'><span class='ev-badge " + _ev_class(ev) + "'>" + f"{ev:+.0%}" + "</span></td></tr>"
+            st.markdown("""<table class="sp-table" style="margin-bottom:8px"><thead><tr>
+          <th>日期</th><th>级别</th><th>比赛</th><th>玩法</th><th>选项(让球)</th><th class="num">赔率</th><th class="num">EV</th>
+          </tr></thead><tbody>""" + rows + """</tbody></table>""", unsafe_allow_html=True)
+            st.caption("让球注单与胜平负高度相关（+1.000），组合优化为控制方差选择胜平负。⚠️ = 需人工审核。可手动少量配置作为对冲。")
+
+    # ── 组合优化详情 (Kelly vs SLSQP) ──
+    if portfolio and portfolio.get("optimization"):
+        with st.expander("📐 组合优化详情 (Kelly vs SLSQP 均值-方差)", expanded=False):
+            _render_sporttery_portfolio(portfolio)
 
     # ==========================================
     # Per-match hedge combos
@@ -1921,7 +1972,7 @@ def render_smart_betting_tab() -> None:
             st.markdown(f'<table class=sp-table><thead><tr><th>比赛</th><th>组合</th><th class=num>赔率</th><th class=num>EV</th><th class=num>覆盖率</th></tr></thead><tbody>{rows}</tbody></table>', unsafe_allow_html=True)
             st.caption('对冲组合：买两边，只要不出现第三种结果就赚钱。覆盖率=至少中一边的概率。')
         else:
-            st.caption('当前没有符合条件的对冲组合（需要 had 三个选项全开且至少两边 EV>0）')
+            st.caption('当前没有符合条件的 HAD 胜平负对冲组合（D+A 或 H+D，需要三个选项全开且至少两边 EV>0）。上方 hhad+CRS 组合不受此限。')
     # ==========================================
     # SECTION 2: PURCHASE RECORDER
     # ==========================================
@@ -1960,7 +2011,7 @@ def render_smart_betting_tab() -> None:
         with st.form("smart_manual_form"):
             m_home_cn = st.selectbox("主队", TEAM_NAMES_CN, key="sm_home")
             m_away_cn = st.selectbox("客队", TEAM_NAMES_CN, key="sm_away")
-            m_date = st.selectbox("比赛日期", ["2026-06-23","2026-06-24","2026-06-25","2026-06-26","2026-06-27","2026-06-28"], key="sm_date")
+            m_date = st.selectbox("比赛日期", _get_upcoming_dates(), key="sm_date")
             pool_opts = [p[0] for p in SP_POOLS]
             _pool_full = {p[0]: p[2] for p in SP_POOLS}
             m_pool = st.selectbox("玩法", pool_opts, format_func=lambda c: f"{c} — {_pool_full.get(c, c)}", key="sm_pool")

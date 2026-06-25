@@ -95,13 +95,12 @@ def render_h2_strategy(guoan_matches, standings, mae=0):
     if st.session_state.get('use_dynamic_tier', False):
         from src.opponent_rating import get_opponent_scorecard, load_elo_history
         elo_hist = load_elo_history()
-        completed_dates = set(h2.get('completed', []))
-        dyn_sum_rev = 0; dyn_sum_qty = 0
+        completed_info = h2.get('completed', {})
+        dyn_sum_rev = completed_info.get('revenue', 0)
+        dyn_sum_qty = completed_info.get('quantity', 0)
         remaining_count = 0
         for m in matches:
-            if m['date'] in completed_dates:
-                dyn_sum_rev += m.get('target_revenue', 0)
-                dyn_sum_qty += m.get('target_quantity', 0)
+            if m['date'] <= '2026-06-25':
                 continue
             remaining_count += 1
             mock = {'date': m['date'], 'opponent': m['opponent'], 'is_home': True, 'completed': True}
@@ -122,8 +121,8 @@ def render_h2_strategy(guoan_matches, standings, mae=0):
         if remaining_count > 0:
             summary['annual_projection_revenue'] = dyn_sum_rev
             summary['annual_projection_quantity'] = dyn_sum_qty
-            summary['total_target_revenue'] = sum(m['target_revenue'] for m in matches if m['date'] not in completed_dates)
-            summary['total_target_quantity'] = sum(m['target_quantity'] for m in matches if m['date'] not in completed_dates)
+            summary['total_target_revenue'] = sum(m['target_revenue'] for m in matches if m['date'] > '2026-06-25')
+            summary['total_target_quantity'] = sum(m['target_quantity'] for m in matches if m['date'] > '2026-06-25')
 
     # ══ KPI Row ══
     c1, c2, c3, c4 = st.columns(4)
