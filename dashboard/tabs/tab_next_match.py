@@ -15,10 +15,12 @@ def render_tab1(target_match, home_preds, guoan_matches, standings, mae, use_dyn
     dt = pd.Timestamp(target_match["date"])
     if use_dynamic:
         from src.opponent_rating import get_opponent_scorecard, load_elo_history
+        from src.csl_context import load_csl_data
         try:
             elo = load_elo_history()
+            all_matches, _, _ = load_csl_data()
             card = get_opponent_scorecard(opp, target_match["date"], elo_history=elo,
-                                           standings_by_round=standings, matches=matches)
+                                           standings_by_round=standings, matches=all_matches)
             tier = card["tier"]
             st_score = card["ST"]
             ap_score = card["AP"]
