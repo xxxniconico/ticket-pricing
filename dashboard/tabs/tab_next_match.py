@@ -18,7 +18,7 @@ def render_tab1(target_match, home_preds, guoan_matches, standings, mae, use_dyn
         try:
             elo = load_elo_history()
             card = get_opponent_scorecard(opp, target_match["date"], elo_history=elo,
-                                           standings_by_round=standings, matches=guoan_matches)
+                                           standings_by_round=standings, matches=matches)
             tier = card["tier"]
             st_score = card["ST"]
             ap_score = card["AP"]

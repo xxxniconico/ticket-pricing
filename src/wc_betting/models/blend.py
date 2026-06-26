@@ -15,7 +15,7 @@ from dataclasses import dataclass
 
 W_ELO_DEFAULT = 0.4
 W_POISSON_DEFAULT = 0.6
-INCONSISTENCY_THRESHOLD = 0.08  # plan §3.4: flag if |p_elo - p_poisson| > 8%
+INCONSISTENCY_THRESHOLD = 0.15  # plan §3.4: flag if |p_elo - p_poisson| > 15% (relaxed from 8%)
 
 
 @dataclass

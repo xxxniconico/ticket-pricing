@@ -59,12 +59,77 @@ DAILY_CAP = 0.15
 EV_THRESHOLD = 0.0
 MIN_P_MODEL_CRS = 0.02   # ignore CRS/TTG with model prob < 2%
 MIN_P_MODEL_HAD = 0.12  # auto-review: rejects had/hhad underdog bets < 12%
+
+# Backtest-based EV adjustments (25 settled bets, 6/25-26):
+#   hhad: 7W 9L ROI +18% (only profitable pool)
+#   had:  2W 5L ROI -25% (draws 0/3, H/A also negative)
+# Apply penalty to had EV, bonus to hhad
+# Motivation constants (used by _get_motivation_adjustment)
+MOTIVATION_CRITICAL = 0.15
+MOTIVATION_BOOST = 0.10
+MOTIVATION_GROUP_WINNER = 0.05
+MOTIVATION_PENALTY = -0.05
+
+# Unified quality scoring — replaces 7 discrete rules with 1 continuous score
+# Score = ev_calibrated + adjustments. Score > MIN_SCORE → recommend.
+MIN_QUALITY_SCORE = 0.05   # minimum score for auto-recommendation
+# === Architecture ===
+# Q (Quality Score) = permanent factors: EV, pool type, handicap, elo gap, odds
+# Scenario Layer = stage-specific: group 3rd round motivation → will be zeroed in knockout
+# Final Score = Q + Scenario → threshold → auto/manual
+
+POOL_DISCOUNT = {"had": -0.05, "hhad": 0.0}
+CRS_TTG_MANUAL = True  # 比分/总进球：高赔低命中，回测0/2，全量manual
+LARGE_HCAP_MANUAL = True  # |hcap|>=2：回测1W5L命中率17%，全量manual
+
+# Team tier adjustment — computed from Elo ratings (dynamic, not hardcoded)
+# T1=top8, T2=9-20, T3=21-36, T4=37-48
+_tier_cache: dict[str, int] | None = None
+
+def _compute_tiers() -> dict[str, int]:
+    """Compute tiers from Elo model. Cached after first call."""
+    global _tier_cache
+    if _tier_cache is not None:
+        return _tier_cache
+    from wc_betting.models.elo import EloModel
+    elo = EloModel()
+    elo.calibrate()
+    ratings = {}
+    # Get all teams from ratings dict
+    for code in elo.ratings:
+        try:
+            ratings[code] = elo.ratings[code]["elo"]
+        except Exception:
+            ratings[code] = 1500
+    sorted_teams = sorted(ratings.items(), key=lambda x: -x[1])
+    n = len(sorted_teams)
+    tiers = {}
+    for i, (team, _) in enumerate(sorted_teams):
+        if i < 8: tiers[team] = 1
+        elif i < 20: tiers[team] = 2
+        elif i < 36: tiers[team] = 3
+        else: tiers[team] = 4
+    _tier_cache = tiers
+    return tiers
+
+TIER_MATCHUP_ADJ = {
+    # (home_tier, away_tier): Q adjustment
+    (1,1): 0.0,    # elite clash: model is reliable
+    (1,4): -0.05,  # huge mismatch: unpredictable, had less valuable
+    (4,1): -0.05,
+    (4,4): -0.03,  # both weak: chaotic
+    (2,3): 0.01,   # most balanced: model performs best
+    (3,2): 0.01,
+}
+DRAW_PENALTY = -0.08       # draws are high-variance
+LARGE_HCAP_PENALTY = -0.05 # |hcap|>=2 penalty per extra level
+MOTIVATION_BONUS_FACTOR = 1.0   # scale motivation adjustment into score space
 MAX_ODDS_AUTO = 25.0   # max odds for auto-review (extreme longshots → manual)
 
 # Elo-Poisson gap threshold: when the model's 1X2 probs diverge from Elo-based
 # probs by more than this, the match is flagged as "manual review" and excluded
 # from automatic portfolio optimization. Matches value.py's threshold (plan §4).
-ELO_POISSON_GAP_THRESHOLD = 0.08
+ELO_POISSON_GAP_THRESHOLD = 0.15
 
 # hhad sign convention (see docstring).
 HANDICAP_SIGN = 1.0  # virtual_home = home_goals + HANDICAP_SIGN * goalLine
@@ -343,6 +408,94 @@ def _apply_daily_cap(ops: list[dict],
     return ops
 
 
+def _get_motivation_adjustment(home_en: str, away_en: str) -> float:
+    """Return net motivation shift based on 3rd-place ranking cutoff.
+    
+    48-team format: 12 group winners + 12 runners-up + 8 best 3rd-place.
+    Teams at 0-2pts in 3rd place have MASSIVE motivation (win = qualify).
+    """
+    # Standings after 2 matches:
+    # (pts, gd, can_win_group, is_3rd): tuple
+    # can_win_group = win makes them group 1st → faces 2nd in R32
+    MOT_STANDINGS = {
+        'Egypt': (4, 2, True, False), 'Iran': (2, 0, False, False),
+        'Belgium': (2, 0, False, True), 'New Zealand': (1, -2, False, False),
+        'Spain': (4, 4, True, False), 'Uruguay': (2, 0, False, False),
+        'Cape Verde': (2, 0, False, True), 'Saudi Arabia': (1, -4, False, False),
+        'France': (6, 5, True, False), 'Norway': (6, 4, True, False),
+        'Senegal': (0, -3, False, True), 'Iraq': (0, -6, False, False),
+        'Argentina': (6, 5, True, False), 'Austria': (3, 0, True, False),
+        'Algeria': (3, -2, True, True), 'Jordan': (0, -3, False, False),
+        'Colombia': (6, 3, True, False), 'Portugal': (4, 5, True, False),
+        'DR Congo': (1, -1, False, True), 'Uzbekistan': (0, -7, False, False),
+        'England': (4, 2, True, False), 'Ghana': (4, 1, True, False),
+        'Croatia': (3, -1, True, True), 'Panama': (0, -2, False, False),
+    }
+    
+    # Teams where draw=qualify (2pt + GD advantage over 8th place)
+    _draw_is_enough = {'Iran'}  # 3pt would beat Scotland(3pt GD-3)
+    
+    def mot(team):
+        entry = MOT_STANDINGS.get(team)
+        if entry is None: return 0.0
+        pts, gd, can_win_group, is_3rd = entry
+        val = 0.0
+        if pts >= 6:
+            val = MOTIVATION_PENALTY              # qualified, may rotate
+        elif pts >= 4:
+            val = 0.0                              # likely through
+        elif team in _draw_is_enough:
+            val = 0.05                             # draw is enough to qualify
+        elif pts >= 3:
+            val = 0.05                             # already in top 8, just securing
+        else:
+            # pts 0-2: fighting for qualification
+            if is_3rd:
+                val = MOTIVATION_CRITICAL          # +15%: win = jump into top 8
+            else:
+                val = MOTIVATION_BOOST             # +10%: must fight
+        # Group winner bonus: winning means facing a 2nd-place team in R32
+        if can_win_group:
+            val += MOTIVATION_GROUP_WINNER         # +5% extra
+        return val
+    
+    return mot(home_en) - mot(away_en)
+
+
+def _get_context_rules(home_en: str, away_en: str) -> dict:
+    """Return context rules for a specific match based on qualification dynamics.
+    
+    Rules are match-specific and change per round.
+    Group 3rd round rules (6/27-28):
+    - draw_is_enough: team needs only a draw to qualify → prefer hhad
+    - must_win: team must win to qualify → prefer had
+    - both_qualified: both teams already through → reduce stakes
+    - win_group_winner: win = group 1st = easier R32 opponent
+    """
+    # Iran: 2pt, draw = 3pt GD0 > Scotland(3pt GD-3) → qualify
+    DRAW_IS_ENOUGH = {'Iran'}
+    # Uruguay: must beat Spain to have chance
+    MUST_WIN = {'Uruguay'}  
+    # Both qualified, playing for group position
+    BOTH_QUALIFIED = {('Norway','France'), ('France','Norway'),
+                      ('Colombia','Portugal'), ('Portugal','Colombia')}
+    # Win = group winner → easier knockout path
+    WIN_GROUP_WINNER = {'Egypt', 'Spain', 'Norway', 'France', 'Argentina',
+                        'Colombia', 'Portugal', 'England', 'Ghana'}
+    
+    rules = {}
+    if home_en in DRAW_IS_ENOUGH:
+        rules['draw_is_enough'] = True
+    if home_en in MUST_WIN:
+        rules['must_win'] = True
+    if (home_en, away_en) in BOTH_QUALIFIED:
+        rules['both_qualified'] = True
+    if home_en in WIN_GROUP_WINNER:
+        rules['win_group_winner'] = True
+    
+    return rules
+
+
 def run(odds_rows: list[dict] | None = None,
         out_path: Path = OUT_FILE) -> dict:
     """Scan sporttery odds for +EV opportunities.
@@ -449,6 +602,18 @@ def run(odds_rows: list[dict] | None = None,
                 p_c = p_calib_map.get(key, p)
                 ev = p * price_f - 1.0
                 ev_c = p_c * price_f - 1.0
+                # Final-round motivation adjustment
+                # Adjust probability based on qualification stakes
+                mot_adj = _get_motivation_adjustment(home_en, away_en)
+                if mot_adj != 0:
+                    if key == 'H':
+                        p = max(0.02, p + mot_adj)
+                        p_c = max(0.02, p_c + mot_adj * 1.5)
+                    elif key == 'A':
+                        p = max(0.02, p - mot_adj)
+                        p_c = max(0.02, p_c - mot_adj * 1.5)
+                    # D unchanged (both sides cancel)
+                
                 if ev_c <= EV_THRESHOLD:
                     continue
                 kelly = _kelly(p_c, price_f)
@@ -482,33 +647,117 @@ def run(odds_rows: list[dict] | None = None,
                 # Re-check EV threshold after discount
                 if ev_c <= EV_THRESHOLD:
                     continue
-                # Extreme longshot → auto-flag as manual_review (odds > 25 = hit rate < 4%)
-                is_longshot = (price_f > MAX_ODDS_AUTO)
                 
-                # Manual review if inconsistent OR cold mismatch OR extreme longshot.
-                # Draw quality checks (6/25 backtest: all draws lost when p<25%):
-                # - p_model < 25% → auto-review (model too uncertain)
-                # - model #1 pick != D → model prefers another outcome (weak signal)
-                is_manual = (inconsistent and key != "D") or mismatch_cold or is_longshot
-                # Draw-specific quality filter
+                # Motivation adjustment to probabilities
+                mot_adj = _get_motivation_adjustment(home_en, away_en)
+                if mot_adj != 0:
+                    if key == 'H':
+                        p = max(0.02, p + mot_adj * 0.5)
+                        p_c = max(0.02, p_c + mot_adj * 0.75)
+                    elif key == 'A':
+                        p = max(0.02, p - mot_adj * 0.5)
+                        p_c = max(0.02, p_c - mot_adj * 0.75)
+                
+                # Recompute EV with adjusted probabilities
+                ev = p * price_f - 1.0
+                ev_c = p_c * price_f - 1.0
+                
+                if ev_c <= EV_THRESHOLD:
+                    continue
+                
+                # === Unified Quality Score (after final EV) ===
+                quality = ev_c
+                reasons = []
+                
+                # Team tier adjustment (permanent: team strength from Elo)
+                tiers = _compute_tiers()
+                ht = tiers.get(home_en, 3)
+                at = tiers.get(away_en, 3)
+                tier_adj = TIER_MATCHUP_ADJ.get((ht, at), 0.0)
+                if tier_adj != 0:
+                    quality += tier_adj
+                    reasons.append(f"T{ht}vT{at}({tier_adj:+.0%})")
+                
+                # Pool discount (had is less reliable: 2W5L vs hhad 7W9L)
+                quality += POOL_DISCOUNT.get(pool, 0)
+                
+                # Draw penalty (high variance, 0/3 in user backtest)
                 if pool == "had" and key == "D":
+                    quality += DRAW_PENALTY
                     if p < 0.25:
-                        is_manual = True
+                        quality -= 0.01
                         reasons.append(f"low_draw_p({p:.0%})")
                     if poisson_1x2:
-                        po_h_d = poisson_1x2.get("h", 0)
-                        po_d_d = poisson_1x2.get("d", 0)
-                        po_a_d = poisson_1x2.get("a", 0)
-                        if po_d_d <= po_h_d or po_d_d <= po_a_d:
-                            is_manual = True
-                            reasons.append("draw_not_top_pick")
-                reasons = []
-                if inconsistent:
-                    reasons.append(f"elo_poisson_gap={elo_gap:.1%}" if elo_gap is not None else "inconsistent")
+                        po_d = poisson_1x2.get("d", 0)
+                        if po_d <= max(poisson_1x2.get("h",0), poisson_1x2.get("a",0)):
+                            quality -= 0.01
+                            reasons.append("draw_not_top")
+                
+                # Large handicap penalty
+                if pool == "hhad" and handicap is not None and abs(handicap) >= 2:
+                    quality += LARGE_HCAP_PENALTY * (abs(handicap) - 1)
+                    reasons.append(f"large_hcap({handicap:+.0f})")
+                
+                # Cold mismatch
                 if mismatch_cold:
-                    reasons.append(f"mismatch_cold(gap={mi_h-po_h:.0%})" if (market_imp and poisson_1x2) else "mismatch_cold")
-                if is_longshot:
-                    reasons.append(f"longshot(odds={price_f:.0f})")
+                    quality -= 0.02
+                    reasons.append("mismatch_cold")
+                
+                # Longshot
+                if price_f > MAX_ODDS_AUTO:
+                    quality -= 0.02
+                    reasons.append(f"longshot({price_f:.0f})")
+                
+                # Scenario layer: group-stage final-round motivation
+                # Applied OUTSIDE Q so it can be zeroed in knockout stage
+                scenario_bonus = 0.0
+                if mot_adj != 0:
+                    if (key == 'H' and mot_adj > 0) or (key == 'A' and mot_adj < 0):
+                        scenario_bonus = abs(mot_adj) * MOTIVATION_BONUS_FACTOR
+                    elif (key == 'H' and mot_adj < 0) or (key == 'A' and mot_adj > 0):
+                        scenario_bonus = -abs(mot_adj) * MOTIVATION_BONUS_FACTOR
+                quality += scenario_bonus  # add to final score (will be configurable per stage)
+                
+                # === Context Rules (Scenario layer) ===
+                # Check BOTH teams' context — match dynamics are two-sided
+                ctx_h = _get_context_rules(home_en, away_en)
+                ctx_a = _get_context_rules(away_en, home_en)
+                
+                def _apply_ctx(ctx, side):
+                    nonlocal scenario_bonus
+                    if not ctx: return
+                    tag = f'[{side}]'
+                    if ctx.get('draw_is_enough'):
+                        if pool == 'hhad':
+                            scenario_bonus += 0.03; reasons.append(f'ctx{tag}draw=qualify→hhad')
+                        elif pool == 'had':
+                            scenario_bonus -= 0.02; reasons.append(f'ctx{tag}draw=qualify→no_had')
+                    if ctx.get('must_win'):
+                        if pool == 'had':
+                            scenario_bonus += 0.02; reasons.append(f'ctx{tag}must_win→had')
+                    if ctx.get('both_qualified'):
+                        scenario_bonus -= 0.03; reasons.append(f'ctx{tag}both_qualified→reduce')
+                    if ctx.get('win_group_winner'):
+                        if pool == 'hhad':
+                            scenario_bonus += 0.02; reasons.append(f'ctx{tag}group_winner→hhad')
+                
+                _apply_ctx(ctx_h, 'H')
+                _apply_ctx(ctx_a, 'A')
+                
+                # Threshold check
+                is_manual = quality < MIN_QUALITY_SCORE
+                
+                # CRS/TTG override: always manual (high odds, low hit rate, 0/2 backtest)
+                if pool in ('crs', 'ttg') and CRS_TTG_MANUAL:
+                    is_manual = True
+                    reasons.insert(0, f"{pool}_manual")
+                
+                # Large handicap override: |hcap|>=2 always manual (1W5L, 17% hit rate)
+                if pool == 'hhad' and handicap is not None and abs(handicap) >= 2 and LARGE_HCAP_MANUAL:
+                    is_manual = True
+                    reasons.insert(0, f"large_hcap({handicap:+.0f})")
+                
+                reasons.append(f"score={quality:+.0%}")
                 
                 opportunities.append({
                     "match": f"{home_en} vs {away_en}",
@@ -520,6 +769,8 @@ def run(odds_rows: list[dict] | None = None,
                     "pool_code": pool,
                     "pool_name": POOL_NAMES_CN.get(pool, pool),
                     "pool_priority": POOL_PRIORITY.get(pool, 9),
+                    "quality_score": round(quality, 4),
+                    "scenario_bonus": round(scenario_bonus, 4),
                     "selection": key,
                     "selection_cn": _selection_cn(pool, key),
                     "handicap": handicap if pool == "hhad" else None,

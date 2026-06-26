@@ -1525,7 +1525,7 @@ def _render_sporttery_purchases(purchases_data: dict | None,
           <td><span class="sp-pool-badge sp-{p['pool_code']}">{p.get('pool_name','')}</span></td>
           <td><span class="sp-sel">{p.get('selection_cn','')}{hc_note}</span></td>
           <td class="num">{p['odds']:.2f}</td>
-          <td class="num"><span class="ev-badge {_ev_class(p.get('ev',0))}">{p.get('ev',0):+.0%}</span></td>
+          <td class="num"><span class="ev-badge {_ev_class(p.get('ev_calibrated', p.get('ev',0)))}">{p.get('ev_calibrated', p.get('ev',0)):+.0%}</span></td>
           <td class="num">{p['stake_cny']:.0f}</td>
           <td>{sb}</td><td>{pl}</td></tr>"""
     render_html(f"""<table class="sp-table"><thead><tr>
@@ -1873,9 +1873,12 @@ def render_smart_betting_tab() -> None:
             stake = a.get("optimal_stake", 0)
             tag = "★" if a.get("selection") == "D" else ""
             ht = _get_elo_tiers().get(a.get("home_en",""),4); at = _get_elo_tiers().get(a.get("away_en",""),4)
-            rows += f"<tr><td>{d}</td><td>T{ht}vT{at}</td><td>{tag} {match_cn[:24]}</td><td><span class='sp-pool-badge sp-{pool}'>{pool}</span></td><td>{sel}</td><td class='num'>{odds:.2f}</td><td class='num'><span class='ev-badge {_ev_class(ev)}'>{ev:+.0%}</span></td><td class='num'>{stake:.1%}</td></tr>"
+            qs = a.get("quality_score", a.get("ev_calibrated", 0))
+            sb = a.get("scenario_bonus", 0)
+            sb_s = f"+{sb:.0%}" if sb > 0 else (f"{sb:.0%}" if sb < 0 else "—")
+            rows += f"<tr><td>{d}</td><td>T{ht}vT{at}</td><td>{tag} {match_cn[:24]}</td><td><span class='sp-pool-badge sp-{pool}'>{pool}</span></td><td>{sel}</td><td class='num'>{odds:.2f}</td><td class='num'><span class='ev-badge {_ev_class(ev)}'>{ev:+.0%}</span></td><td class='num'>{qs:+.0%}</td><td class='num'>{sb_s}</td><td class='num'>{stake:.1%}</td></tr>"
         st.markdown(f"""<table class="sp-table" style="margin-bottom:8px"><thead><tr>
-          <th>日期</th><th>级别</th><th>比赛</th><th>玩法</th><th>选</th><th class="num">赔率</th><th class="num">EV</th><th class="num">仓位</th>
+          <th>日期</th><th>级别</th><th>比赛</th><th>玩法</th><th>选</th><th class="num">赔率</th><th class="num">EV</th><th class="num">Q</th><th class="num">场景</th><th class="num">仓位</th>
           </tr></thead><tbody>{rows}</tbody></table>""", unsafe_allow_html=True)
     else:
         st.info("暂无组合优化结果。请先运行体彩扫描 + 组合优化。")
@@ -2306,6 +2309,85 @@ def render_sporttery_tab(finished=None):
         _render_dual_track()
 
 
+def render_knockout_tab() -> None:
+    """淘汰赛对阵预测：R32已确认+待定对阵+第三名出线."""
+    import json as _json, re as _re
+    from collections import defaultdict
+    
+    st.markdown("### 🏆 R32 淘汰赛对阵")
+    
+    u = _json.loads((ROOT / "data/processed/wc_2026_unified.json").read_text())
+    
+    standings = defaultdict(lambda: defaultdict(lambda: {'pts':0,'gf':0,'ga':0,'gd':0,'played':0}))
+    for m in u:
+        if not m.get('finished') or not m.get('score'): continue
+        g = m['group']; home = m['home_en']; away = m['away_en']
+        parts = _re.split(r'[-–]', m['score'].replace(chr(0x2212),'-'))
+        if len(parts) != 2: continue
+        hg, ag = int(parts[0]), int(parts[1])
+        for t, gf, ga in [(home, hg, ag), (away, ag, hg)]:
+            standings[g][t]['played'] += 1
+            standings[g][t]['gf'] += gf
+            standings[g][t]['ga'] += ga
+        standings[g][t]['gd'] = standings[g][t]['gf'] - standings[g][t]['ga']
+        if hg > ag: standings[g][home]['pts'] += 3
+        elif ag > hg: standings[g][away]['pts'] += 3
+        else: standings[g][home]['pts'] += 1; standings[g][away]['pts'] += 1
+    
+    def get_pos(g, pos):
+        teams = sorted(standings[g].items(), key=lambda x: (-x[1]['pts'], -x[1]['gd'], -x[1]['gf']))
+        if pos < len(teams): return teams[pos][0], teams[pos][1]
+        return '?', {'pts':0,'gd':0,'gf':0}
+    
+    locked = {'A','B','C','D','E','F'}
+    bracket = [
+        ("1A", "2B"), ("1B", "2A"), ("1C", "2F"), ("1F", "2C"),
+        ("1G", "2L"), ("1L", "2G"), ("1H", "2J"), ("1J", "2H"),
+    ]
+    
+    st.markdown("#### ✅ 已确认（6场）")
+    rows = ""
+    for w, r in bracket:
+        wg = w[1]; rg = r[1]
+        if wg in locked and rg in locked:
+            h, _ = get_pos(wg, 0); a, _ = get_pos(rg, 1)
+            hcn = cn(h)[0]; acn = cn(a)[0]
+            h_flag = flag_img(cn(h)[1]); a_flag = flag_img(cn(a)[1])
+            rows += "<tr><td>" + h_flag + " " + hcn[:10] + "</td><td>vs</td><td>" + a_flag + " " + acn[:10] + "</td><td><span class='badge group'>" + wg + "1-" + rg + "2</span></td></tr>"
+    render_html("<table class='sp-table'><thead><tr><th>主队</th><th></th><th>客队</th><th>对阵</th></tr></thead><tbody>" + rows + "</tbody></table>")
+    
+    st.markdown("#### ⏳ 今晚决定（6场）")
+    rows = ""
+    for w, r in bracket:
+        wg = w[1]; rg = r[1]
+        if wg not in locked or rg not in locked:
+            h, hs = get_pos(wg, 0); a, as_ = get_pos(rg, 1)
+            hcn = cn(h)[0]; acn = cn(a)[0]
+            h_flag = flag_img(cn(h)[1]); a_flag = flag_img(cn(a)[1])
+            h_pts = "(" + str(hs['pts']) + "pt)" if wg not in locked else ""
+            a_pts = "(" + str(as_['pts']) + "pt)" if rg not in locked else ""
+            rows += "<tr><td>" + h_flag + " " + hcn[:10] + " " + h_pts + "</td><td>vs</td><td>" + a_flag + " " + acn[:10] + " " + a_pts + "</td><td><span class='badge group'>" + wg + "1-" + rg + "2</span></td></tr>"
+    render_html("<table class='sp-table'><thead><tr><th>主队</th><th></th><th>客队</th><th>对阵</th></tr></thead><tbody>" + rows + "</tbody></table>")
+    
+    st.markdown("#### 🥉 第三名出线排名")
+    thirds = []
+    for g in sorted(standings):
+        teams = sorted(standings[g].items(), key=lambda x: (-x[1]['pts'], -x[1]['gd'], -x[1]['gf']))
+        if len(teams) >= 3:
+            name, stats = teams[2]
+            thirds.append((g, name, stats['pts'], stats['gd'], stats['gf'], stats['played']))
+    thirds.sort(key=lambda x: (-x[2], -x[3], -x[4]))
+    
+    rows = ""
+    for i, (g, name, pts, gd, gf, played) in enumerate(thirds):
+        icon = '✅' if i < 8 else '❌'
+        status = '已完赛' if g in locked else '末轮'
+        flag = flag_img(cn(name)[1]) if cn(name)[1] != '🏳️' else ''
+        rows += "<tr><td>" + icon + " " + str(i+1) + "</td><td>" + flag + " " + cn(name)[0][:12] + "</td><td><span class='badge group'>Group " + g + "</span></td><td class='num'>" + str(pts) + "</td><td class='num'>" + str(gd) + "</td><td class='num'>" + str(gf) + "</td><td>" + status + "</td></tr>"
+    render_html("<table class='sp-table'><thead><tr><th></th><th>球队</th><th>组</th><th class='num'>分</th><th class='num'>GD</th><th class='num'>GF</th><th>状态</th></tr></thead><tbody>" + rows + "</tbody></table>")
+    st.caption("前8名晋级淘汰赛。G-L组末轮结束后可能变化。")
+
+
 # === Main ===
 def main() -> None:
     inject_css()
@@ -2352,12 +2434,13 @@ def main() -> None:
     render_season_progress(finished, upcoming)
 
     # === 四个 Tab 分区: 未赛 (Tab1) + 已赛 (Tab2) + 价值下注 (Tab3) + 中国体彩 (Tab4) ===
-    tab1, tab2, tab3, tab4, tab5 = st.tabs([
+    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
         f"📅 未赛 ({len(upcoming)} 场)",
         f"✅ 已赛 ({len(finished)} 场 · 默认折叠)",
         "📊 价值下注",
         "🎰 中国体彩",
         "🧠 智能投注",
+        "🏆 淘汰赛",
     ])
 
     with tab1:
@@ -2380,6 +2463,9 @@ def main() -> None:
 
     with tab5:
         render_smart_betting_tab()
+
+    with tab6:
+        render_knockout_tab()
 
     # === Legend (Tab 外面, 统一在底部) ===
     render_legend()
