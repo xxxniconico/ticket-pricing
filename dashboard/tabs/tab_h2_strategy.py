@@ -82,8 +82,8 @@ def render_h2_strategy(guoan_matches, standings, mae=0):
                 card = get_opponent_scorecard(opp, next_home["date"], elo_history=elo_hist,
                                                standings_by_round=get_ctx_rounds(), matches=None)
                 opponent_tier = card["tier"]
-        except Exception:
-            pass
+        except Exception as e:
+            st.warning(f"Dynamic tier failed: {e}")
         live_pred = rule_predict(opp, opponent_tier_override=opponent_tier, **pred_args)
         live_opt = optimizer.optimize(opp, match_date=next_home["date"], **pred_args)
         next_target = next((m for m in matches if m["date"] == next_home["date"]), None)

@@ -169,12 +169,14 @@ def compute_home_predictions(home_done, guoan_matches, enable_ema=False):
             import streamlit as st
             if st.session_state.get("use_dynamic_tier", False):
                 from src.opponent_rating import get_opponent_scorecard, load_elo_history
+                from src.csl_context import load_csl_data
                 elo_hist = load_elo_history()
+                all_matches, _, _ = load_csl_data()
                 card = get_opponent_scorecard(m["opponent"], m["date"], elo_history=elo_hist,
-                                               standings_by_round=_ctx_rounds, matches=None)
+                                               standings_by_round=_ctx_rounds, matches=all_matches)
                 opponent_tier = card["tier"]
-        except Exception:
-            pass
+        except Exception as e:
+            st.warning(f"Dynamic tier failed: {e}")
         p = rule_predict(m["opponent"], enable_ema=enable_ema,
                          opponent_tier_override=opponent_tier, **pred_args)
         results.append((m, p, a, ctx))

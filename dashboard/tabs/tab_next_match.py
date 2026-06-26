@@ -23,7 +23,8 @@ def render_tab1(target_match, home_preds, guoan_matches, standings, mae, use_dyn
             st_score = card["ST"]
             ap_score = card["AP"]
             st.caption(f"📊 动态评级: ST={st_score:.1f} | AP={ap_score:.1f} | Tier={tier}")
-        except Exception:
+        except Exception as e:
+            st.warning(f"Dynamic tier failed: {e}")
             tier = classify_opponent_tier(opp)
     else:
         tier = classify_opponent_tier(opp)
