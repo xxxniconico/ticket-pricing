@@ -31,7 +31,6 @@ from dashboard.tabs.tab_heatmap import render_heatmap_tab
 from dashboard.tabs.tab_validation import render_validation_tab
 from dashboard.tabs.tab_odds import render_odds_tab
 from dashboard.tabs.tab_team_ratings import render_team_ratings
-from dashboard.tabs.tab_guoan_monitor import render_guoan_monitor
 from dashboard.components.shadow_toggle import render_shadow_toggle
 
 import numpy as np
@@ -124,7 +123,7 @@ def main():
     </div>""", unsafe_allow_html=True)
 
     use_dynamic = render_shadow_toggle()
-    tab_names = ["🎯 下一场预测", "📋 历史定价", "🔍 对手分析", "🏆 积分榜", "📊 H2策略", "🔥 座位热力图", "📐 模型验证", "🎲 赔率信号", "📊 球队评级", "📈 国安监控"]
+    tab_names = ["🎯 下一场预测", "📋 历史定价", "🔍 对手分析", "🏆 积分榜", "📊 H2策略", "🔥 座位热力图", "📐 模型验证", "🎲 赔率信号", "📊 球队评级"]
     active_tab = st.radio("导航", tab_names, horizontal=True, label_visibility="collapsed", key="main_tab")
 
     if active_tab == tab_names[0]:
@@ -178,8 +177,6 @@ def main():
         render_odds_tab()
     if active_tab == tab_names[8]:
         render_team_ratings(all_matches, standings, use_dynamic)
-    if active_tab == tab_names[9]:
-        render_guoan_monitor(all_matches, standings)
 
     st.caption(f"V8.1 · 国安绿品牌 · 决策工作台 · 赛程引擎 {SCHEDULE_ENGINE_VERSION}")
 
