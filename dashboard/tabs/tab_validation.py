@@ -16,7 +16,23 @@ def render_validation_tab(home_preds, guoan_matches, all_matches):
     驱动源: pricing_decisions.json + parquet 实际销量。
     前面的比赛模型未参与决策，不纳入验证。
     """
-    st.markdown("**策略验证 · 赛后追踪**")
+    
+    # -- H2 Experiment Matrix --
+    st.divider()
+    st.markdown("**H2 定价实验矩阵**")
+    exp_data = [
+        {"date":"2026-06-27","opponent":"武汉三镇","tier":"B->C","group":"事后对照","t1":"—","t2":"—","t3":"—","status":"已赛"},
+        {"date":"2026-07-04","opponent":"山东泰山","tier":"A->A","group":"德比弹性","t1":260,"t2":374,"t3":484,"status":"待武汉数据"},
+        {"date":"2026-07-17","opponent":"辽宁铁人","tier":"C->B","group":"升级发现","t1":160,"t2":220,"t3":300,"status":"已确认"},
+        {"date":"2026-08-07","opponent":"深圳新鹏城","tier":"B->C","group":"降级发现","t1":126,"t2":180,"t3":280,"status":"已确认"},
+        {"date":"2026-08-01","opponent":"浙江","tier":"B->B","group":"对照","t1":160,"t2":220,"t3":300,"status":"已确认"},
+        {"date":"2026-08-22","opponent":"云南玉昆","tier":"B->B","group":"对照","t1":160,"t2":220,"t3":300,"status":"已确认"},
+        {"date":"2026-10-18","opponent":"青岛西海岸","tier":"B->C","group":"降级验证","t1":126,"t2":180,"t3":280,"status":"已确认"},
+        {"date":"2026-11-08","opponent":"重庆铜梁龙","tier":"C->B","group":"升级验证","t1":160,"t2":220,"t3":300,"status":"已确认"},
+    ]
+    st.dataframe(pd.DataFrame(exp_data), use_container_width=True, hide_index=True)
+    st.divider()
+st.markdown("**策略验证 · 赛后追踪**")
     st.caption("仅显示你确认了定价决策的场次。实际数据出来后自动计算策略贡献。")
 
     # 加载定价决策
