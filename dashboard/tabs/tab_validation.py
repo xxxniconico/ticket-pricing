@@ -32,7 +32,7 @@ def render_validation_tab(home_preds, guoan_matches, all_matches):
     ]
     st.dataframe(pd.DataFrame(exp_data), use_container_width=True, hide_index=True)
     st.divider()
-st.markdown("**策略验证 · 赛后追踪**")
+    st.markdown("**策略验证 · 赛后追踪**")
     st.caption("仅显示你确认了定价决策的场次。实际数据出来后自动计算策略贡献。")
 
     # 加载定价决策
