@@ -167,16 +167,17 @@ def render_prediction_detail(target_match, guoan_matches, standings, mae, key_pr
     # Check for pricing overrides
     import json
     override_path = ROOT / "data" / "processed" / "pricing_overrides.json"
-    overrides = {}
+    ovr = {}
     if override_path.exists():
-        overrides = json.load(open(override_path)).get(opp, {}).get("prices", {})
+        ovr = json.load(open(override_path)).get(opp, {})
+    overrides = ovr.get("prices", {})
     r = optimizer.optimize(opp, match_date=target_match["date"], strategy=strategy_mode, **pred_args)
     if overrides:
         for zt, p in overrides.items():
             if zt in r.tiers:
                 r.tiers[zt].optimal_price = p
     # Also override quantities if provided
-    qty_overrides = json.load(open(override_path)).get(opp, {}).get("qtys", {})
+    qty_overrides = ovr.get("qtys", {})
     if qty_overrides:
         for zt, q in qty_overrides.items():
             if zt in r.tiers:
@@ -188,7 +189,7 @@ def render_prediction_detail(target_match, guoan_matches, standings, mae, key_pr
     render_strategy_card(r, pred_args)
     render_pricing_table(r)
     if overrides:
-        note = json.load(open(override_path)).get(opp, {}).get("note", "")
+        note = ovr.get("note", "")
         if note:
             st.info(f"定价说明：{note}")
     sandbox_sliders = render_what_if(r, opp)
