@@ -21,7 +21,7 @@ from dashboard.common.data_cache import (
     _round_num,
 )
 from dashboard.components.ctx_builder import build_pred_args
-from dashboard.common.data_cache import get_optimizer, _get_zone_actual_revenue
+from dashboard.common.data_cache import get_optimizer, _get_zone_actual_revenue, _get_zone_face_revenue
 from dashboard.tabs.tab_next_match import render_tab1
 from dashboard.tabs.tab_history import render_history_expanders, render_mae_chart
 from dashboard.tabs.tab_opponent import render_opponent_analysis
@@ -33,6 +33,7 @@ from dashboard.tabs.tab_odds import render_odds_tab
 from dashboard.tabs.tab_team_ratings import render_team_ratings
 from dashboard.components.shadow_toggle import render_shadow_toggle
 
+from dashboard.tabs.tab_data_base import render_data_base
 import numpy as np
 import streamlit as st
 from src.pricing_v5 import ZONE_TIERS
@@ -58,7 +59,7 @@ def main():
     standings = build_standings_2026(all_matches)
 
     home_matches = [m for m in guoan_matches if m.get("is_home")]
-    home_done = [m for m in home_matches if m.get("completed")]
+    home_done = [m for m in home_matches if m.get("completed") and m["date"].startswith("2026")]
     completed = [m for m in guoan_matches if m.get("completed") and m["date"].startswith("2026")]
 
     total_pts = sum(
@@ -123,7 +124,7 @@ def main():
     </div>""", unsafe_allow_html=True)
 
     use_dynamic = render_shadow_toggle()
-    tab_names = ["🎯 下一场预测", "📋 历史定价", "🔍 对手分析", "🏆 积分榜", "📊 H2策略", "🔥 座位热力图", "📐 模型验证", "🎲 赔率信号", "📊 球队评级"]
+    tab_names = ["🎯 下一场预测", "📋 历史定价", "🔍 对手分析", "🏆 积分榜", "📊 H2策略", "🔥 座位热力图", "📐 模型验证", "🎲 赔率信号", "📊 球队评级", "🗄️ 数据基座"]
     active_tab = st.radio("导航", tab_names, horizontal=True, label_visibility="collapsed", key="main_tab")
 
     if active_tab == tab_names[0]:
@@ -143,7 +144,7 @@ def main():
         for m, pred, actual, ctx in home_preds:
             pred_args = build_pred_args(m, ctx)
             r_h = opt_kpi.optimize(m["opponent"], **pred_args)
-            zone_rev = _get_zone_actual_revenue(m)
+            zone_rev = _get_zone_face_revenue(m)  # 票面收入
             total_actual_rev = sum(zone_rev.values())
             cum_scene_qty += r_h.total_attendance
             cum_delta_qty += r_h.total_attendance - actual
@@ -177,6 +178,8 @@ def main():
         render_odds_tab()
     if active_tab == tab_names[8]:
         render_team_ratings(all_matches, standings, use_dynamic)
+    if active_tab == tab_names[9]:
+        render_data_base()
 
     st.caption(f"V8.1 · 国安绿品牌 · 决策工作台 · 赛程引擎 {SCHEDULE_ENGINE_VERSION}")
 
