@@ -26,7 +26,7 @@ import math
 from src.rule_engine import predict_calibrated as predict_attendance
 from src.pricing_v5 import (
     ZONE_TIERS, ZONE_SECTIONS,
-    classify_opponent, get_pricing_tier, build_price_matrix, build_elasticity_matrix,
+    classify_opponent, get_pricing_tier, build_price_matrix, build_elasticity_matrix, get_dynamic_elasticity,
     is_tier_frozen, FROZEN_TIERS, get_zone_bounds,
     BASE_PRICES_A, BASE_PRICES_B,
 )
@@ -81,19 +81,47 @@ class DynamicPricingOptimizer:
 
         # Zone tier capacities (estimated from section counts)
         self.capacities = self._estimate_capacities()
+        # T4 扩容后手动覆盖 (山东赛后, 1509座)
+        self.capacities["T4"] = max(self.capacities.get("T4", 0), 1509)
 
         # 动态份额：基于 total_predicted 线性回归，每 tier 独立拟合
         # V5.5: 基于 2026 KMeans zone 重映射后 2025-2026 数据重拟合 (n=26)
         # T1 share 随总上座↓（低价区在弱队场次占比更高）
         # T2/T3 share 随总上座↑（中档在强队场次更受欢迎）
         # T4-T6 share 近似常数（区段少，波动小）
-        self._share_coeffs = {
-            "T1": (-0.0000250, 0.5912),  # R²=0.853
-            "T2": ( 0.0000150, 0.0753),  # R²=0.686
-            "T3": ( 0.0000070, 0.2281),  # R²=0.721
-            "T4": ( 0.0000030, 0.0000),  # R²=0.325, clamped to ≥0
-            "T5": ( 0.0000010, 0.0965),  # R²=0.024
-            "T6": (-0.0000001, 0.0101),  # R²=0.112
+        # V8.0: 按对手级别分表 (山东回测修正)
+        self._tier_share_baseline = {
+            "S": {"T1":0.273,"T2":0.248,"T3":0.320,"T4":0.029,"T5":0.122,"T6":0.008},
+            "A": {"T1":0.350,"T2":0.220,"T3":0.270,"T4":0.090,"T5":0.065,"T6":0.005},
+            "B": {"T1":0.506,"T2":0.119,"T3":0.253,"T4":0.020,"T5":0.095,"T6":0.006},
+            "C": {"T1":0.545,"T2":0.091,"T3":0.249,"T4":0.016,"T5":0.091,"T6":0.008},
+        }
+
+        # 同对手2025实际份额（用于反事实，优先于通用基线）
+        self._opponent_share_baseline = {
+            "成都蓉城": {"T1":0.225,"T2":0.262,"T3":0.349,"T4":0.102,"T5":0.053,"T6":0.008},
+            "浙江俱乐部绿城": {"T1":0.352,"T2":0.233,"T3":0.297,"T4":0.019,"T5":0.090,"T6":0.008},
+            "浙江": {"T1":0.352,"T2":0.233,"T3":0.297,"T4":0.019,"T5":0.090,"T6":0.008},
+            "山东泰山": {"T1":0.262,"T2":0.294,"T3":0.294,"T4":0.054,"T5":0.084,"T6":0.010},
+            "河南俱乐部酒祖杜康": {"T1":0.378,"T2":0.222,"T3":0.301,"T4":0.015,"T5":0.078,"T6":0.005},
+            "河南": {"T1":0.378,"T2":0.222,"T3":0.301,"T4":0.015,"T5":0.078,"T6":0.005},
+            "河南队": {"T1":0.378,"T2":0.222,"T3":0.301,"T4":0.015,"T5":0.078,"T6":0.005},
+            "深圳新鹏城": {"T1":0.292,"T2":0.278,"T3":0.286,"T4":0.020,"T5":0.116,"T6":0.008},
+            "长春亚泰": {"T1":0.281,"T2":0.279,"T3":0.303,"T4":0.018,"T5":0.111,"T6":0.008},
+            "青岛西海岸": {"T1":0.485,"T2":0.122,"T3":0.271,"T4":0.012,"T5":0.101,"T6":0.009},
+            "上海申花": {"T1":0.227,"T2":0.308,"T3":0.344,"T4":0.016,"T5":0.100,"T6":0.005},
+            "天津津门虎": {"T1":0.221,"T2":0.269,"T3":0.324,"T4":0.049,"T5":0.127,"T6":0.010},
+            "武汉三镇": {"T1":0.362,"T2":0.204,"T3":0.308,"T4":0.012,"T5":0.109,"T6":0.005},
+            "上海海港": {"T1":0.424,"T2":0.176,"T3":0.271,"T4":0.026,"T5":0.095,"T6":0.007},
+            "大连英博海发": {"T1":0.551,"T2":0.091,"T3":0.241,"T4":0.010,"T5":0.102,"T6":0.006},
+            "大连英博": {"T1":0.551,"T2":0.091,"T3":0.241,"T4":0.010,"T5":0.102,"T6":0.006},
+            "青岛海牛": {"T1":0.518,"T2":0.095,"T3":0.259,"T4":0.011,"T5":0.112,"T6":0.005},
+            "梅州客家": {"T1":0.469,"T2":0.174,"T3":0.255,"T4":0.010,"T5":0.087,"T6":0.005},
+        }
+
+        self._share_total_adj = {
+            "T1": -0.000010, "T2": 0.000010, "T3": 0.000005,
+            "T4": 0.000002, "T5": 0.000001, "T6": 0.000000,
         }
 
         # Reference price for attendance-to-revenue conversion (per-tier, not global)
@@ -113,6 +141,7 @@ class DynamicPricingOptimizer:
                  min_revenue: float = 0.0, strategy: str = 'auto',
                  pricing_tier_override: str | None = None,
                  opponent_tier_override: str | None = None,
+                 capacity_overrides: dict | None = None,
                  **context) -> OptimizeResult:
         """
         为一场比赛优化6档定价。
@@ -124,10 +153,13 @@ class DynamicPricingOptimizer:
             strategy: 'auto'(默认), 'balanced'(平衡: T1-T3降价拉量, T4-T6涨价补收入)
             **context: 传给 rule_engine.predict() 的情境参数
         """
+        # ── 对手级别（动态评分，优先于所有后续计算）──
+        from src.classify import classify_opponent_tier
+        opp_tier = opponent_tier_override or classify_opponent_tier(opponent, match_date=match_date)
+
         # 1. 规则引擎预测总量（硬编码基值，MAE=549）
         ctx_with_tier = dict(context)
-        if opponent_tier_override:
-            ctx_with_tier['opponent_tier_override'] = opponent_tier_override
+        ctx_with_tier['opponent_tier_override'] = opp_tier
         predicted_total = predict_attendance(opponent, **ctx_with_tier)
 
         # 动态目标权重：四级分档 (V8.2: 门槛下调, 更平滑过渡)
@@ -143,8 +175,6 @@ class DynamicPricingOptimizer:
         # ── 对手级别约束：非德比场次涨价空间受限 ──
         # S级德比可以激进涨价，A级适度，B/C级保守
         # 防止 上海海港 类 case：预测上座高但实际价格弹性大 → 涨价驱客
-        from src.classify import classify_opponent_tier
-        opp_tier = opponent_tier_override or classify_opponent_tier(opponent, match_date=match_date)
         tier_rw_cap = {"S": 1.0, "A": 0.75, "B": 0.50, "C": 0.35}
         if rw > tier_rw_cap.get(opp_tier, 1.0):
             rw = tier_rw_cap[opp_tier]
@@ -156,17 +186,30 @@ class DynamicPricingOptimizer:
         else:
             strategy_mode = 'revenue'
 
+        # 反事实场景：覆盖库存容量（用于原库存 vs 新库存对比）
+        if capacity_overrides:
+            for zt, cap in capacity_overrides.items():
+                if zt in self.capacities:
+                    self.capacities[zt] = cap
+
         # 2. 对手定价级别（含derby提升/A-/C-降价）。pricing_tier_override 用于升班马B级模拟
-        opp_level = pricing_tier_override or get_pricing_tier(opponent)
+        opp_level = pricing_tier_override or get_pricing_tier(opponent, match_date=match_date)
 
         # 3. 获取该级别的基准价
         base_prices = self.price_matrix[opp_level]
 
         # 4. 动态份额分配（T1↓随总上座 T2↑随总上座，归一化）
+        # 优先用同对手2025实际份额，无数据时回退到级别基线
+        opponent_share = self._opponent_share_baseline.get(opponent)
+        if opponent_share:
+            baseline = opponent_share
+        else:
+            baseline = self._tier_share_baseline.get(opp_tier, self._tier_share_baseline["B"])
         raw_shares = {}
         for zt in ZONE_TIERS:
-            a, b = self._share_coeffs[zt]
-            raw_shares[zt] = max(0.005, a * predicted_total + b)
+            base_share = baseline.get(zt, 0.05)
+            adj = self._share_total_adj.get(zt, 0.0) * (predicted_total - 10000) / 5000
+            raw_shares[zt] = max(0.005, base_share + adj)
         total_raw = sum(raw_shares.values())
         volume_shares = {zt: s/total_raw for zt, s in raw_shares.items()}
 
@@ -206,7 +249,7 @@ class DynamicPricingOptimizer:
         for zt in ZONE_TIERS:
             p0 = base_prices[zt]
             q0 = base_demand[zt]
-            eps = self.elasticity[opp_level][zt]
+            eps = get_dynamic_elasticity(zt, p0) if zt == "T5" else self.elasticity[opp_level][zt]
             cap = self.capacities[zt]
             frozen = is_tier_frozen(zt, opp_level)
 

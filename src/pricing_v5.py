@@ -80,7 +80,7 @@ from src.classify import (
     S_TIER, A_TIER, B_TIER, C_TIER, DERBY_RIVALS,
 )
 
-def get_pricing_tier(opponent_name: str) -> str:
+def get_pricing_tier(opponent_name: str, match_date: str | None = None) -> str:
     """返回实际定价级别（含derby提升、A-/C-降价）。
 
     规则（基于2026赛季票务公告校准）：
@@ -88,9 +88,13 @@ def get_pricing_tier(opponent_name: str) -> str:
     - A级降价(海港) → 使用A-级定价(S_Aminus)
     - C级深降(英博) → 使用C-级定价(S_Cminus)
     - 其余按对手分级正常映射
+
+    Args:
+        opponent_name: 对手队名
+        match_date: 比赛日期 (YYYY-MM-DD)，提供后启用动态评分
     """
     name = str(opponent_name).strip()
-    level = classify_opponent(name)
+    level = classify_opponent(name, match_date=match_date)
 
     # Derby boost: B级德比→A级定价
     if level == "B" and any(t in name or name in t for t in DERBY_PRICE_BOOST):
@@ -120,7 +124,7 @@ _OBSERVED_ELASTICITY_AB = {
     "T2": 0.20,   # 中档有一定敏感度
     "T3": 0.15,   # 温和敏感
     "T4": 0.15,   # 样本小，保守估计
-    "T5": 0.24,   # 高端区同样敏感（SA→BC份额-10.8%）
+    "T5": 0.24,   # 高端区同样敏感（SA→BC份额-10.8%）【暂不回退0.43: 无干净实测数据】
     "T6": 0.16,   # VIP轻微敏感
 }
 
@@ -135,8 +139,47 @@ TIER_ELASTICITY_MULTIPLIER = {
     "S_A": 0.85,      # A级强队：T1 ε=0.20 vs B=0.26 → ratio 0.77 (仅1zone显著)
     "S_Aminus": 0.90, # A级降价：无直接数据，略低于S_A
     "S_B": 1.00,      # B级：中性基准 (31场/档位, 实证锚定)
-    "S_C": 2.00,      # C级弱队：6/6 zones显著, 弹性为B级2.0x+
+    "S_C": 1.78,      # C级弱队：武汉6/27实测修正, 弹性为B级1.78x (原2.00)
     "S_Cminus": 2.50, # C级深降：无直接数据, C级2.0x基础上外推
+}
+
+# 实测弹性覆盖 (山东A级/武汉C级, 2026-06/07)
+# 格式: {(opponent_level, zone_tier): epsilon}
+_MANUAL_ELASTICITY_OVERRIDE = {
+    ("S_A", "T3"): 0.20,   # 山东实测, T4分流轻微混杂
+    ("S_A", "T5"): 0.42,   # 山东实测, 库存修正后 (迁移区弹性0.84, 比赛质量效应分离)
+    ("S_C", "T5"): 0.43,   # 武汉实测+逻辑保留(用户确认)
+}
+
+_DYNAMIC_EPS_EXPONENT = 1.73  # T5专用, 待浙江实验后校准 (目前无干净数据点)
+
+def get_dynamic_elasticity(zone_tier, price):
+    """动态弹性：T5 幂律公式（待验证）。
+    
+    eps(p) = 0.24 * (p / 780)^1.73  [注意: 指数和参考点均未校准]
+    
+    ⚠ T5 价格弹性目前没有干净的实测数据:
+    - 武汉 ¥540 vs ¥620: 同区不同排, 含质量溢价
+    - 申花 vs 山东: 对手级别不同 (S vs A), 测的是级别效应不是价格效应
+    - 迁移区: 价格+标签同时变, 混合信号
+    
+    浙江(8/1)后可设计 T5 弹性实验。在此之前用静态弹性 S_A=0.20。
+    T1-T4/T6 返回 None, fallback 到 get_elasticity()。
+    """
+    if zone_tier != "T5":
+        return None
+    pref, epsref = 540, 0.43
+    eps = epsref * (price / pref) ** _DYNAMIC_EPS_EXPONENT
+    return round(max(0.01, eps), 2)
+
+def get_t5_elasticity(price, level="S_A"):
+    # 保留旧接口兼容
+    return get_dynamic_elasticity("T5", price)
+
+_OLD_MANUAL_ELASTICITY_OVERRIDE = {
+    ("S_A", "T3"): 0.20,   # 山东实测, T4分流轻微混杂
+    ("S_A", "T5"): 0.42,   # 山东实测, 库存修正后
+    ("S_C", "T5"): 0.43,   # 武汉实测+逻辑保留(用户确认)
 }
 
 def get_elasticity(zone_tier: str, opponent_level: str) -> float:
@@ -147,6 +190,20 @@ def get_elasticity(zone_tier: str, opponent_level: str) -> float:
     负值表示价格上升→需求下降。
     绝对值>1 = 有弹性（降价增收），<1 = 无弹性（涨价增收）。
     """
+    override = _MANUAL_ELASTICITY_OVERRIDE.get((opponent_level, zone_tier))
+    if override is not None:
+        return override
+    base_eps = _OBSERVED_ELASTICITY_AB.get(zone_tier, 1.0)
+    mult = TIER_ELASTICITY_MULTIPLIER.get(opponent_level, 1.0)
+    return round(base_eps * mult, 2)
+
+
+# 保留旧接口兼容性: 无价格时返回基准弹性(用于显示)
+def get_elasticity_static(zone_tier: str, opponent_level: str) -> float:
+    """静态弹性(兼容旧代码, 无价格参数时使用)"""
+    override = _MANUAL_ELASTICITY_OVERRIDE.get((opponent_level, zone_tier))
+    if override is not None:
+        return override
     base_eps = _OBSERVED_ELASTICITY_AB.get(zone_tier, 1.0)
     mult = TIER_ELASTICITY_MULTIPLIER.get(opponent_level, 1.0)
     return round(base_eps * mult, 2)
@@ -386,3 +443,151 @@ if __name__ == "__main__":
         else:
             status.append("🔓 可调")
         print(f"  {zt}: {', '.join(status)}")
+
+# ═══════════════════════════════════════════
+# P1.1b 动态弹性表 — 赛后迭代更新
+# ═══════════════════════════════════════════
+
+import json as _json
+from pathlib import Path as _Path
+
+_ELASTICITY_TABLE_PATH = _Path(__file__).resolve().parent.parent / "data" / "processed" / "elasticity_table.json"
+
+def load_elasticity_table() -> dict:
+    """加载动态弹性表。无文件时从代码初始化。"""
+    if _ELASTICITY_TABLE_PATH.exists():
+        with open(_ELASTICITY_TABLE_PATH) as f:
+            return _json.load(f)
+    return _init_elasticity_table()
+
+def _init_elasticity_table() -> dict:
+    """从代码静态参数初始化弹性表。"""
+    table = {
+        'version': 1,
+        'updated_at': 'init',
+        'method': 'Initialized from pricing_v5 static parameters',
+        'elasticity': {}
+    }
+    for lvl in ["S_S", "S_A", "S_Aminus", "S_B", "S_C", "S_Cminus"]:
+        table['elasticity'][lvl] = {}
+        for zt in ZONE_TIERS:
+            table['elasticity'][lvl][zt] = round(get_elasticity(zt, lvl), 3)
+    table['observations'] = []
+    return table
+
+def save_elasticity_table(table: dict):
+    """持久化动态弹性表。"""
+    _ELASTICITY_TABLE_PATH.parent.mkdir(parents=True, exist_ok=True)
+    from datetime import datetime
+    table['updated_at'] = datetime.now().strftime('%Y-%m-%d %H:%M')
+    table['version'] = table.get('version', 1) + 1
+    with open(_ELASTICITY_TABLE_PATH, 'w') as f:
+        _json.dump(table, f, ensure_ascii=False, indent=2)
+
+def compute_observed_elasticity(confirmed_price: float, baseline_price: float,
+                                 actual_qty: float, baseline_qty: float) -> float | None:
+    """计算弧弹性: ε = (ΔQ/Q_avg) / (ΔP/P_avg)。价格不变时返回 None。"""
+    dp = confirmed_price - baseline_price
+    if abs(dp) < 1:
+        return None  # No price change, no elasticity observation
+    dq = actual_qty - baseline_qty
+    p_avg = (confirmed_price + baseline_price) / 2
+    q_avg = (actual_qty + baseline_qty) / 2
+    if p_avg <= 0 or q_avg <= 0:
+        return None
+    return round(abs((dq / q_avg) / (dp / p_avg)), 4)
+
+def update_elasticity_from_match(match_date: str, opponent: str, pricing_level: str,
+                                  confirmed_prices: dict, baseline_prices: dict,
+                                  actual_qtys: dict, baseline_qtys: dict):
+    """赛后记录弹性观测（待审批模式）。
+    
+    观测写入 pending_observations，不自动更新弹性值。
+    需调用 approve_elasticity_observation() 手动确认后才生效。
+    
+    原因：弧弹性会被库存重组/样本噪声污染，需要人工判断哪些观测有效。
+    """
+    table = load_elasticity_table()
+    from datetime import datetime
+    
+    for zt in ZONE_TIERS:
+        cp = confirmed_prices.get(zt, 0)
+        bp = baseline_prices.get(zt, 0)
+        aq = actual_qtys.get(zt, 0)
+        bq = baseline_qtys.get(zt, 0)
+        
+        obs_eps = compute_observed_elasticity(cp, bp, aq, bq)
+        if obs_eps is None:
+            continue
+        
+        # 质量标记：数量变化方向与价格变化方向一致（涨价→减量, 降价→增量）
+        dp = cp - bp
+        dq = actual_qtys.get(zt, 0) - baseline_qtys.get(zt, 0)
+        direction_ok = (dp > 0 and dq < 0) or (dp < 0 and dq > 0)
+        
+        # 异常标记：弹性>3.0 或数量偏差>80% 通常是库存效应
+        is_anomaly = obs_eps > 3.0 or (bq > 50 and abs(dq) / bq > 0.8)
+        
+        obs = {
+            'match': f'{match_date}_{opponent}',
+            'level': pricing_level,
+            'tier': zt,
+            'confirmed_price': cp,
+            'baseline_price': bp,
+            'actual_qty': aq,
+            'baseline_qty': bq,
+            'observed_eps': obs_eps,
+            'direction_ok': direction_ok,
+            'likely_anomaly': is_anomaly,
+            'recorded_at': datetime.now().strftime('%Y-%m-%d %H:%M'),
+            'status': 'pending',
+        }
+        table.setdefault('pending_observations', []).append(obs)
+    
+    save_elasticity_table(table)
+    return table
+
+def approve_elasticity_observation(match_key: str, tier: str, approved: bool = True, manual_eps: float | None = None):
+    """审批弹性观测。approved=True 时 EMA 更新到弹性表。
+    
+    Args:
+        match_key: 如 '2026-07-04_山东泰山'
+        tier: 如 'T5'
+        approved: 是否批准
+        manual_eps: 手动指定弹性值（不批准时忽略，批准时覆盖观测值）
+    """
+    table = load_elasticity_table()
+    
+    for obs in table.get('pending_observations', []):
+        if obs['match'] == match_key and obs['tier'] == tier and obs['status'] == 'pending':
+            obs['status'] = 'approved' if approved else 'rejected'
+            
+            if approved:
+                eps_value = manual_eps if manual_eps is not None else obs['observed_eps']
+                level = obs['level']
+                old_eps = table['elasticity'].get(level, {}).get(tier, 1.0)
+                alpha = 0.3
+                new_eps = round(alpha * eps_value + (1 - alpha) * old_eps, 4)
+                new_eps = max(0.01, min(5.0, new_eps))
+                
+                if level not in table['elasticity']:
+                    table['elasticity'][level] = {}
+                table['elasticity'][level][tier] = new_eps
+                
+                obs['approved_eps'] = eps_value
+                obs['new_eps'] = new_eps
+                obs['old_eps'] = old_eps
+            
+            table.setdefault('approved_observations', []).append(obs)
+            # Remove from pending
+            table['pending_observations'] = [o for o in table['pending_observations'] if not (o['match'] == match_key and o['tier'] == tier)]
+            
+            save_elasticity_table(table)
+            return True
+    
+    return False
+
+def get_dynamic_elasticity_value(pricing_level: str, zone_tier: str) -> float:
+    """从动态弹性表读取当前最佳估计值。"""
+    table = load_elasticity_table()
+    return table.get('elasticity', {}).get(pricing_level, {}).get(zone_tier, 1.0)

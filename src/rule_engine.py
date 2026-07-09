@@ -123,7 +123,7 @@ def predict(opponent, derby=False, lost_bottom=False, heavy_home_loss=False,
 
 def predict_calibrated(opponent, enable_ema=False, **kwargs):
     raw = predict(opponent, **kwargs)
-    tier = classify_opponent_tier(opponent)
+    tier = kwargs.get('opponent_tier_override') or classify_opponent_tier(opponent)
     return raw * get_effective_calibration(tier, enable_ema=enable_ema)
 
 def update(match_id, opponent, actual, **ctx):
@@ -132,7 +132,11 @@ def update(match_id, opponent, actual, **ctx):
     if any(h.get("match_id") == match_id for h in cal.get("history", [])):
         return
     raw = predict(opponent, **ctx)
-    tier = classify_opponent_tier(opponent)
+    # Use dynamic tier override if provided, otherwise fall back to static classification
+    tier = ctx.get("opponent_tier_override") or classify_opponent_tier(opponent)
+    # Ensure tier is a valid string key
+    if not isinstance(tier, str) or tier not in ("S", "A", "B", "C"):
+        tier = classify_opponent_tier(opponent)
     ratio = actual / raw if raw > 0 else 1.0
     old = cal["tier"].get(tier, 1.0)
     new = round(_ALPHA * ratio + (1 - _ALPHA) * old, 4)

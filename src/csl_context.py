@@ -318,7 +318,7 @@ def predict_with_context(opponent: str, match_date: str,
     if guoan_all is None:
         guoan_all = get_guoan_matches(matches)
         # Filter CSL-only for accurate context
-        guoan_all = [m for m in guoan_all if 'cfl_fixtures_api' in m.get('source','') or 'wikipedia' in m.get('source','')]
+        guoan_all = [m for m in guoan_all if 'cfl_fixtures_api' in m.get('source','') or 'wikipedia' in m.get('source','') or 'mcp_history' in m.get('source','')]
 
     match = {"date": match_date, "opponent": opponent, "is_home": True, "completed": True}
     ctx = detect_ctx(match, guoan_all, standings)
