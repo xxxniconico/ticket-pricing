@@ -126,6 +126,38 @@ def _get_zone_actual_revenue(m):
             return result
     return {}
 
+@st.cache_data(ttl=3600)
+def _get_zone_face_revenue(m):
+    """返回每档票面收入（从 parquet 票价信息列解析面值 × 数量）。
+    
+    票价信息格式: "300.00*2" → 面值 300.00 × 数量 2 = 票面收入 600.00。
+    与 _get_zone_actual_revenue 的区别：不含优惠券/学生折扣偏差。
+    """
+    from src.pricing_v5 import get_zone_sections
+    csl = _get_csl_parquet()
+    if csl is None:
+        return {}
+    year = m["date"][:4]
+    zm = {s: zt for zt, secs in get_zone_sections(year).items() for s in secs}
+    for mid in csl["match_id"].unique():
+        md = csl[csl["match_id"] == mid]
+        if str(md["match_date"].iloc[0]).startswith(m["date"]):
+            md = md.copy()
+            md["zt"] = md["section"].astype(str).map(zm)
+            # Parse face unit price from 票价信息
+            def _face_unit(price_str):
+                try:
+                    return float(str(price_str).split('*')[0])
+                except (ValueError, IndexError):
+                    return 0.0
+            md["face_unit"] = md["票价信息"].apply(_face_unit)
+            md["face_revenue"] = md["face_unit"] * md["数量"]
+            result = {}
+            for zt in ZONE_TIERS:
+                result[zt] = float(md[md["zt"] == zt]["face_revenue"].sum())
+            return result
+    return {}
+
 # ── Standings Builder ───────────────────────────────────
 @st.cache_data(ttl=7200)
 def build_standings_2026(all_matches):
