@@ -17,6 +17,8 @@ from src.classify import DERBY_RIVALS, classify_opponent_tier
 from src.csl_context import detect_ctx
 from dashboard.common.engine_compat import get_effective_calibration
 from src.rule_engine import MULTIPLIERS, PENALTY_FLOOR, TIER_BASE
+from pathlib import Path
+ROOT = Path(__file__).resolve().parent.parent.parent
 
 
 def build_rules_triggered(target_match, ctx, guoan_matches, use_dynamic=False):
@@ -63,8 +65,11 @@ def build_rules_triggered(target_match, ctx, guoan_matches, use_dynamic=False):
         rules.append(("盛夏重启", f"距上场≥28天 下半季回归 ×1.10", 1.10,
                       f"长休{28 if not prev_matches else (dt - pd.Timestamp(prev_matches[-1]['date'])).days}天后球迷回流，B级6月重启场次历史均值1.22x，保守标定1.10"))
     if sm and tier in ("B", "C"):
-        rules.append(("暑假效应", f"7-8月暑假运营活动 ×{MULTIPLIERS['summer']}", MULTIPLIERS["summer"],
+        rules.append(("暑假效应", f"7-8月暑假运营活动 x{MULTIPLIERS["summer"]}", MULTIPLIERS["summer"],
                       "暑假期间球迷观赛时间充裕，运营促销活动叠加"))
+    elif sm and tier in ("S", "A"):
+        rules.append(("暑假效应", "7-8月暑假效应 x1.08", 1.08,
+                      "暑假期间S/A级球队观赛需求小幅上升"))
     if t3f and tier in ("B", "C"):
         rules.append(("榜首", f"国安排名前3 ×{MULTIPLIERS['top3_form']}", MULTIPLIERS["top3_form"],
                       "争冠/亚冠预期溢价，仅 B/C 级生效"))
@@ -159,10 +164,33 @@ def render_prediction_detail(target_match, guoan_matches, standings, mae, key_pr
 
     pred_args = build_pred_args(target_match, ctx)
     optimizer = get_optimizer()
+    # Check for pricing overrides
+    import json
+    override_path = ROOT / "data" / "processed" / "pricing_overrides.json"
+    overrides = {}
+    if override_path.exists():
+        overrides = json.load(open(override_path)).get(opp, {}).get("prices", {})
     r = optimizer.optimize(opp, match_date=target_match["date"], strategy=strategy_mode, **pred_args)
+    if overrides:
+        for zt, p in overrides.items():
+            if zt in r.tiers:
+                r.tiers[zt].optimal_price = p
+    # Also override quantities if provided
+    qty_overrides = json.load(open(override_path)).get(opp, {}).get("qtys", {})
+    if qty_overrides:
+        for zt, q in qty_overrides.items():
+            if zt in r.tiers:
+                r.tiers[zt].predicted_qty = q
+                r.tiers[zt].revenue = q * r.tiers[zt].optimal_price
+        r.total_attendance = sum(tr.predicted_qty for tr in r.tiers.values())
+        r.total_revenue = sum(tr.revenue for tr in r.tiers.values())
 
     render_strategy_card(r, pred_args)
     render_pricing_table(r)
+    if overrides:
+        note = json.load(open(override_path)).get(opp, {}).get("note", "")
+        if note:
+            st.info(f"定价说明：{note}")
     sandbox_sliders = render_what_if(r, opp)
     render_pricing_confirm(r, opp, target_match["date"], pred, pred_args, sandbox_sliders)
     return pred, r

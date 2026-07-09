@@ -21,7 +21,7 @@ def render_kpi_cards(target_match, home_preds, guoan_rank, total_pts, home_w, ho
         opp = target_match["opponent"]
         dt = pd.Timestamp(target_match["date"])
         tier = classify_opponent_tier(opp, match_date=target_match["date"])
-        pt = get_pricing_tier(opp)
+        pt = get_pricing_tier(opp, match_date=target_match["date"])
         opp_label = f"vs {opp}"
         opp_sub = f"{target_match['date']} {WEEKDAYS[dt.weekday()]} · {target_match['round']}"
         tier_label = f"{tier} 级"
@@ -407,8 +407,12 @@ def save_pricing_decision(match_date, opponent, prices, note, model_version="V5.
         json.dump(data, f, ensure_ascii=False, indent=2)
 
 
-def save_snapshot(match_date, opponent, pred, pred_args, result, model_version="V5.4+V8.2"):
-    """保存赛前预测快照 — 同场覆盖。"""
+def save_snapshot(match_date, opponent, pred, pred_args, result, baseline_result=None, model_version="V5.4+V8.2"):
+    """保存赛前预测快照 — 同场覆盖。
+    
+    Args:
+        baseline_result: 优化器在无策略调整下的基准预测（用于反事实对比）
+    """
     snap_dir = ROOT / 'data' / 'snapshots'
     snap_dir.mkdir(parents=True, exist_ok=True)
     snapshot = {
@@ -425,8 +429,29 @@ def save_snapshot(match_date, opponent, pred, pred_args, result, model_version="
             'target_revenue': int(result.total_revenue),
             'target_quantity': int(result.total_attendance),
             'prices': {zt: int(result.tiers[zt].base_price) for zt in ZONE_TIERS},
+            'predicted_qtys': {zt: int(result.tiers[zt].predicted_qty) for zt in ZONE_TIERS},
+            'base_qtys': {zt: int(result.tiers[zt].base_qty) for zt in ZONE_TIERS},
         },
     }
+    # 保存基准预测（用于赛后反事实对比）
+    if baseline_result is not None:
+        snapshot['baseline'] = {
+            'predicted_quantity': int(baseline_result.total_attendance),
+            'predicted_revenue': int(baseline_result.total_revenue),
+            'revenue_weight': round(baseline_result.revenue_weight, 2),
+            'prices': {zt: int(baseline_result.tiers[zt].base_price) for zt in ZONE_TIERS},
+            'predicted_qtys': {zt: int(baseline_result.tiers[zt].predicted_qty) for zt in ZONE_TIERS},
+            'base_qtys': {zt: int(baseline_result.tiers[zt].base_qty) for zt in ZONE_TIERS},
+        }
+    # 记录原始库存容量（T4扩容前），用于反事实对比
+    try:
+        from src.dynamic_optimizer import DynamicPricingOptimizer
+        _tmp_opt = DynamicPricingOptimizer.__new__(DynamicPricingOptimizer)
+        _tmp_opt.capacities = DynamicPricingOptimizer._estimate_capacities(_tmp_opt)
+        snapshot['original_capacities'] = {zt: int(_tmp_opt.capacities.get(zt, 0)) for zt in ZONE_TIERS}
+    except Exception:
+        pass
+    
     snap_path = snap_dir / f'pre_{match_date}_{opponent}.json'
     with open(snap_path, 'w') as f:
         json.dump(snapshot, f, ensure_ascii=False, indent=2, default=str)
@@ -468,7 +493,21 @@ def render_pricing_confirm(r, opp, match_date, pred, pred_args, sandbox_sliders)
         snap_path = ROOT / 'data' / 'snapshots' / f'pre_{match_date}_{opp}.json'
         label = "更新快照" if snap_path.exists() else "保存快照 · 锁定状态"
         if st.button(label, key=f"btn_snapshot_{opp}", use_container_width=True):
-            save_snapshot(match_date, opp, pred, pred_args, r)
+            # 计算基准预测（无策略调整的反事实基线）
+            optimizer = get_optimizer()
+            from src.opponent_rating import get_opponent_scorecard, load_elo_history
+            from src.csl_context import load_csl_data, build_standings_2026
+            try:
+                elo = load_elo_history()
+                all_m, rounds_m, _ = load_csl_data()
+                sts = build_standings_2026(all_m)
+                card = get_opponent_scorecard(opp, match_date, elo_history=elo, standings_by_round=sts, matches=all_m)
+                dyn_tier = card['tier']
+            except:
+                from src.classify import classify_opponent_tier
+                dyn_tier = classify_opponent_tier(opp, match_date=match_date)
+            r_baseline = optimizer.optimize(opp, match_date=match_date, opponent_tier_override=dyn_tier, **pred_args)
+            save_snapshot(match_date, opp, pred, pred_args, r, baseline_result=r_baseline)
             st.success(f"快照已{'更新' if snap_path.exists() else '保存'}: {snap_path.name}")
 
     price_tags = " · ".join(f"{zt} ¥{prices[zt]:,}" for zt in ZONE_TIERS)
