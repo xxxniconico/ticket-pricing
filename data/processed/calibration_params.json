@@ -2,23 +2,23 @@
   "method": "platt_scaling",
   "classes": {
     "H": [
-      1.6990982271996864,
-      -3.442007832613002
+      2.154821805162822,
+      -4.2059838638718965
     ],
     "D": [
-      0.9685051794545666,
+      0.9247248574184207,
       -0.1
     ],
     "A": [
-      2.507471625019915,
+      2.4042540188492287,
       -5.0
     ]
   },
   "meta": {
-    "n_matches": 57,
+    "n_matches": 69,
     "source": "run_comparison",
     "draw_inflate": 1.01,
-    "deflate_away": 0.62,
+    "deflate_away": 1.0,
     "xg_enabled": false,
     "xg_brier_pass": false
   }

@@ -1,37 +1,24 @@
 {
-  "timestamp": "2026-06-08 20:29",
-  "model_version": "V5.4+V8.2",
-  "match": {
-    "date": "2026-06-27",
-    "opponent": "武汉三镇"
-  },
   "prediction": {
-    "tier": "B",
-    "pricing_tier": "S_B",
-    "predicted_quantity": 9200,
+    "predicted_quantity": 6395,
+    "dynamic_prediction": 6395,
+    "tier": "B->C",
     "context": {
-      "midseason_restart": true
-    },
-    "context_args": {
-      "derby": false,
-      "saturday": true,
-      "midweek": false,
-      "summer": false,
-      "late_season": false,
-      "match_year": "2026",
-      "away_winless": false,
-      "lost_bottom": false,
-      "heavy_home_loss": false,
-      "short_rest": false,
       "midseason_restart": true,
-      "season_opener": false
-    }
+      "saturday": true
+    },
+    "note": "动态分级C级预测(静态B级9200)"
   },
-  "optimization": {
-    "revenue_weight": 0.5,
-    "target_revenue": 2626285,
-    "target_quantity": 9086,
-    "base_prices": {
+  "prices": {
+    "actual": {
+      "T1": 170,
+      "T2": 230,
+      "T3": 320,
+      "T4": 460,
+      "T5": 620,
+      "T6": 1080
+    },
+    "S_B_base": {
       "T1": 160,
       "T2": 220,
       "T3": 300,
@@ -39,5 +26,70 @@
       "T5": 540,
       "T6": 1080
     }
+  },
+  "baseline": {
+    "predicted_quantity": 6732,
+    "predicted_revenue": 1349364,
+    "revenue_weight": 0.35,
+    "prices": {
+      "T1": 140,
+      "T2": 200,
+      "T3": 280,
+      "T4": 440,
+      "T5": 500,
+      "T6": 1030
+    },
+    "predicted_qtys": {
+      "T1": 3735,
+      "T2": 617,
+      "T3": 1641,
+      "T4": 104,
+      "T5": 581,
+      "T6": 51
+    },
+    "base_qtys": {
+      "T1": 3485,
+      "T2": 581,
+      "T3": 1592,
+      "T4": 102,
+      "T5": 581,
+      "T6": 51
+    }
+  },
+  "actual": {
+    "total_quantity": 6063,
+    "total_revenue": 1600740,
+    "quantities": {
+      "T1": 3140,
+      "T2": 730,
+      "T3": 1517,
+      "T4": 135,
+      "T5": 503,
+      "T6": 38
+    },
+    "revenues": {
+      "T1": 533800,
+      "T2": 167900,
+      "T3": 485440,
+      "T4": 60700,
+      "T5": 311860,
+      "T6": 41040
+    }
+  },
+  "original_capacities": {
+    "T1": 3794,
+    "T2": 3994,
+    "T3": 5310,
+    "T4": 463,
+    "T5": 2113,
+    "T6": 118
+  },
+  "expanded_capacities": {
+    "T1": 3794,
+    "T2": 3994,
+    "T3": 5310,
+    "T4": 1509,
+    "T5": 2113,
+    "T6": 118
   }
 }
