@@ -87,19 +87,41 @@ def get_actual(m):
             return get_adjusted_actual(mid, raw)
     return 0
 
+def _face_to_tier_map(md):
+    """按当场票名称面价从低到高映射 T1-T6。
+    票名称如"260元"→260。每场取所有面价升序，对应 T1(最低)..T6(最高)。
+    返回 {面价数字: 档位}。
+    """
+    import re as _re
+    faces = set()
+    for name in md["票名称"].dropna().unique():
+        mt = _re.search(r"(\d+)", str(name))
+        if mt:
+            faces.add(int(mt.group(1)))
+    faces = sorted(faces)
+    # 升序面价对应 T1..T6
+    tiers = ["T1", "T2", "T3", "T4", "T5", "T6"]
+    return {fc: tiers[i] for i, fc in enumerate(faces) if i < len(tiers)}
+
+
+def _parse_face(name):
+    import re as _re
+    mt = _re.search(r"(\d+)", str(name))
+    return int(mt.group(1)) if mt else None
+
+
 @st.cache_data(ttl=3600)
 def _get_zone_qtys(m):
     from src.pricing_v5 import get_zone_sections
     csl = _get_csl_parquet()
     if csl is None:
         return {}
-    year = m["date"][:4]
-    zm = {s: zt for zt, secs in get_zone_sections(year).items() for s in secs}
     for mid in csl["match_id"].unique():
         md = csl[csl["match_id"] == mid]
         if str(md["match_date"].iloc[0]).startswith(m["date"]):
             md = md.copy()
-            md["zt"] = md["section"].astype(str).map(zm)
+            f2t = _face_to_tier_map(md)
+            md["zt"] = md["票名称"].map(_parse_face).map(f2t)
             result = {}
             for zt in ZONE_TIERS:
                 result[zt] = int(md[md["zt"] == zt]["数量"].sum())
@@ -113,13 +135,12 @@ def _get_zone_actual_revenue(m):
     csl = _get_csl_parquet()
     if csl is None:
         return {}
-    year = m["date"][:4]
-    zm = {s: zt for zt, secs in get_zone_sections(year).items() for s in secs}
     for mid in csl["match_id"].unique():
         md = csl[csl["match_id"] == mid]
         if str(md["match_date"].iloc[0]).startswith(m["date"]):
             md = md.copy()
-            md["zt"] = md["section"].astype(str).map(zm)
+            f2t = _face_to_tier_map(md)
+            md["zt"] = md["票名称"].map(_parse_face).map(f2t)
             result = {}
             for zt in ZONE_TIERS:
                 result[zt] = float(md[md["zt"] == zt]["实际支付价格"].sum())
@@ -137,20 +158,14 @@ def _get_zone_face_revenue(m):
     csl = _get_csl_parquet()
     if csl is None:
         return {}
-    year = m["date"][:4]
-    zm = {s: zt for zt, secs in get_zone_sections(year).items() for s in secs}
     for mid in csl["match_id"].unique():
         md = csl[csl["match_id"] == mid]
         if str(md["match_date"].iloc[0]).startswith(m["date"]):
             md = md.copy()
-            md["zt"] = md["section"].astype(str).map(zm)
-            # Parse face unit price from 票价信息
-            def _face_unit(price_str):
-                try:
-                    return float(str(price_str).split('*')[0])
-                except (ValueError, IndexError):
-                    return 0.0
-            md["face_unit"] = md["票价信息"].apply(_face_unit)
+            f2t = _face_to_tier_map(md)
+            md["zt"] = md["票名称"].map(_parse_face).map(f2t)
+            # 票面收入 = 票名称面价 × 数量
+            md["face_unit"] = md["票名称"].map(_parse_face)
             md["face_revenue"] = md["face_unit"] * md["数量"]
             result = {}
             for zt in ZONE_TIERS:
