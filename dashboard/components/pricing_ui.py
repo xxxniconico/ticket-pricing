@@ -289,24 +289,29 @@ def render_what_if(r, opp):
     mult = WHATIF_SCENARIOS.get(scenario)
     is_custom = mult is None
 
+    optimizer = get_optimizer()
     col1, col2 = st.columns(2)
     sliders = {}
+    inv_inputs = {}
     with col1:
         for zt in ["T1", "T2", "T3"]:
             base = r.tiers[zt].base_price
             lo, hi = max(40, int(base * 0.6 / 10) * 10), int(base * 1.3 / 10) * 10
             val = int(base * mult / 10) * 10 if not is_custom else int(base / 10) * 10
             sliders[zt] = st.slider(f"{zt} 价格", lo, hi, max(lo, min(hi, val)), 10, key=f"wiz_{zt}_{opp}")
+            cap0 = int(optimizer.capacities.get(zt, 0))
+            inv_inputs[zt] = st.number_input(f"{zt} 开放库存", min_value=0, value=cap0, step=50, key=f"inv_{zt}_{opp}")
     with col2:
         for zt in ["T4", "T5", "T6"]:
             base = r.tiers[zt].base_price
             lo, hi = max(30, int(base * 0.6 / 10) * 10), int(base * 1.3 / 10) * 10
             val = int(base * mult / 10) * 10 if not is_custom else int(base / 10) * 10
             sliders[zt] = st.slider(f"{zt} 价格", lo, hi, max(lo, min(hi, val)), 10, key=f"wiz_{zt}_{opp}")
+            cap0 = int(optimizer.capacities.get(zt, 0))
+            inv_inputs[zt] = st.number_input(f"{zt} 开放库存", min_value=0, value=cap0, step=50, key=f"inv_{zt}_{opp}")
 
     # Recalc with optimizer's elasticity matrix
     opp_level = r.opponent_level
-    optimizer = get_optimizer()
     eps = optimizer.elasticity[opp_level]
 
     rows = ""
@@ -323,7 +328,8 @@ def render_what_if(r, opp):
         ep = eps.get(zt, 0.25)
         price_ratio = mp / bp if bp > 0 else 1
         mq = adj_bq * (price_ratio ** (-ep)) if abs(ep) >= 0.001 else adj_bq
-        mq = max(0, min(mq, optimizer.capacities[zt]))
+        cap_zt = inv_inputs.get(zt, optimizer.capacities[zt])
+        mq = max(0, min(mq, cap_zt))
         if mp < bp:
             mq = max(mq, adj_bq)
         mrev = mp * mq
@@ -372,7 +378,7 @@ def render_what_if(r, opp):
       <span style="color:#ff6b6b">乐观 ¥{rev_high:.0f}万</span>
     </div>""", unsafe_allow_html=True)
 
-    return sliders
+    return sliders, inv_inputs
 
 
 def load_pricing_decisions():
@@ -384,7 +390,7 @@ def load_pricing_decisions():
     return {'decisions': []}
 
 
-def save_pricing_decision(match_date, opponent, prices, note, model_version="V5.4+V8.2"):
+def save_pricing_decision(match_date, opponent, prices, note, inventory=None, model_version="V5.4+V8.2"):
     """持久化定价决策 — 同场覆盖，不重复。"""
     data = load_pricing_decisions()
     entry = {
@@ -392,6 +398,7 @@ def save_pricing_decision(match_date, opponent, prices, note, model_version="V5.
         'model_version': model_version,
         'match': {'date': match_date, 'opponent': opponent},
         'prices': {zt: int(prices[zt]) for zt in ZONE_TIERS},
+        'inventory': {zt: int(inventory[zt]) for zt in ZONE_TIERS} if inventory else {},
         'note': note,
     }
     # 覆盖同场旧记录
@@ -407,7 +414,7 @@ def save_pricing_decision(match_date, opponent, prices, note, model_version="V5.
         json.dump(data, f, ensure_ascii=False, indent=2)
 
 
-def save_snapshot(match_date, opponent, pred, pred_args, result, baseline_result=None, model_version="V5.4+V8.2"):
+def save_snapshot(match_date, opponent, pred, pred_args, result, baseline_result=None, inventory=None, model_version="V5.4+V8.2"):
     """保存赛前预测快照 — 同场覆盖。
     
     Args:
@@ -432,6 +439,7 @@ def save_snapshot(match_date, opponent, pred, pred_args, result, baseline_result
             'predicted_qtys': {zt: int(result.tiers[zt].predicted_qty) for zt in ZONE_TIERS},
             'base_qtys': {zt: int(result.tiers[zt].base_qty) for zt in ZONE_TIERS},
         },
+        'manual_inventory': {zt: int(inventory[zt]) for zt in ZONE_TIERS} if inventory else {},
     }
     # 保存基准预测（用于赛后反事实对比）
     if baseline_result is not None:
@@ -458,8 +466,8 @@ def save_snapshot(match_date, opponent, pred, pred_args, result, baseline_result
     return snap_path
 
 
-def render_pricing_confirm(r, opp, match_date, pred, pred_args, sandbox_sliders):
-    """定价确认 + 快照：复用沙盒滑块值，持久化决策和预测状态。"""
+def render_pricing_confirm(r, opp, match_date, pred, pred_args, sandbox_sliders, sandbox_inventory=None):
+    """定价确认 + 快照：复用沙盒滑块值和库存输入，持久化决策和预测状态。"""
     st.divider()
     st.markdown("**定价确认 · 快照**")
 
@@ -486,7 +494,7 @@ def render_pricing_confirm(r, opp, match_date, pred, pred_args, sandbox_sliders)
     with c1:
         label = "更新定价决策" if existing else "确认定价 · 记录决策"
         if st.button(label, key=f"btn_confirm_{opp}", use_container_width=True):
-            save_pricing_decision(match_date, opp, prices, note)
+            save_pricing_decision(match_date, opp, prices, note, inventory=sandbox_inventory)
             st.success(f"已{'更新' if existing else '记录'} {opp} 定价决策")
             st.rerun()
     with c2:
@@ -507,10 +515,13 @@ def render_pricing_confirm(r, opp, match_date, pred, pred_args, sandbox_sliders)
                 from src.classify import classify_opponent_tier
                 dyn_tier = classify_opponent_tier(opp, match_date=match_date)
             r_baseline = optimizer.optimize(opp, match_date=match_date, opponent_tier_override=dyn_tier, **pred_args)
-            save_snapshot(match_date, opp, pred, pred_args, r, baseline_result=r_baseline)
+            save_snapshot(match_date, opp, pred, pred_args, r, baseline_result=r_baseline, inventory=sandbox_inventory)
             st.success(f"快照已{'更新' if snap_path.exists() else '保存'}: {snap_path.name}")
 
     price_tags = " · ".join(f"{zt} ¥{prices[zt]:,}" for zt in ZONE_TIERS)
     st.caption(f"当前生效: {price_tags}")
+    if sandbox_inventory:
+        inv_tags = " · ".join(f"{zt} {sandbox_inventory[zt]:,}" for zt in ZONE_TIERS)
+        st.caption(f"开放库存: {inv_tags}")
 
 
