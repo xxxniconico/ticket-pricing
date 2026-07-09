@@ -5,12 +5,15 @@ import streamlit as st
 
 from dashboard.common.brand import team_crest_html
 from dashboard.common.constants import TIER_COLORS
-from dashboard.common.data_cache import _get_zone_actual_revenue, _get_zone_qtys, get_optimizer
+from dashboard.common.data_cache import _get_zone_actual_revenue, _get_zone_face_revenue, _get_zone_qtys, get_optimizer
 from dashboard.components.ctx_builder import build_pred_args
 from dashboard.components.pricing_ui import render_pricing_table, render_strategy_card
 from src.classify import DERBY_RIVALS, classify_opponent_tier
 from src.pricing_v5 import ZONE_TIERS, build_price_matrix, get_pricing_tier
 from src.rule_engine import update as rule_update
+import json
+from pathlib import Path
+ROOT = Path(__file__).resolve().parent.parent.parent
 
 # ══════════════════════════════════════════════════════════
 #  Tab 2: 历史定价
@@ -42,6 +45,19 @@ def render_mae_chart(home_preds):
     </div>"""
     st.markdown(bars, unsafe_allow_html=True)
 
+def _load_decisions():
+    """加载定价决策，返回 {date_opp: decision_dict} 映射。"""
+    f = ROOT / 'data' / 'processed' / 'pricing_decisions.json'
+    if not f.exists():
+        return {}
+    with open(f) as fh:
+        data = json.load(fh)
+    lookup = {}
+    for d in data.get('decisions', []):
+        key = f"{d['match']['date']}_{d['match']['opponent']}"
+        lookup[key] = d
+    return lookup
+
 def render_history_expanders(home_preds, guoan_matches):
     if not home_preds:
         st.info("暂无已赛主场数据")
@@ -65,6 +81,7 @@ def render_history_expanders(home_preds, guoan_matches):
 
     optimizer = get_optimizer()
     _pm = build_price_matrix()
+    decisions = _load_decisions()
 
     for i, (m, p, a, ctx) in enumerate(home_preds):
         opp = m["opponent"]
@@ -84,7 +101,7 @@ def render_history_expanders(home_preds, guoan_matches):
 
         # Load actual data first, then render strategy card with vs-actual comparison
         zone_qty = _get_zone_qtys(m)
-        zone_rev = _get_zone_actual_revenue(m)
+        zone_rev = _get_zone_face_revenue(m)  # 票面收入（面值×销量），消除折扣偏差
         total_actual_qty = 0
         total_actual_rev = 0
 
@@ -103,6 +120,12 @@ def render_history_expanders(home_preds, guoan_matches):
         # Strategy card with vs-actual data (dynamic linkage)
         strat_label, rw = render_strategy_card(r_h, pred_args,
             actual_revenue=total_actual_rev, actual_attendance=total_actual_qty)
+
+        # Load actual pricing decision for this match
+        dec_key = f"{m['date']}_{opp}"
+        decision = decisions.get(dec_key, {})
+        actual_prices = decision.get('prices', {})
+        decision_note = decision.get('note', '')
 
         # Build pricing table HTML: 决策质量优先（Δ = 场景 vs 基准预测）
         r_html = ""
@@ -123,10 +146,13 @@ def render_history_expanders(home_preds, guoan_matches):
             # 实际数据（纯参考）
             actual_z = zone_qty.get(zt, 0)
             actual_rev_z = zone_rev.get(zt, 0)
+            act_p = actual_prices.get(zt)
+            act_p_str = f'¥{act_p:,.0f}' if act_p else '<span style="color:#62666d">—</span>'
             r_html += (
                 f'<tr><td>{zt}</td>'
                 f'<td>¥{tr.base_price:,.0f}</td>'
                 f'<td>¥{tr.optimal_price:,.0f} {dp_s}</td>'
+                f'<td>{act_p_str}</td>'
                 f'<td style="color:#62666d">{qty_base_z:,.0f}</td>'
                 f'<td style="color:#f7f8f8">{qty_opt_z:,.0f}</td>'
                 f'<td style="color:{qty_delta_color};font-family:JetBrains Mono,ui-monospace">{qty_delta_z:+,.0f}</td>'
@@ -144,7 +170,7 @@ def render_history_expanders(home_preds, guoan_matches):
         rev_delta_t_color = "#ff6b6b" if rev_delta_total > 0 else "#51cf66" if rev_delta_total < 0 else "#8a8f98"
         r_html += (
             f'<tr style="border-top:1px solid rgba(255,255,255,0.08);font-weight:510">'
-            f'<td colspan="3" style="color:#8a8f98">合计</td>'
+            f'<td colspan="4" style="color:#8a8f98">合计</td>'
             f'<td style="color:#62666d">{r_h.base_attendance:,.0f}</td>'
             f'<td style="color:#f7f8f8">{r_h.total_attendance:,.0f}</td>'
             f'<td style="color:{qty_delta_t_color};font-family:JetBrains Mono,ui-monospace">{qty_delta_total:+,.0f}</td>'
@@ -156,7 +182,7 @@ def render_history_expanders(home_preds, guoan_matches):
         )
 
         st.markdown(f"""<div class="table-scroll"><table class="history-table">
-          <thead><tr><th>档位</th><th>基准价</th><th>优化价</th><th>基准量</th><th>场景量</th><th>Δ量</th><th>场景收入</th><th>Δ收入</th><th>实际量</th><th>实际收入</th></tr></thead>
+          <thead><tr><th>档位</th><th>基准价</th><th>优化价</th><th>实际执行价</th><th>基准量</th><th>场景量</th><th>Δ量</th><th>场景收入</th><th>Δ收入</th><th>实际量</th><th>实际收入</th></tr></thead>
           <tbody>{r_html}</tbody>
         </table></div>""", unsafe_allow_html=True)
 
@@ -205,13 +231,20 @@ def render_history_expanders(home_preds, guoan_matches):
         base_qty_dev_audit = (r_h.base_attendance or 0) - total_actual_qty
         base_rev_dev_audit = (r_h.base_revenue or 0) - total_actual_rev
 
+        # Build actual pricing summary for audit card
+        act_price_summary = ""
+        if actual_prices:
+            act_parts = [f"{zt} ¥{actual_prices[zt]:,}" for zt in ZONE_TIERS if zt in actual_prices]
+            act_price_summary = f"实际执行价：{' · '.join(act_parts)}<br>"
+            if decision_note:
+                act_price_summary += f"备注：{decision_note}<br>"
         st.markdown(f"""<div style="padding:8px 12px;margin:4px 0;background:{audit_bg};border:1px solid {audit_border};border-radius:6px;font-size:0.72rem;color:{audit_color}">
           <strong>{opp} 策略审计（决策质量）</strong><br>
           策略模式：{strat_label}（rw={rw:.0%} aw={r_h.attendance_weight:.0%}）<br>
           优化效应：场景 ¥{r_h.total_revenue/10000:.1f}万 vs 基准 ¥{(r_h.base_revenue or 0)/10000:.1f}万（{rev_delta_total/10000:+.1f}万）<br>
           数量效应：场景 {r_h.total_attendance:,.0f}张 vs 基准 {(r_h.base_attendance or 0):.0f}张（{qty_delta_total:+,.0f}张）<br>
           预测偏差：基准 {base_qty_dev_audit:+,.0f}张 · 实际到场 {total_actual_qty:,} · 实际收入 ¥{total_actual_rev/10000:.1f}万<br>
-          判断：{audit_judgment}
+          {act_price_summary}判断：{audit_judgment}
         </div>""", unsafe_allow_html=True)
 
         # V8.1: EMA赛后校准 — 每场已赛主场更新校准因子

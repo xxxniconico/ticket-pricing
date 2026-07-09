@@ -30,7 +30,7 @@ def render_tab1(target_match, home_preds, guoan_matches, standings, mae, use_dyn
             tier = classify_opponent_tier(opp)
     else:
         tier = classify_opponent_tier(opp)
-    pt = get_pricing_tier(opp)
+    pt = get_pricing_tier(opp, match_date=target_match["date"])
 
     crest_html = team_crest_html(opp, "lg")
     derby_class = "derby-match" if opp in DERBY_RIVALS else ""

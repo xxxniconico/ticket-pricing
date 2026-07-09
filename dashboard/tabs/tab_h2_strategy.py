@@ -8,7 +8,7 @@ import streamlit as st
 
 from dashboard.common.brand import team_crest_html
 from dashboard.common.constants import DEDUCTIONS
-from dashboard.common.data_cache import _get_zone_actual_revenue, get_ctx_rounds, get_optimizer
+from dashboard.common.data_cache import _get_zone_actual_revenue, _get_zone_face_revenue, get_ctx_rounds, get_optimizer
 from dashboard.components.ctx_builder import build_pred_args
 from dashboard.components.prediction_detail import render_prediction_detail
 from dashboard.components.pricing_ui import render_strategy_card
@@ -40,7 +40,7 @@ def _h2_actual_revenue(match_date, opponent, guoan_matches):
         if not m.get("completed") or not m.get("is_home"):
             continue
         if m["date"] == match_date and m["opponent"] == opponent:
-            zone_rev = _get_zone_actual_revenue(m)
+            zone_rev = _get_zone_face_revenue(m)  # 票面收入
             return sum(zone_rev.values()) if zone_rev else None
     return None
 
@@ -163,7 +163,7 @@ def render_h2_strategy(guoan_matches, standings, mae=0):
         st.divider()
         st.markdown("**下一场盯盘**")
         tier = classify_opponent_tier(next_home["opponent"], match_date=next_home["date"])
-        pt = get_pricing_tier(next_home["opponent"])
+        pt = get_pricing_tier(next_home["opponent"], match_date=next_home["date"])
         prices = pm[pt]
         ctx_str = "+".join([k for k, v in ctx.items() if v]) or "无触发"
         gap_str = f'<span style="color:{"#51cf66" if live_gap >= 0 else "#ff6b6b"}">¥{live_gap/1e4:+.1f}万</span>' if next_target else "—"
