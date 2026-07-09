@@ -276,7 +276,30 @@ def render_pricing_table(r):
     </table>""", unsafe_allow_html=True)
     st.caption("情景推演未经验证 · 实际定价请结合实时预售数据")
 
-def render_what_if(r, opp):
+def get_prev_match_inventory(match_date):
+    """读取上一主场快照的 manual_inventory 作为本场库存起始值。
+    库存继承链：每场输入的库存赛后成为下一场的起始库存。
+    找不到则返回 None（回退到 optimizer 默认容量）。
+    """
+    snap_dir = ROOT / 'data' / 'snapshots'
+    if not snap_dir.exists():
+        return None
+    # 收集所有 pre_ 快照, 取 match_date 严格早于本场的最近一场
+    best_date, best_inv = None, None
+    for p in snap_dir.glob('pre_*.json'):
+        try:
+            snap = json.load(open(p, encoding='utf-8'))
+            d = snap.get('match', {}).get('date', '')
+            inv = snap.get('manual_inventory', {})
+            if d and d < match_date and inv:
+                if best_date is None or d > best_date:
+                    best_date, best_inv = d, inv
+        except Exception:
+            continue
+    return best_inv
+
+
+def render_what_if(r, opp, match_date=None):
     st.divider()
     st.markdown("**What-If 沙盒 | 手动调价测试**")
     scenario_keys = list(WHATIF_SCENARIOS.keys())
@@ -290,6 +313,9 @@ def render_what_if(r, opp):
     is_custom = mult is None
 
     optimizer = get_optimizer()
+    prev_inv = get_prev_match_inventory(match_date) if match_date else None
+    if prev_inv:
+        st.caption(f"📦 库存起始值继承自上一主场（可手动调整）")
     col1, col2 = st.columns(2)
     sliders = {}
     inv_inputs = {}
@@ -299,7 +325,7 @@ def render_what_if(r, opp):
             lo, hi = max(40, int(base * 0.6 / 10) * 10), int(base * 1.3 / 10) * 10
             val = int(base * mult / 10) * 10 if not is_custom else int(base / 10) * 10
             sliders[zt] = st.slider(f"{zt} 价格", lo, hi, max(lo, min(hi, val)), 10, key=f"wiz_{zt}_{opp}")
-            cap0 = int(optimizer.capacities.get(zt, 0))
+            cap0 = int(prev_inv.get(zt)) if prev_inv and prev_inv.get(zt) else int(optimizer.capacities.get(zt, 0))
             inv_inputs[zt] = st.number_input(f"{zt} 开放库存", min_value=0, value=cap0, step=50, key=f"inv_{zt}_{opp}")
     with col2:
         for zt in ["T4", "T5", "T6"]:
@@ -307,7 +333,7 @@ def render_what_if(r, opp):
             lo, hi = max(30, int(base * 0.6 / 10) * 10), int(base * 1.3 / 10) * 10
             val = int(base * mult / 10) * 10 if not is_custom else int(base / 10) * 10
             sliders[zt] = st.slider(f"{zt} 价格", lo, hi, max(lo, min(hi, val)), 10, key=f"wiz_{zt}_{opp}")
-            cap0 = int(optimizer.capacities.get(zt, 0))
+            cap0 = int(prev_inv.get(zt)) if prev_inv and prev_inv.get(zt) else int(optimizer.capacities.get(zt, 0))
             inv_inputs[zt] = st.number_input(f"{zt} 开放库存", min_value=0, value=cap0, step=50, key=f"inv_{zt}_{opp}")
 
     # Recalc with optimizer's elasticity matrix

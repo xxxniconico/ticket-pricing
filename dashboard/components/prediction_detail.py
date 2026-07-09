@@ -192,6 +192,6 @@ def render_prediction_detail(target_match, guoan_matches, standings, mae, key_pr
         note = ovr.get("note", "")
         if note:
             st.info(f"定价说明：{note}")
-    sandbox_sliders, sandbox_inventory = render_what_if(r, opp)
+    sandbox_sliders, sandbox_inventory = render_what_if(r, opp, match_date=target_match["date"])
     render_pricing_confirm(r, opp, target_match["date"], pred, pred_args, sandbox_sliders, sandbox_inventory)
     return pred, r
