@@ -1,0 +1,147 @@
+{
+  "timestamp": "2026-06-28 23:38",
+  "model_version": "V5.4+V8.2",
+  "match": {
+    "date": "2026-07-04",
+    "opponent": "山东泰山"
+  },
+  "prediction": {
+    "predicted_quantity": 12607,
+    "tier": "A"
+  },
+  "context": {
+    "derby": true,
+    "saturday": true,
+    "summer": true,
+    "match_year": "2026"
+  },
+  "optimization": {
+    "revenue_weight": 0.75,
+    "target_revenue": 5993720,
+    "target_quantity": 13131,
+    "prices": {
+      "T1": 260,
+      "T2": 340,
+      "T3": 440,
+      "T4": 580,
+      "T5": 780,
+      "T6": 1380
+    }
+  },
+  "baseline": {
+    "predicted_quantity": 12424,
+    "predicted_revenue": 5363062,
+    "revenue_weight": 0.75,
+    "prices": {
+      "T1": 260,
+      "T2": 340,
+      "T3": 440,
+      "T4": 580,
+      "T5": 780,
+      "T6": 1380
+    },
+    "predicted_qtys": {
+      "T1": 3764,
+      "T2": 2901,
+      "T3": 3584,
+      "T4": 1177,
+      "T5": 927,
+      "T6": 70
+    },
+    "base_qtys": {
+      "T1": 3794,
+      "T2": 2929,
+      "T3": 3647,
+      "T4": 1182,
+      "T5": 984,
+      "T6": 70
+    }
+  },
+  "note": "仅含主队可定价票(不含客队126/127区)。复盘13,809张含客队票，看板12,932张为主队净票。",
+  "postmortem": {
+    "method": "手工分解：库存重组 + 调价效应",
+    "actual": {
+      "quantity": 13809,
+      "revenue": 5827000,
+      "note": "含客队票"
+    },
+    "actual_home_only": {
+      "quantity": 12932,
+      "revenue": 5442660,
+      "note": "仅主队可定价票"
+    },
+    "decomposition": {
+      "inventory_restructure": {
+        "qty_delta": 834,
+        "rev_delta": 557000,
+        "pct": 61
+      },
+      "pricing_adjustment": {
+        "qty_delta": -175,
+        "rev_delta": 355000,
+        "pct": 39
+      },
+      "total": {
+        "qty_delta": 659,
+        "rev_delta": 912000
+      }
+    },
+    "three_scenarios": {
+      "prediction": {
+        "label": "看板预测（执行价+新库存）",
+        "qty": 13131,
+        "rev": 5994000,
+        "avg_price": 456
+      },
+      "actual": {
+        "label": "实际（执行价+新库存）",
+        "qty": 12954,
+        "rev": 5458000,
+        "avg_price": 421
+      },
+      "counterfactual": {
+        "label": "反事实（S_A基价+原库存）",
+        "qty": 12977,
+        "rev": 5083000,
+        "avg_price": 392
+      },
+      "strategy_contribution": 375000
+    }
+  },
+  "actual": {
+    "total_quantity": 12932,
+    "total_revenue": 5442660,
+    "quantities": {
+      "T1": 3761,
+      "T2": 3871,
+      "T3": 3410,
+      "T4": 143,
+      "T5": 1665,
+      "T6": 82
+    },
+    "revenues": {
+      "T1": 977860,
+      "T2": 1393560,
+      "T3": 1636560,
+      "T4": 82860,
+      "T5": 1230460,
+      "T6": 121360
+    }
+  },
+  "original_capacities": {
+    "T1": 3794,
+    "T2": 3994,
+    "T3": 5310,
+    "T4": 463,
+    "T5": 2113,
+    "T6": 118
+  },
+  "expanded_capacities": {
+    "T1": 3794,
+    "T2": 3994,
+    "T3": 5310,
+    "T4": 1509,
+    "T5": 2113,
+    "T6": 118
+  }
+}
