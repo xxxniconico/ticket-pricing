@@ -530,7 +530,8 @@ def render_pricing_confirm(r, opp, match_date, pred, pred_args, sandbox_sliders,
             # 计算基准预测（无策略调整的反事实基线）
             optimizer = get_optimizer()
             from src.opponent_rating import get_opponent_scorecard, load_elo_history
-            from src.csl_context import load_csl_data, build_standings_2026
+            from src.csl_context import load_csl_data
+            from dashboard.common.data_cache import build_standings_2026
             try:
                 elo = load_elo_history()
                 all_m, rounds_m, _ = load_csl_data()
