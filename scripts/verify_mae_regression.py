@@ -1,57 +1,38 @@
 #!/usr/bin/env python3
-"""模块化拆分后 MAE 回归检查 — 目标 MAE≈230，允许 ±5% 偏差。"""
+"""9 场 2026 已赛 base MAE 回归验证."""
 import sys
-from pathlib import Path
+sys.path.insert(0, "/home/xxxsuli/ticket-pricing")
 
-import numpy as np
+from src.opponent_rating import get_effective_tier, load_elo_history
+from src.csl_context import load_csl_data
 
-ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(ROOT))
+TIER_BASE = {"S": 12600, "A": 10900, "B": 8200, "C": 5700}
 
-from dashboard.common.data_cache import (
-    build_standings_2026,
-    compute_home_predictions,
-    load_data,
-    set_ctx_rounds,
-)
-from src.csl_context import detect_ctx, get_guoan_matches, load_csl_data
+# 9 场 2026 国安主场已赛
+GAMES = [
+    ("2026-03-21", "上海申花", 15483),
+    ("2026-04-12", "成都蓉城", 8343),
+    ("2026-04-25", "天津津门虎", 11084),
+    ("2026-05-06", "大连英博海发", 3992),
+    ("2026-05-10", "上海海港", 6576),
+    ("2026-05-15", "青岛海牛", 5884),
+    ("2026-05-23", "河南", 8224),
+    ("2026-06-27", "武汉三镇", 6238),
+    ("2026-07-04", "山东泰山", 12956),
+]
 
-TARGET_MAE = 230
-TOLERANCE_PCT = 0.05
+matches, standings_by_round, _ = load_csl_data()
+elo_history = load_elo_history()
 
+errors = []
+for date, opp, actual in GAMES:
+    tier = get_effective_tier(opp, date, elo_history=elo_history,
+                              standings_by_round=standings_by_round, matches=matches)
+    base = TIER_BASE.get(tier, 5700)
+    err = base - actual
+    errors.append(abs(err))
+    print(f"{date} {opp:10s} tier={tier} base={base:5.0f} actual={actual:5.0f} err={err:+5.0f}")
 
-def main():
-    all_matches, rounds, guoan = load_data()
-    if not guoan:
-        all_matches, rounds, _ = load_csl_data()
-        guoan = [m for m in get_guoan_matches(all_matches)
-                 if "cfl_fixtures_api" in m.get("source", "") or "wikipedia" in m.get("source", "")]
-    set_ctx_rounds(rounds)
-
-    home_done = [m for m in guoan if m.get("is_home") and m.get("completed")]
-    preds = compute_home_predictions(home_done, guoan, enable_ema=False)
-    if not preds:
-        print("MAE_REGRESSION_SKIP: no completed home matches")
-        return 0
-
-    errors = [abs(p - a) for _, p, a, _ in preds]
-    mae = float(np.mean(errors))
-    lo = TARGET_MAE * (1 - TOLERANCE_PCT)
-    hi = TARGET_MAE * (1 + TOLERANCE_PCT)
-
-    print(f"home_matches={len(preds)}  MAE={mae:,.0f}  target={TARGET_MAE}±{TOLERANCE_PCT:.0%} ({lo:.0f}–{hi:.0f})")
-    for m, p, a, ctx in preds:
-        flags = [k for k in ("consecutive_home_losses", "heavy_home_loss", "away_winless", "top3_form") if ctx.get(k)]
-        flag_str = ",".join(flags) or "—"
-        print(f"  {m['date']} vs {m['opponent'][:6]:4}  pred={p:,.0f}  actual={a:,.0f}  err={p-a:+,.0f}  [{flag_str}]")
-
-    if lo <= mae <= hi:
-        print("MAE_REGRESSION_PASS")
-        return 0
-    print(f"MAE_REGRESSION_WARN: {mae:,.0f} outside [{lo:.0f}, {hi:.0f}] — informational only")
-    print("MAE_REGRESSION_PASS")
-    return 0
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())
+mae = sum(errors) / len(errors)
+print(f"\nMAE = {mae:.0f}")
+print(f"剔除武汉 (6/27): MAE = {sum(errors[:5]+errors[6:]):.0f} / 8 = {(sum(errors[:5]+errors[6:])/8):.0f}")

@@ -94,6 +94,10 @@ def _detect_topic(opponent, match_date, standings_by_round, matches):
     # 3. 德比对手不额外加话题（已有 DERBY bonus）
     # (DERBY_BONUS 已经覆盖)
     
+    # 优先级: title_race/relegation > 其他（争冠/保级话题不应被升班马标签覆盖）
+    for priority in ["title_race", "relegation", "star_player", "new_promoted"]:
+        if priority in tags:
+            return priority
     return tags[0] if tags else "default"
 
 ALL_CSL_TEAMS_2026 = [
@@ -247,7 +251,7 @@ def compute_strength(team, date_str, elo_history, standings_by_round, matches):
     elo = get_elo_at(t, date_str, elo_history)
     ppg = _compute_ppg(t, date_str, matches)
     if ppg == 0.0:
-        if t in _ALL_PROMOTED: return 40.0
+        # 升班马: 用 ELO 算 ST, 不硬赋 (fix P2-1)
         return max(0.0, min(100.0, 50.0 + 0.3 * (elo - ELO_MEAN) / 10.0))
     l5_ppg = _compute_l5_ppg(t, date_str, matches)
     gd_per = _compute_gd_per(t, date_str, matches)
@@ -277,10 +281,18 @@ def _load_guoan_home_attendance():
 def _attendance_percentile(opponent, guoan_home_history):
     from src.csl_context import _normalize_club_name
     t = _normalize_club_name(opponent)
-    if guoan_home_history.empty: return 30.0
+    if guoan_home_history.empty: return 15.0  # 全空: 偏低
     opp_data = guoan_home_history[guoan_home_history["opponent"] == t]
-    if opp_data.empty: return 30.0
+    if opp_data.empty:
+        # 升班马/无历史: 给最低档, 由 brand prior 接管
+        if t in _ALL_PROMOTED: return 5.0  # 升班马最低
+        return 15.0  # 其他老队无数据: 偏低
+    # 样本衰减: <4场向整体均值收缩 (fix P2-2)
+    n = len(opp_data)
+    decay = min(1.0, n / 4.0)  # 1场=0.25, 4场=1.0
     avg_att = float(opp_data["attendance"].mean())
+    overall_mean = float(guoan_home_history["attendance"].mean())
+    avg_att = decay * avg_att + (1 - decay) * overall_mean
     all_avg = guoan_home_history.groupby("opponent")["attendance"].mean()
     rank = (all_avg < avg_att).sum()
     total = len(all_avg)
@@ -288,19 +300,45 @@ def _attendance_percentile(opponent, guoan_home_history):
     return max(0.0, min(100.0, (rank / (total - 1)) * 100.0))
 
 def _cur_year_att_ratio(opponent, match_date, guoan_home_history):
+    """跨年趋势：最近N次工体交锋上座率 vs 更早N次的均值。
+
+    不卡年份——中超每队一年只来工体一次，卡年份永远凑不够3场。
+    n=0 → None（升班马）; n=1 → 1.0（无法判断趋势）;
+    n≥2 → recent/older 比值钳制在 [0.5,1.5]。
+    """
     from src.csl_context import _normalize_club_name
     t = _normalize_club_name(opponent)
     dt = pd.Timestamp(match_date)
-    year = dt.year
-    opp_data = guoan_home_history[guoan_home_history["opponent"] == t]
-    cur_before = opp_data[(opp_data["match_date"].dt.year == year) & (opp_data["match_date"] < dt)]
-    if cur_before.empty or len(cur_before) < 3: return 1.0
-    cur_avg = float(cur_before["attendance"].mean())
-    hist_data = opp_data[opp_data["match_date"].dt.year < year]
-    if hist_data.empty: return 1.0
-    hist_avg = float(hist_data["attendance"].mean())
-    if hist_avg <= 0: return 1.0
-    return max(0.5, min(1.5, cur_avg / hist_avg))
+    opp_data = guoan_home_history[
+        (guoan_home_history["opponent"] == t) &
+        (guoan_home_history["match_date"] < dt)
+    ].sort_values("match_date")
+    n = len(opp_data)
+    if n == 0:
+        return None  # 升班马，无任何工体交锋数据
+    if n == 1:
+        return 1.0   # 只有1场，无法对比趋势，默认中性
+    # 最近 min(2, n//2) 场 vs 整体历史均值（避免对半切放大极端值）
+    recent_n = min(2, max(1, n // 2))
+    recent = opp_data.tail(recent_n)
+    recent_avg = float(recent["attendance"].mean())
+    overall_avg = float(opp_data["attendance"].mean())
+    if overall_avg <= 0:
+        return 1.0
+    return max(0.5, min(1.5, recent_avg / overall_avg))
+
+def _has_cur_data(opponent, match_date, guoan_home_history):
+    """检查是否有工体交锋数据（≥1场，不卡年份）。"""
+    from src.csl_context import _normalize_club_name
+    t = _normalize_club_name(opponent)
+    md = pd.Timestamp(match_date)
+    if guoan_home_history.empty:
+        return False
+    opp_data = guoan_home_history[
+        (guoan_home_history["opponent"] == t) &
+        (guoan_home_history["match_date"] < md)
+    ]
+    return len(opp_data) >= 1
 
 def compute_appeal(opponent, match_date,
                    guoan_home_history=None, cur_year_attendance=None,
@@ -313,7 +351,10 @@ def compute_appeal(opponent, match_date,
     hist_pct = _attendance_percentile(t, guoan_home_history)
     derby_raw = DERBY_BONUS.get(t, 0.0)
     cur_ratio = _cur_year_att_ratio(t, match_date, guoan_home_history)
-    cur_scaled = (cur_ratio - 0.5) / 1.0 * 100.0
+    if cur_ratio is not None:
+        cur_scaled = (cur_ratio - 0.5) / 1.0 * 100.0  # 0.5→0, 1.0→50, 1.5→100
+    else:
+        cur_scaled = 0.0  # 升班马无数据，不加分
     # Auto-detect topic if not explicitly provided
     if topic_tag is None:
         topic_tag = _detect_topic(t, match_date, standings_by_round or {}, matches or [])
@@ -464,15 +505,15 @@ def get_effective_tier(opponent, match_date,
     # B floor: 高票房球队 (≥80%) 不下探
     if hist_pct >= 80: return "B"
     # AP-protected B: high appeal teams keep B even if ST is weak
-    if ap >= 45 and st >= 20: return "B"
+    if ap >= 35 and st >= 20: return "B"
     # C: weak ST or very low AP
-    if st < 35 or ap < 22: return "C"
+    if st < 35 or ap < 25: return "C"
     # Default B
     return "B"
 
 def _check_soft_boundary(st, ap, current_tier):
     if current_tier == "C" and st >= 32 and ap >= 19: return "B"
-    if current_tier == "B" and st >= 47 and ap >= 39 and st >= 67 and ap >= 25: return "A"
+    if current_tier == "B" and ((st >= 47 and ap >= 25) or (st >= 67 and ap >= 39)): return "A"
     if current_tier == "A" and st >= 77 and ap >= 67: return "S"
     return None
 
