@@ -211,16 +211,24 @@ def render_opponent_analysis(all_matches):
     </table></div>""", unsafe_allow_html=True)
     st.caption("官方积分含 CFA 年初扣分处罚 · 近5场 W红 D黄 L绿 · 分级为动态引擎实时判定")
 
-    # ── 档位变更日志 ──
+    # ── 分级快照（按 ST 降序） ──
     st.divider()
-    st.caption("**档位变更日志**")
-    log_path = ROOT / "data/processed/tier_changes.json"
-    if log_path.exists():
-        with open(log_path) as f:
-            changes = json.load(f)
-        if changes:
-            log_df = pd.DataFrame(changes[-10:])
-            st.dataframe(log_df[["date", "team", "from", "to", "reason"]],
-                         hide_index=True, use_container_width=True)
-        else:
-            st.caption("暂无变更记录")
+    st.caption("**分级快照（动态引擎实时输出）**")
+    snap = sorted(cards, key=lambda c: -c["ST"])
+    snap_rows = ""
+    for c in snap:
+        t = c["tier"]
+        clr = TIER_COLORS.get(t, "#8a8f98")
+        snap_rows += (
+            "<tr>"
+            f"<td style='color:{clr};font-weight:510'>{t}</td>"
+            f"<td style='text-align:left'>{c['opponent']}</td>"
+            f"<td style='font-family:JetBrains Mono'>{c['ST']:.0f}</td>"
+            f"<td style='font-family:JetBrains Mono'>{c['AP']:.0f}</td>"
+            f"<td style='font-family:JetBrains Mono'>{c['elo']:.0f}</td>"
+            "</tr>"
+        )
+    st.markdown(f"""<table class="compact-table" style="max-width:550px">
+      <thead><tr><th>Tier</th><th style="text-align:left">球队</th><th>ST</th><th>AP</th><th>ELO</th></tr></thead>
+      <tbody>{snap_rows}</tbody>
+    </table>""", unsafe_allow_html=True)

@@ -1,58 +1,137 @@
 [
   {
-    "date": "2026-06-25",
-    "team": "天津津门虎",
-    "from": "A",
-    "to": "C",
-    "type": "static_diff",
-    "reason": "Dynamic vs static: A -> C"
-  },
-  {
-    "date": "2026-06-25",
+    "date": "2026-07-21",
     "team": "上海海港",
-    "from": "A",
-    "to": "B",
-    "type": "static_diff",
-    "reason": "Dynamic vs static: A -> B"
+    "tier": "A",
+    "ST": 48.4,
+    "AP": 24.0,
+    "ELO": 1562.7,
+    "reason": "ST=48 AP=24"
   },
   {
-    "date": "2026-06-25",
-    "team": "深圳新鹏城",
-    "from": "B",
-    "to": "C",
-    "type": "static_diff",
-    "reason": "Dynamic vs static: B -> C"
+    "date": "2026-07-21",
+    "team": "上海申花",
+    "tier": "S",
+    "ST": 70.2,
+    "AP": 47.3,
+    "ELO": 1598.8,
+    "reason": "ST=70 AP=47"
   },
   {
-    "date": "2026-06-25",
+    "date": "2026-07-21",
+    "team": "云南玉昆",
+    "tier": "B",
+    "ST": 40.1,
+    "AP": 36.4,
+    "ELO": 1479.7,
+    "reason": "ST=40 AP=36"
+  },
+  {
+    "date": "2026-07-21",
+    "team": "大连英博海发",
+    "tier": "C",
+    "ST": 45.8,
+    "AP": 21.2,
+    "ELO": 1485.3,
+    "reason": "ST=46 AP=21"
+  },
+  {
+    "date": "2026-07-21",
+    "team": "天津津门虎",
+    "tier": "A",
+    "ST": 33.9,
+    "AP": 41.3,
+    "ELO": 1448.9,
+    "reason": "ST=34 AP=41"
+  },
+  {
+    "date": "2026-07-21",
+    "team": "山东泰山",
+    "tier": "A",
+    "ST": 63.4,
+    "AP": 43.8,
+    "ELO": 1575.1,
+    "reason": "ST=63 AP=44"
+  },
+  {
+    "date": "2026-07-21",
+    "team": "成都蓉城",
+    "tier": "A",
+    "ST": 87.0,
+    "AP": 41.5,
+    "ELO": 1654.7,
+    "reason": "ST=87 AP=42"
+  },
+  {
+    "date": "2026-07-21",
     "team": "武汉三镇",
-    "from": "B",
-    "to": "C",
-    "type": "static_diff",
-    "reason": "Dynamic vs static: B -> C"
+    "tier": "C",
+    "ST": 19.1,
+    "AP": 26.9,
+    "ELO": 1444.6,
+    "reason": "ST=19 AP=27"
   },
   {
-    "date": "2026-06-25",
-    "team": "青岛西海岸",
-    "from": "B",
-    "to": "C",
-    "type": "static_diff",
-    "reason": "Dynamic vs static: B -> C"
+    "date": "2026-07-21",
+    "team": "河南",
+    "tier": "B",
+    "ST": 41.0,
+    "AP": 28.1,
+    "ELO": 1473.0,
+    "reason": "ST=41 AP=28"
   },
   {
-    "date": "2026-06-25",
+    "date": "2026-07-21",
+    "team": "浙江",
+    "tier": "B",
+    "ST": 44.1,
+    "AP": 28.3,
+    "ELO": 1494.9,
+    "reason": "ST=44 AP=28"
+  },
+  {
+    "date": "2026-07-21",
+    "team": "深圳新鹏城",
+    "tier": "C",
+    "ST": 31.9,
+    "AP": 30.1,
+    "ELO": 1410.5,
+    "reason": "ST=32 AP=30"
+  },
+  {
+    "date": "2026-07-21",
     "team": "辽宁铁人",
-    "from": "C",
-    "to": "B",
-    "type": "static_diff",
-    "reason": "Dynamic vs static: C -> B"
+    "tier": "C",
+    "ST": 39.3,
+    "AP": 24.1,
+    "ELO": 1443.9,
+    "reason": "ST=39 AP=24"
   },
   {
-    "date": "2026-06-25",
+    "date": "2026-07-21",
     "team": "重庆铜梁龙",
-    "from": "C",
-    "to": "B",
-    "type": "static_diff",
-    "reason": "Dynamic vs static: C -> B"
+    "tier": "C",
+    "ST": 50.5,
+    "AP": 24.6,
+    "ELO": 1496.0,
+    "reason": "ST=50 AP=25"
+  },
+  {
+    "date": "2026-07-21",
+    "team": "青岛海牛",
+    "tier": "C",
+    "ST": 25.6,
+    "AP": 9.3,
+    "ELO": 1423.9,
+    "reason": "ST=26 AP=9"
+  },
+  {
+    "date": "2026-07-21",
+    "team": "青岛西海岸",
+    "tier": "C",
+    "ST": 46.6,
+    "AP": 24.5,
+    "ELO": 1501.2,
+    "reason": "ST=47 AP=24"
   }
 ]
