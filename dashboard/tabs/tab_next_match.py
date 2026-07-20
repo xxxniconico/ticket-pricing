@@ -15,7 +15,7 @@ def render_tab1(target_match, home_preds, guoan_matches, standings, mae, use_dyn
     dt = pd.Timestamp(target_match["date"])
     
     # 获取动态分级数据
-    st_score = ap_score = 0
+    st_score = ap_score = 0; hist_n = hist_avg = 0
     st_sub = ap_sub = {}
     if use_dynamic:
         from src.opponent_rating import get_opponent_scorecard, load_elo_history
