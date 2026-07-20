@@ -170,7 +170,9 @@ def render_prediction_detail(target_match, guoan_matches, standings, mae, key_pr
     if override_path.exists():
         ovr = json.load(open(override_path)).get(opp, {})
     overrides = ovr.get("prices", {})
-    r = optimizer.optimize(opp, match_date=target_match["date"], strategy=strategy_mode, **pred_args)
+    from dashboard.components.pricing_ui import get_prev_match_inventory
+    prev_inv = get_prev_match_inventory(target_match["date"])
+    r = optimizer.optimize(opp, match_date=target_match["date"], strategy=strategy_mode, capacity_overrides=prev_inv, **pred_args)
     if overrides:
         for zt, p in overrides.items():
             if zt in r.tiers:
