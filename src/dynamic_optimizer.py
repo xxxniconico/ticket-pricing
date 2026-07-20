@@ -202,8 +202,8 @@ class DynamicPricingOptimizer:
         tier_baseline = {
             "S": {"T1":0.240,"T2":0.253,"T3":0.339},
             "A": {"T1":0.374,"T2":0.209,"T3":0.285},
-            "B": {"T1":0.520,"T2":0.102,"T3":0.262},
-            "C": {"T1":0.520,"T2":0.102,"T3":0.262},
+            "B": {"T1":0.430,"T2":0.130,"T3":0.280},
+            "C": {"T1":0.430,"T2":0.130,"T3":0.280},
         }
         # V9.1优先, 旧基线仅fallback
         opponent_share = self._opponent_share_baseline.get(opponent) if opp_tier == "S" else None
