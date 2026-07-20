@@ -201,9 +201,9 @@ class DynamicPricingOptimizer:
         # 4. 份额分配（V9.1: 票名称校准 + T4/T5扩容真实值 + 容量溢出）
         tier_baseline = {
             "S": {"T1":0.240,"T2":0.253,"T3":0.339},
-            "A": {"T1":0.374,"T2":0.209,"T3":0.285},
-            "B": {"T1":0.430,"T2":0.130,"T3":0.280},
-            "C": {"T1":0.430,"T2":0.130,"T3":0.280},
+            "A": {"T1":0.397,"T2":0.191,"T3":0.282},
+            "B": {"T1":0.514,"T2":0.102,"T3":0.260},
+            "C": {"T1":0.514,"T2":0.102,"T3":0.260},
         }
         # V9.1优先, 旧基线仅fallback
         opponent_share = self._opponent_share_baseline.get(opponent) if opp_tier == "S" else None
