@@ -30,6 +30,11 @@ def render_tab1(target_match, home_preds, guoan_matches, standings, mae, use_dyn
             ap_score = card["AP"]
             st_sub = card["components"]["ST_sub"]
             ap_sub = card["components"]["AP_sub"]
+            from src.opponent_rating import _load_guoan_home_attendance
+            hist_df = _load_guoan_home_attendance()
+            opp_hist = hist_df[hist_df["opponent"] == opp]
+            hist_n = len(opp_hist)
+            hist_avg = opp_hist["attendance"].mean() if hist_n > 0 else 0
         except Exception as e:
             st.warning(f"Dynamic tier failed: {e}")
             tier = classify_opponent_tier(opp)
