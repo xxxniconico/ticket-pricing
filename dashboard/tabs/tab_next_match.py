@@ -46,30 +46,6 @@ def render_tab1(target_match, home_preds, guoan_matches, standings, mae, use_dyn
       <span style="font-size:0.72rem;font-weight:590;color:{tier_color};background:{tier_color}22;
         padding:2px 8px;border-radius:4px;border:1px solid {tier_color}44">{tier}级</span>
     </div>""", unsafe_allow_html=True)
-
-    # 基值确认
-    if use_dynamic and st_score > 0:
-        from src.rule_engine import TIER_BASE
-        base = TIER_BASE.get(tier, 0)
-        st.caption(f"{tier}级基准上座 **{base:,}** 张  |  S={TIER_BASE['S']:,}  A={TIER_BASE['A']:,}  B={TIER_BASE['B']:,}  C={TIER_BASE['C']:,}")
-
-    # 历史数据对比
-    if len(home_preds) > 0:
-        from src.classify import classify_opponent_tier
-        same_tier = [(p, a) for (m, p, a, _) in home_preds
-                     if classify_opponent_tier(m["opponent"], match_date=m["date"]) == tier]
-        if same_tier:
-            errors = [abs(p - a) for (p, a) in same_tier]
-            tier_mae = sum(errors) / len(errors)
-            tier_ape = tier_mae / base * 100 if base > 0 else 0
-            st.caption(f"{tier}级已赛 {len(same_tier)} 场  |  MAE={tier_mae:.0f}张  |  APE={tier_ape:.1f}%")
-        # 同对手历史
-        same_opp = [(p, a) for (m, p, a, _) in home_preds if m["opponent"] == opp]
-        if same_opp:
-            opp_errs = [abs(p - a) for (p, a) in same_opp]
-            opp_mae = sum(opp_errs) / len(opp_errs)
-            st.caption(f"vs {opp} 历史 {len(same_opp)} 场  |  MAE={opp_mae:.0f}张")
-
     st.caption(f"{TIER_LABELS.get(tier, tier)} | 定价: {PT_LABELS.get(pt, pt)} | {target_match['round']} | {WEEKDAYS[dt.weekday()]}")
     if opp in DERBY_RIVALS:
         st.caption("🔥 德比战 · 球迷关注度最高 · 建议收入优先策略")
