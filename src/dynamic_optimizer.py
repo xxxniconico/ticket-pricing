@@ -198,25 +198,29 @@ class DynamicPricingOptimizer:
         # 3. 获取该级别的基准价
         base_prices = self.price_matrix[opp_level]
 
-        # 4. 份额分配（V9.1: 票名称校准 + T4/T5扩容真实值 + 容量溢出）
-        tier_baseline = {
-            "S": {"T1":0.240,"T2":0.253,"T3":0.339},
-            "A": {"T1":0.397,"T2":0.191,"T3":0.282},
-            "B": {"T1":0.514,"T2":0.102,"T3":0.260},
-            "C": {"T1":0.514,"T2":0.102,"T3":0.260},
-        }
-        # V9.1优先, 旧基线仅fallback
-        opponent_share = self._opponent_share_baseline.get(opponent) if opp_tier == "S" else None
-        if opponent_share:
-            volume_shares = dict(opponent_share)
+        # 4. 份额分配（V10: 销量驱动分段 + T4+T5合并模型）
+        # T1-T3: 按预测上座P分段 (2025+2026 25场票名称校准)
+        # T4+T5合并=13.4%, 内部按P分配 (山东+辽宁扩容后标定)
+        P = predicted_total
+        if P >= 11000:
+            t1, t2, t3 = 0.260, 0.270, 0.320
+        elif P >= 8000:
+            t1, t2, t3 = 0.370, 0.220, 0.290
+        elif P >= 5000:
+            t1, t2, t3 = 0.480, 0.130, 0.270
         else:
-            bl = tier_baseline.get(opp_tier, tier_baseline["B"])
-            raw = dict(bl)
-            raw["T4"] = 0.075
-            raw["T5"] = 0.055
-            raw["T6"] = 0.006
-            s = sum(raw.values())
-            volume_shares = {zt: raw[zt] / s for zt in ZONE_TIERS}
+            t1, t2, t3 = 0.530, 0.080, 0.260
+        t45 = 0.134  # T4+T5 合并份额
+        t4_ratio = 0.50 + (P - 5000) / 10000 * 0.20  # P高→T4占比高
+        t4_ratio = max(0.45, min(0.70, t4_ratio))
+        raw = {
+            "T1": t1, "T2": t2, "T3": t3,
+            "T4": t45 * t4_ratio,
+            "T5": t45 * (1 - t4_ratio),
+            "T6": 0.006,
+        }
+        s = sum(raw.values())
+        volume_shares = {zt: raw[zt] / s for zt in ZONE_TIERS}
 
         base_demand = {}
         for zt in ZONE_TIERS:
