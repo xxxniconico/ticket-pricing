@@ -38,6 +38,23 @@ def render_tab1(target_match, home_preds, guoan_matches, standings, mae, use_dyn
             with col3:
                 tier_color = {"S":"#ff6b6b","A":"#f0c040","B":"#8a8f98","C":"#51cf66"}.get(tier,"#8a8f98")
                 st.markdown(f'<div style="text-align:center;padding-top:10px"><span style="font-size:1.4rem;font-weight:590;color:{tier_color}">{tier}</span><br><span style="font-size:0.6rem;color:#62666d">动态分级</span></div>', unsafe_allow_html=True)
+
+            # 判定原因
+            hpct = ap_sub['HIST_ATT_pct']
+            reasons = []
+            st_val = st_score; ap_val = ap_score
+            if st_val >= 80 and ap_val >= 70: reasons.append("S级：ST≥80且AP≥70，顶级强队+票房号召力")
+            elif hpct >= 90: reasons.append("A级：历史票房≥90%，德比级票房热度")
+            elif st_val >= 55 and ap_val >= 40: reasons.append("A级：ST≥55且AP≥40，实力与票房兼备")
+            elif hpct >= 55 and st_val >= 45: reasons.append("A级：老牌强队保护（历史票房≥55%且ST≥45）")
+            elif hpct >= 80: reasons.append("B级：历史票房≥80%，票房号召力保护不下探")
+            elif ap_val >= 35 and st_val >= 20: reasons.append("B级：AP≥35且ST≥20，吸引力驱动")
+            elif st_val < 35: reasons.append("C级：ST<35，实力偏弱")
+            elif ap_val < 25: reasons.append("C级：AP<25，票房号召力不足")
+            else: reasons.append("B级：未触发特殊规则，默认中级")
+            if st_val >= 35 and ap_val >= 25 and tier == "B":
+                reasons.append("→ soft_boundary确认：ST≥35且AP≥25")
+            st.caption(" · ".join(reasons))
         except Exception as e:
             st.warning(f"Dynamic tier failed: {e}")
             tier = classify_opponent_tier(opp)
