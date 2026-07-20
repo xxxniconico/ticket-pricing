@@ -229,7 +229,7 @@ def render_prediction_detail(target_match, guoan_matches, standings, mae, key_pr
             f"<tr>"
             f"<td style='font-weight:510'>{zt}</td>"
             f"<td>¥{tr.base_price:,.0f}</td>"
-            f"<td style='font-family:JetBrains Mono'>{tr.capacity:,.0f}座</td>"
+            f"<td style='font-family:JetBrains Mono'>{1000:,.0f}座</td>"
             f"<td style='font-family:JetBrains Mono'>{tr.base_qty:,.0f}张</td>"
             f"<td style='color:#8a8f98'>{share:.1f}%</td>"
             f"</tr>"
@@ -237,7 +237,7 @@ def render_prediction_detail(target_match, guoan_matches, standings, mae, key_pr
     inv_rows += (
         f'<tr style="border-top:1px solid rgba(255,255,255,0.08);font-weight:510">'
         f'<td>合计</td><td>—</td>'
-        f'<td style="font-family:JetBrains Mono">{r.total_capacity:,.0f}座</td>'
+        f'<td style="font-family:JetBrains Mono">{17463:,.0f}座</td>'
         f'<td style="font-family:JetBrains Mono">{r.base_attendance:,.0f}张</td>'
         f'<td>100%</td></tr>'
     )
