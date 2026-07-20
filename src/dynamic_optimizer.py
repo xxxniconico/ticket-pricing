@@ -198,16 +198,22 @@ class DynamicPricingOptimizer:
         # 3. 获取该级别的基准价
         base_prices = self.price_matrix[opp_level]
 
-        # 4. 动态份额分配（V9: T1/T2线性回归 + T3-T6常数，留一法验证 MAE 2.0pp vs 基线3.4pp）
-        # 优先用同对手2025实际份额；无数据时用线性回归（基于2025+2026 27场拟合）
+        # 4. 份额分配（V9.1: 票名称校准 + T4/T5扩容真实值 + 容量溢出）
+        tier_baseline = {
+            "S": {"T1":0.240,"T2":0.253,"T3":0.339},
+            "A": {"T1":0.374,"T2":0.209,"T3":0.285},
+            "B": {"T1":0.520,"T2":0.102,"T3":0.262},
+            "C": {"T1":0.520,"T2":0.102,"T3":0.262},
+        }
         opponent_share = self._opponent_share_baseline.get(opponent)
         if opponent_share:
             volume_shares = dict(opponent_share)
         else:
-            P = predicted_total
-            t1 = max(0.02, -0.000024 * P + 0.592)
-            t2 = max(0.02, +0.000018 * P + 0.035)
-            raw = {"T1": t1, "T2": t2, "T3": 0.26, "T4": 0.02, "T5": 0.11, "T6": 0.007}
+            bl = tier_baseline.get(opp_tier, tier_baseline["B"])
+            raw = dict(bl)
+            raw["T4"] = 0.075
+            raw["T5"] = 0.055
+            raw["T6"] = 0.006
             s = sum(raw.values())
             volume_shares = {zt: raw[zt] / s for zt in ZONE_TIERS}
 
