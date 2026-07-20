@@ -24,7 +24,20 @@ def render_tab1(target_match, home_preds, guoan_matches, standings, mae, use_dyn
             tier = card["tier"]
             st_score = card["ST"]
             ap_score = card["AP"]
-            st.caption(f"📊 动态评级: ST={st_score:.1f} | AP={ap_score:.1f} | Tier={tier}")
+            st_sub = card["components"]["ST_sub"]
+            ap_sub = card["components"]["AP_sub"]
+            
+            # 展示详细分解
+            col1, col2, col3 = st.columns([2, 2, 1])
+            with col1:
+                st.caption(f"**ST 实力分 {st_score:.0f}**")
+                st.caption(f"ELO={st_sub['ELO_norm']:.0f} | PPG={st_sub['PPG']:.2f} | L5={st_sub['L5_PPG']:.2f}")
+            with col2:
+                st.caption(f"**AP 吸引力 {ap_score:.0f}**")
+                st.caption(f"票房%={ap_sub['HIST_ATT_pct']:.0f} | 排名分={ap_sub['PERF']:.0f} | 德比={ap_sub['DERBY_bonus']:.0f}")
+            with col3:
+                tier_color = {"S":"#ff6b6b","A":"#f0c040","B":"#8a8f98","C":"#51cf66"}.get(tier,"#8a8f98")
+                st.markdown(f'<div style="text-align:center;padding-top:10px"><span style="font-size:1.4rem;font-weight:590;color:{tier_color}">{tier}</span><br><span style="font-size:0.6rem;color:#62666d">动态分级</span></div>', unsafe_allow_html=True)
         except Exception as e:
             st.warning(f"Dynamic tier failed: {e}")
             tier = classify_opponent_tier(opp)
