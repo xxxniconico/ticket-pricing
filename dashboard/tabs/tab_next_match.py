@@ -31,30 +31,65 @@ def render_tab1(target_match, home_preds, guoan_matches, standings, mae, use_dyn
             col1, col2, col3 = st.columns([2, 2, 1])
             with col1:
                 st.caption(f"**ST 实力分 {st_score:.0f}**")
-                st.caption(f"ELO={st_sub['ELO_norm']:.0f} | PPG={st_sub['PPG']:.2f} | L5={st_sub['L5_PPG']:.2f}")
+                st.caption(f"ELO={st_sub['ELO_norm']:.0f} | 场均积分={st_sub['PPG']:.2f} | 近5场={st_sub['L5_PPG']:.2f}")
             with col2:
                 st.caption(f"**AP 吸引力 {ap_score:.0f}**")
-                st.caption(f"票房%={ap_sub['HIST_ATT_pct']:.0f} | 排名分={ap_sub['PERF']:.0f} | 德比={ap_sub['DERBY_bonus']:.0f}")
+                st.caption(f"票房排位={ap_sub['HIST_ATT_pct']:.0f}% | 联赛分位={ap_sub['PERF']:.0f} | 德比加分={ap_sub['DERBY_bonus']:.0f}")
             with col3:
                 tier_color = {"S":"#ff6b6b","A":"#f0c040","B":"#8a8f98","C":"#51cf66"}.get(tier,"#8a8f98")
                 st.markdown(f'<div style="text-align:center;padding-top:10px"><span style="font-size:1.4rem;font-weight:590;color:{tier_color}">{tier}</span><br><span style="font-size:0.6rem;color:#62666d">动态分级</span></div>', unsafe_allow_html=True)
 
-            # 判定原因
+            # 判定原因（中文细分指数）
             hpct = ap_sub['HIST_ATT_pct']
-            reasons = []
+            perf = ap_sub['PERF']
+            derby = ap_sub['DERBY_bonus']
+            elo_n = st_sub['ELO_norm']
+            ppg = st_sub['PPG']
+            l5 = st_sub['L5_PPG']
+
+            # 构建自然语言解释
+            parts = []
+            # ST描述
+            st_desc = f"ELO分位{elo_n:.0f}"
+            if ppg >= 1.8: st_desc += f"，场均{ppg:.1f}分(强)"
+            elif ppg >= 1.2: st_desc += f"，场均{ppg:.1f}分(中)"
+            else: st_desc += f"，场均{ppg:.1f}分(弱)"
+            if l5 >= 2.0: st_desc += f"，近5场{l5:.1f}分(状态火热)"
+            elif l5 >= 1.2: st_desc += f"，近5场{l5:.1f}分(状态平稳)"
+            else: st_desc += f"，近5场{l5:.1f}分(状态低迷)"
+
+            # AP描述
+            ap_desc = f"历史票房排位{hpct:.0f}%"
+            if perf >= 70: ap_desc += f"，联赛排名靠前(分位{perf:.0f})"
+            elif perf >= 40: ap_desc += f"，联赛中上游(分位{perf:.0f})"
+            elif perf >= 20: ap_desc += f"，联赛中下游(分位{perf:.0f})"
+            else: ap_desc += f"，联赛下游(分位{perf:.0f})"
+            if derby > 0: ap_desc += f"，德比加分{derby:.0f}"
+
+            # Tier原因
             st_val = st_score; ap_val = ap_score
-            if st_val >= 80 and ap_val >= 70: reasons.append("S级：ST≥80且AP≥70，顶级强队+票房号召力")
-            elif hpct >= 90: reasons.append("A级：历史票房≥90%，德比级票房热度")
-            elif st_val >= 55 and ap_val >= 40: reasons.append("A级：ST≥55且AP≥40，实力与票房兼备")
-            elif hpct >= 55 and st_val >= 45: reasons.append("A级：老牌强队保护（历史票房≥55%且ST≥45）")
-            elif hpct >= 80: reasons.append("B级：历史票房≥80%，票房号召力保护不下探")
-            elif ap_val >= 35 and st_val >= 20: reasons.append("B级：AP≥35且ST≥20，吸引力驱动")
-            elif st_val < 35: reasons.append("C级：ST<35，实力偏弱")
-            elif ap_val < 25: reasons.append("C级：AP<25，票房号召力不足")
-            else: reasons.append("B级：未触发特殊规则，默认中级")
-            if st_val >= 35 and ap_val >= 25 and tier == "B":
-                reasons.append("→ soft_boundary确认：ST≥35且AP≥25")
-            st.caption(" · ".join(reasons))
+            if st_val >= 80 and ap_val >= 70:
+                reason = f"S级：实力顶尖(ST={st_val:.0f})且票房号召力极强(AP={ap_val:.0f})"
+            elif hpct >= 90:
+                reason = f"A级：历史票房分位{hpct:.0f}%≥90%，德比级票房热度"
+            elif st_val >= 55 and ap_val >= 40:
+                reason = f"A级：实力较强(ST={st_val:.0f}≥55)且票房吸引力达标(AP={ap_val:.0f}≥40)"
+            elif hpct >= 55 and st_val >= 45:
+                reason = f"A级：老牌强队(票房分位{hpct:.0f}%≥55%，ST={st_val:.0f}≥45)"
+            elif hpct >= 80:
+                reason = f"B级：历史票房分位{hpct:.0f}%≥80%，票房热度保护"
+            elif ap_val >= 35 and st_val >= 20:
+                reason = f"B级：吸引力较高(AP={ap_val:.0f}≥35)，实力尚可(ST={st_val:.0f}≥20)"
+            elif st_val < 35:
+                reason = f"C级：实力不足(ST={st_val:.0f}<35)"
+            elif ap_val < 25:
+                reason = f"C级：票房号召力不足(AP={ap_val:.0f}<25)"
+            else:
+                reason = f"B级：实力中等(ST={st_val:.0f})，票房一般(AP={ap_val:.0f})，未触及A/C边界"
+            
+            st.caption(f"{st_desc}")
+            st.caption(f"{ap_desc}")
+            st.caption(f"→ {reason}")
         except Exception as e:
             st.warning(f"Dynamic tier failed: {e}")
             tier = classify_opponent_tier(opp)
