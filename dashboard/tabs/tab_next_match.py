@@ -77,6 +77,9 @@ def render_tab1(target_match, home_preds, guoan_matches, standings, mae, use_dyn
         st_pills += f"<span style='background:#1a1d22;padding:1px 6px;border-radius:3px;font-size:0.62rem;margin:0 2px'>近5场{l5:.1f}</span>"
         ap_pills = f"<span style='background:#1a1d22;padding:1px 6px;border-radius:3px;font-size:0.62rem;margin:0 2px'>票房{hpct:.0f}%</span>"
         ap_pills += f"<span style='background:#1a1d22;padding:1px 6px;border-radius:3px;font-size:0.62rem;margin:0 2px'>排名分{perf:.0f}</span>"
+        if hist_n > 0:
+            ap_pills += f"<span style='background:#1a1d22;padding:1px 6px;border-radius:3px;font-size:0.62rem;margin:0 2px'>工体{hist_n}场 均{hist_avg:.0f}张</span>"
+
         if derby > 0:
             ap_pills += f"<span style='background:#1a1d22;padding:1px 6px;border-radius:3px;font-size:0.62rem;margin:0 2px;color:#ff6b6b'>⚔德比{derby:.0f}</span>"
 
