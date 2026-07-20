@@ -213,13 +213,14 @@ def render_prediction_detail(target_match, guoan_matches, standings, mae, key_pr
             f"<td>\u00a5{tr.base_price:,.0f}</td>"
             f"</tr>"
         )
+    avg_price = r.base_revenue / r.base_attendance if r.base_attendance > 0 else 0
     cap_rows += (
         f'<tr style="border-top:1px solid rgba(255,255,255,0.08);font-weight:510">'
         f'<td>合计</td>'
         f'<td style="font-family:JetBrains Mono">{total_cap:,.0f}座</td>'
         f'<td>100%</td>'
         f'<td style="font-family:JetBrains Mono">{r.base_attendance:,.0f}张</td>'
-        f'<td>—</td></tr>'
+        f'<td style="font-family:JetBrains Mono">均¥{avg_price:.0f}</td></tr>'
     )
     st.markdown(f"""<table class="compact-table" style="max-width:550px;font-size:0.72rem">
       <thead><tr><th>档位</th><th>容量</th><th>份额</th><th>分配量</th><th>基准价</th></tr></thead>
