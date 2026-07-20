@@ -205,7 +205,8 @@ class DynamicPricingOptimizer:
             "B": {"T1":0.520,"T2":0.102,"T3":0.262},
             "C": {"T1":0.520,"T2":0.102,"T3":0.262},
         }
-        opponent_share = self._opponent_share_baseline.get(opponent)
+        # V9.1优先, 旧基线仅fallback
+        opponent_share = self._opponent_share_baseline.get(opponent) if opp_tier == "S" else None
         if opponent_share:
             volume_shares = dict(opponent_share)
         else:
