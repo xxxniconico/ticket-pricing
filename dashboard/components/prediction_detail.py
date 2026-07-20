@@ -187,46 +187,39 @@ def render_prediction_detail(target_match, guoan_matches, standings, mae, key_pr
         r.total_attendance = sum(tr.predicted_qty for tr in r.tiers.values())
         r.total_revenue = sum(tr.revenue for tr in r.tiers.values())
 
-    # ── 库存与份额（纯容量分配，价格不变）──
+    # ── 库存与份额（V9.1 分级均值+T4/T5扩容值）──
     st.markdown("**库存与份额**")
     from src.pricing_v5 import ZONE_TIERS
-    # 用 optimizer 内部的容量（已在 optimize 中被 capacity_overrides 覆盖）
-    caps = {}
-    for zt in ZONE_TIERS:
-        caps[zt] = getattr(optimizer, "capacities", {}).get(zt, r.base_attendance / 6)
-    total_cap = sum(caps.values())
-    if total_cap == 0:
-        total_cap = r.base_attendance
-        caps = {zt: total_cap/6 for zt in ZONE_TIERS}
+    caps = getattr(optimizer, "capacities", {})
     cap_rows = ""
     for zt in ZONE_TIERS:
         tr = r.tiers[zt]
         cap = caps.get(zt, 0)
-        share = cap / max(total_cap, 1) * 100
-        alloc = tr.base_qty
+        share = tr.base_qty / max(r.base_attendance, 1) * 100
         cap_rows += (
             f"<tr>"
             f"<td style='font-weight:510'>{zt}</td>"
             f"<td style='font-family:JetBrains Mono'>{cap:,.0f}座</td>"
-            f"<td style='font-family:JetBrains Mono'>{share:.1f}%</td>"
             f"<td style='font-family:JetBrains Mono'>{tr.base_qty:,.0f}张</td>"
+            f"<td style='font-family:JetBrains Mono'>{share:.1f}%</td>"
             f"<td>\u00a5{tr.base_price:,.0f}</td>"
             f"</tr>"
         )
     avg_price = r.base_revenue / r.base_attendance if r.base_attendance > 0 else 0
+    total_cap = sum(caps.values()) if caps else r.base_attendance
     cap_rows += (
         f'<tr style="border-top:1px solid rgba(255,255,255,0.08);font-weight:510">'
         f'<td>合计</td>'
         f'<td style="font-family:JetBrains Mono">{total_cap:,.0f}座</td>'
-        f'<td>100%</td>'
         f'<td style="font-family:JetBrains Mono">{r.base_attendance:,.0f}张</td>'
+        f'<td>100%</td>'
         f'<td style="font-family:JetBrains Mono">均¥{avg_price:.0f}</td></tr>'
     )
     st.markdown(f"""<table class="compact-table" style="max-width:550px;font-size:0.72rem">
-      <thead><tr><th>档位</th><th>容量</th><th>份额</th><th>分配量</th><th>基准价</th></tr></thead>
+      <thead><tr><th>档位</th><th>容量</th><th>分配量</th><th>份额</th><th>基准价</th></tr></thead>
       <tbody>{cap_rows}</tbody>
     </table>""", unsafe_allow_html=True)
-    st.caption(f"动态份额分配 · 价格不变 · 预测上座 {r.base_attendance:,.0f}张")
+    st.caption(f"V9.1分级均值+T4/T5扩容真实值 · 预测上座 {r.base_attendance:,.0f}张")
 
     render_strategy_card(r, pred_args)
     render_pricing_table(r)
