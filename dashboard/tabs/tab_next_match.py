@@ -27,69 +27,66 @@ def render_tab1(target_match, home_preds, guoan_matches, standings, mae, use_dyn
             st_sub = card["components"]["ST_sub"]
             ap_sub = card["components"]["AP_sub"]
             
-            # 展示详细分解
-            col1, col2, col3 = st.columns([2, 2, 1])
-            with col1:
-                st.caption(f"**ST 实力分 {st_score:.0f}**")
-                st.caption(f"ELO={st_sub['ELO_norm']:.0f} | 场均积分={st_sub['PPG']:.2f} | 近5场={st_sub['L5_PPG']:.2f}")
-            with col2:
-                st.caption(f"**AP 吸引力 {ap_score:.0f}**")
-                st.caption(f"票房排位={ap_sub['HIST_ATT_pct']:.0f}% | 联赛分位={ap_sub['PERF']:.0f} | 德比加分={ap_sub['DERBY_bonus']:.0f}")
-            with col3:
-                tier_color = {"S":"#ff6b6b","A":"#f0c040","B":"#8a8f98","C":"#51cf66"}.get(tier,"#8a8f98")
-                st.markdown(f'<div style="text-align:center;padding-top:10px"><span style="font-size:1.4rem;font-weight:590;color:{tier_color}">{tier}</span><br><span style="font-size:0.6rem;color:#62666d">动态分级</span></div>', unsafe_allow_html=True)
-
-            # 判定原因（中文细分指数）
+            # 可视化：进度条 + 标签
             hpct = ap_sub['HIST_ATT_pct']
             perf = ap_sub['PERF']
             derby = ap_sub['DERBY_bonus']
             elo_n = st_sub['ELO_norm']
             ppg = st_sub['PPG']
             l5 = st_sub['L5_PPG']
-
-            # 构建自然语言解释
-            parts = []
-            # ST描述
-            st_desc = f"ELO分位{elo_n:.0f}"
-            if ppg >= 1.8: st_desc += f"，场均{ppg:.1f}分(强)"
-            elif ppg >= 1.2: st_desc += f"，场均{ppg:.1f}分(中)"
-            else: st_desc += f"，场均{ppg:.1f}分(弱)"
-            if l5 >= 2.0: st_desc += f"，近5场{l5:.1f}分(状态火热)"
-            elif l5 >= 1.2: st_desc += f"，近5场{l5:.1f}分(状态平稳)"
-            else: st_desc += f"，近5场{l5:.1f}分(状态低迷)"
-
-            # AP描述
-            ap_desc = f"历史票房排位{hpct:.0f}%"
-            if perf >= 70: ap_desc += f"，联赛排名靠前(分位{perf:.0f})"
-            elif perf >= 40: ap_desc += f"，联赛中上游(分位{perf:.0f})"
-            elif perf >= 20: ap_desc += f"，联赛中下游(分位{perf:.0f})"
-            else: ap_desc += f"，联赛下游(分位{perf:.0f})"
-            if derby > 0: ap_desc += f"，德比加分{derby:.0f}"
-
-            # Tier原因
             st_val = st_score; ap_val = ap_score
-            if st_val >= 80 and ap_val >= 70:
-                reason = f"S级：实力顶尖(ST={st_val:.0f})且票房号召力极强(AP={ap_val:.0f})"
-            elif hpct >= 90:
-                reason = f"A级：历史票房分位{hpct:.0f}%≥90%，德比级票房热度"
-            elif st_val >= 55 and ap_val >= 40:
-                reason = f"A级：实力较强(ST={st_val:.0f}≥55)且票房吸引力达标(AP={ap_val:.0f}≥40)"
-            elif hpct >= 55 and st_val >= 45:
-                reason = f"A级：老牌强队(票房分位{hpct:.0f}%≥55%，ST={st_val:.0f}≥45)"
-            elif hpct >= 80:
-                reason = f"B级：历史票房分位{hpct:.0f}%≥80%，票房热度保护"
-            elif ap_val >= 35 and st_val >= 20:
-                reason = f"B级：吸引力较高(AP={ap_val:.0f}≥35)，实力尚可(ST={st_val:.0f}≥20)"
-            elif st_val < 35:
-                reason = f"C级：实力不足(ST={st_val:.0f}<35)"
-            elif ap_val < 25:
-                reason = f"C级：票房号召力不足(AP={ap_val:.0f}<25)"
-            else:
-                reason = f"B级：实力中等(ST={st_val:.0f})，票房一般(AP={ap_val:.0f})，未触及A/C边界"
-            
-            st.caption(f"{st_desc}")
-            st.caption(f"{ap_desc}")
-            st.caption(f"→ {reason}")
+            tc = {"S":"#ff6b6b","A":"#f0c040","B":"#8a8f98","C":"#51cf66"}.get(tier,"#8a8f98")
+
+            # ST进度条颜色
+            if st_val >= 55: st_bar_c = "#ff6b6b"
+            elif st_val >= 35: st_bar_c = "#f0c040"
+            else: st_bar_c = "#51cf66"
+            # AP进度条颜色
+            if ap_val >= 40: ap_bar_c = "#ff6b6b"
+            elif ap_val >= 25: ap_bar_c = "#f0c040"
+            else: ap_bar_c = "#51cf66"
+
+            # 子维度小标签
+            st_pills = f"<span style='background:#1a1d22;padding:1px 6px;border-radius:3px;font-size:0.62rem;margin:0 2px'>ELO {elo_n:.0f}</span>"
+            st_pills += f"<span style='background:#1a1d22;padding:1px 6px;border-radius:3px;font-size:0.62rem;margin:0 2px'>场均{ppg:.1f}分</span>"
+            st_pills += f"<span style='background:#1a1d22;padding:1px 6px;border-radius:3px;font-size:0.62rem;margin:0 2px'>近5场{l5:.1f}</span>"
+
+            ap_pills = f"<span style='background:#1a1d22;padding:1px 6px;border-radius:3px;font-size:0.62rem;margin:0 2px'>票房{hpct:.0f}%</span>"
+            ap_pills += f"<span style='background:#1a1d22;padding:1px 6px;border-radius:3px;font-size:0.62rem;margin:0 2px'>排名分{perf:.0f}</span>"
+            if derby > 0: ap_pills += f"<span style='background:#1a1d22;padding:1px 6px;border-radius:3px;font-size:0.62rem;margin:0 2px;color:#ff6b6b'>⚔德比{derby:.0f}</span>"
+
+            # Tier原因（一行）
+            if st_val >= 80 and ap_val >= 70: reason = "实力顶尖+票房极强"
+            elif hpct >= 90: reason = f"德比级票房热度({hpct:.0f}%)"
+            elif st_val >= 55 and ap_val >= 40: reason = "实力与票房兼备"
+            elif hpct >= 55 and st_val >= 45: reason = "老牌强队保护"
+            elif hpct >= 80: reason = f"票房热度保护({hpct:.0f}%)"
+            elif ap_val >= 35 and st_val >= 20: reason = "吸引力驱动"
+            elif st_val < 35: reason = "实力偏弱"
+            elif ap_val < 25: reason = "票房不足"
+            else: reason = "实力中等，未触及A/C边界"
+
+            st.markdown(f'''<div style="background:#0e1014;border:1px solid #1a1d22;border-radius:6px;padding:8px 12px;margin:4px 0">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+              <span style="font-size:0.68rem;color:#8a8f98;width:24px">ST</span>
+              <div style="flex:1;height:6px;background:#1a1d22;border-radius:3px">
+                <div style="width:{min(st_val/100*100,100):.0f}%;height:6px;background:{st_bar_c};border-radius:3px"></div>
+              </div>
+              <span style="font-size:0.75rem;font-weight:590;color:{st_bar_c};width:28px;text-align:right">{st_val:.0f}</span>
+              <span style="width:8px"></span>
+              <span style="font-size:0.68rem;color:#8a8f98;width:24px">AP</span>
+              <div style="flex:1;height:6px;background:#1a1d22;border-radius:3px">
+                <div style="width:{min(ap_val/100*100,100):.0f}%;height:6px;background:{ap_bar_c};border-radius:3px"></div>
+              </div>
+              <span style="font-size:0.75rem;font-weight:590;color:{ap_bar_c};width:28px;text-align:right">{ap_val:.0f}</span>
+              <span style="font-size:1.3rem;font-weight:590;color:{tc};min-width:24px;text-align:center">{tier}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span style="font-size:0.62rem;color:#62666d">{st_pills}</span>
+              <span style="font-size:0.62rem;color:#62666d">{ap_pills}</span>
+              <span style="font-size:0.62rem;color:#8a8f98;min-width:50px;text-align:right">← {reason}</span>
+            </div>
+            </div>''', unsafe_allow_html=True)
         except Exception as e:
             st.warning(f"Dynamic tier failed: {e}")
             tier = classify_opponent_tier(opp)
