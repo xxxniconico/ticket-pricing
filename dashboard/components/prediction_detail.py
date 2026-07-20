@@ -203,13 +203,13 @@ def render_prediction_detail(target_match, guoan_matches, standings, mae, key_pr
         tr = r.tiers[zt]
         cap = caps.get(zt, 0)
         share = cap / max(total_cap, 1) * 100
-        alloc = r.base_attendance * share / 100
+        alloc = tr.base_qty
         cap_rows += (
             f"<tr>"
             f"<td style='font-weight:510'>{zt}</td>"
             f"<td style='font-family:JetBrains Mono'>{cap:,.0f}座</td>"
             f"<td style='font-family:JetBrains Mono'>{share:.1f}%</td>"
-            f"<td style='font-family:JetBrains Mono'>{alloc:,.0f}张</td>"
+            f"<td style='font-family:JetBrains Mono'>{tr.base_qty:,.0f}张</td>"
             f"<td>\u00a5{tr.base_price:,.0f}</td>"
             f"</tr>"
         )
@@ -225,7 +225,7 @@ def render_prediction_detail(target_match, guoan_matches, standings, mae, key_pr
       <thead><tr><th>档位</th><th>容量</th><th>份额</th><th>分配量</th><th>基准价</th></tr></thead>
       <tbody>{cap_rows}</tbody>
     </table>""", unsafe_allow_html=True)
-    st.caption(f"纯容量占比分配 · 价格不变 · 预测上座 {r.base_attendance:,.0f}张")
+    st.caption(f"动态份额分配 · 价格不变 · 预测上座 {r.base_attendance:,.0f}张")
 
     render_strategy_card(r, pred_args)
     render_pricing_table(r)
