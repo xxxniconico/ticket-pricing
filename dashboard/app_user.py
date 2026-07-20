@@ -521,15 +521,13 @@ def _get_zone_qtys(m):
     df["实际支付价格"] = pd.to_numeric(df["实际支付价格"])
     df["is_home"] = df["is_home"] == "True"
     csl = df[(df["competition"]=="CSL")&(df["is_partial"] == "False")&(df["is_bundle"] == "False")]
-    zm = {s:zt for zt,secs in ZONE_SECTIONS.items() for s in secs}
     for mid in csl["match_id"].unique():
         md = csl[csl["match_id"]==mid]
         if str(md["match_date"].iloc[0]).startswith(m["date"]):
             md = md.copy()
-            md["zt"] = md["section"].astype(str).map(zm)
             result = {}
             for zt in ZONE_TIERS:
-                result[zt] = int(md[md["zt"]==zt]["数量"].sum())
+                result[zt] = int(md[md["票名称"]==zt]["数量"].sum())
             return result
     return {}
 
