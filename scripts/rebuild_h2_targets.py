@@ -30,7 +30,9 @@ guoan_matches = [m for m in guoan_matches if 'cfl_fixtures_api' in m.get('source
 _ctx_rounds = rounds
 
 df = pd.read_parquet(ROOT / 'data/processed/all_unified.parquet')
-csl = df[(df['competition']=='CSL') & (~df['is_partial']) & (~df['is_bundle'])]
+    df['数量'] = pd.to_numeric(df['数量'])
+    df['实际支付价格'] = pd.to_numeric(df['实际支付价格'])
+csl = df[(df['competition']=='CSL') & (df["is_partial"] == "False") & (df["is_bundle"] == "False")]
 
 completed_rev = 0.0
 completed_qty = 0

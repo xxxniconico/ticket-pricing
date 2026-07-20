@@ -44,16 +44,16 @@ YEAR_2023 = 1.45
 PENALTY_FLOOR = 0.35
 _CAL_FILE = os.path.join(os.path.dirname(__file__), "..", "data", "processed", "calibration.json")
 _ALPHA = 0.20
-_EMA_MIN_SAMPLES = 8
+_EMA_MIN_SAMPLES = 3
 
-def _tier_sample_count(tier: str, year_prefix: str = "2026") -> int:
-    """统计 calibration history 中某级别、某赛季的已赛样本数。"""
+def _tier_sample_count(tier: str) -> int:
+    """统计 calibration history 中某级别的已赛样本数（全历史）。"""
     return sum(
         1 for h in _load_cal().get("history", [])
-        if h.get("tier") == tier and str(h.get("match_id", "")).startswith(year_prefix)
+        if h.get("tier") == tier
     )
 
-def get_effective_calibration(tier: str, enable_ema: bool = False) -> float:
+def get_effective_calibration(tier: str, enable_ema: bool = True) -> float:
     """EMA 校准因子。默认关闭；开启时样本 < 8 场强制 1.0。"""
     if not enable_ema:
         return 1.0
@@ -114,14 +114,15 @@ def predict(opponent, derby=False, lost_bottom=False, heavy_home_loss=False,
     if midseason_restart and not season_opener: mult *= MULTIPLIERS["midseason_restart"]
     if midweek and not lost_bottom: mult *= MULTIPLIERS["midweek"]
     if short_rest and not lost_bottom and not heavy_home_loss: mult *= MULTIPLIERS["short_rest"]
-    if summer and tier in ("B","C"): mult *= MULTIPLIERS["summer"]
+    if summer and tier == "C": mult *= 1.30
+    elif summer and tier == "B": mult *= MULTIPLIERS["summer"]
     elif summer and tier in ("S","A"): mult *= 1.08
     elif summer and tier is None: mult *= 1.08 if is_strong else MULTIPLIERS["summer"]  # continuous mode uses ST
     if top3_form and tier in ("B","C", None): mult *= MULTIPLIERS["top3_form"]
     if mult < PENALTY_FLOOR: mult = PENALTY_FLOOR
     return min(base * mult, 20000.0)
 
-def predict_calibrated(opponent, enable_ema=False, **kwargs):
+def predict_calibrated(opponent, enable_ema=True, **kwargs):
     raw = predict(opponent, **kwargs)
     tier = kwargs.get('opponent_tier_override') or classify_opponent_tier(opponent)
     return raw * get_effective_calibration(tier, enable_ema=enable_ema)

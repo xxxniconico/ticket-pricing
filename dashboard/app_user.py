@@ -222,14 +222,14 @@ def render_seating_chart(tier, pred, r):
     st.markdown(svg, unsafe_allow_html=True)
 
 def render_home_card(match):
-    opp = match["opponent"]; lvl = classify_opponent(opp); dt = pd.Timestamp(match["date"])
-    pt = get_pricing_tier(opp)
+    opp = match["opponent"]; lvl = classify_opponent(opp, match_date=match["date"]); dt = pd.Timestamp(match["date"])
+    pt = get_pricing_tier(opp, match_date=match["date"])
     lnames = {"S":"S·德比","A":"A·强队","B":"B·常规","C":"C·普通"}
     st.subheader(f"下一主场：{match['date']} vs {opp}")
     st.caption(f"{lnames.get(lvl,lvl)} | 定价: {PT_LABELS.get(pt,pt)} | {match['round']} | {['周一','周二','周三','周四','周五','周六','周日'][dt.weekday()]}")
 
     from src.classify import classify_opponent_tier
-    tier = classify_opponent_tier(opp)
+    tier = classify_opponent_tier(opp, match_date=match["date"])
     base = TIER_BASE.get(tier, 9000)
     ctx = detect_ctx(match, guoan_matches, standings)
     derby = opp in {"上海申花","山东泰山"}
@@ -334,7 +334,7 @@ def render_home_card(match):
     final_mult = max(final_mult, PENALTY_FLOOR)
     raw_pred = min(base * final_mult, 20000)
 
-    # EMA 校准（与 rule_engine.predict_calibrated 同步）
+    # 校准因子（EMA 已禁用，固定 1.0）
     _cal = get_calibration()
     _cal_factor = _cal["tier"].get(tier, 1.0)
     pred = raw_pred * _cal_factor
@@ -501,7 +501,10 @@ def get_actual(m):
     pq = ROOT/"data/processed/all_unified.parquet"
     if not pq.exists(): return 0
     df = pd.read_parquet(pq)
-    csl = df[(df["competition"]=="CSL")&(~df["is_partial"])&(~df["is_bundle"])]
+    df["数量"] = pd.to_numeric(df["数量"])
+    df["实际支付价格"] = pd.to_numeric(df["实际支付价格"])
+    df["is_home"] = df["is_home"] == "True"
+    csl = df[(df["competition"]=="CSL")&(df["is_partial"] == "False")&(df["is_bundle"] == "False")]
     for mid in csl["match_id"].unique():
         md = csl[csl["match_id"]==mid]
         if str(md["match_date"].iloc[0]).startswith(m["date"]):
@@ -514,7 +517,10 @@ def _get_zone_qtys(m):
     pq = ROOT/"data/processed/all_unified.parquet"
     if not pq.exists(): return {}
     df = pd.read_parquet(pq)
-    csl = df[(df["competition"]=="CSL")&(~df["is_partial"])&(~df["is_bundle"])]
+    df["数量"] = pd.to_numeric(df["数量"])
+    df["实际支付价格"] = pd.to_numeric(df["实际支付价格"])
+    df["is_home"] = df["is_home"] == "True"
+    csl = df[(df["competition"]=="CSL")&(df["is_partial"] == "False")&(df["is_bundle"] == "False")]
     zm = {s:zt for zt,secs in ZONE_SECTIONS.items() for s in secs}
     for mid in csl["match_id"].unique():
         md = csl[csl["match_id"]==mid]
@@ -618,10 +624,10 @@ with left:
             ctx=detect_ctx(m, guoan_matches, standings)
             zone_qty=_get_zone_qtys(m)
             from src.classify import classify_opponent_tier
-            mt=classify_opponent_tier(opp)
-            lvl = classify_opponent(opp)
+            mt=classify_opponent_tier(opp, match_date=match_date)
+            lvl = classify_opponent(opp, match_date=match_date)
             _pm = build_price_matrix()
-            pt_hist = get_pricing_tier(opp)
+            pt_hist = get_pricing_tier(opp, match_date=match_date)
             prices_fixed = {zt: _pm[pt_hist][zt] for zt in ZONE_TIERS}
             fixed_rev=sum(zone_qty.get(zt,0)*prices_fixed[zt] for zt in ZONE_TIERS)
             pred_args={'derby':opp in {"上海申花","山东泰山"},

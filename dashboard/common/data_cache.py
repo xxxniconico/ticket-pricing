@@ -71,7 +71,10 @@ def _get_csl_parquet():
     if not pq.exists():
         return None
     df = pd.read_parquet(pq)
-    return df[(df["competition"] == "CSL") & (~df["is_partial"]) & (~df["is_bundle"])]
+    df["数量"] = pd.to_numeric(df["数量"])
+    df["实际支付价格"] = pd.to_numeric(df["实际支付价格"])
+    df["is_home"] = df["is_home"] == "True"
+    return df[(df["competition"] == "CSL") & (df["is_partial"] == "False") & (df["is_bundle"] == "False")]
 
 
 @st.cache_data(ttl=3600)
@@ -210,20 +213,18 @@ def compute_home_predictions(home_done, guoan_matches, enable_ema=False):
             continue
         ctx = detect_ctx(m, guoan_matches, _ctx_rounds)
         pred_args = build_pred_args(m, ctx)
-        # Dynamic tier support
+        # Dynamic tier (always on)
         opponent_tier = None
         try:
-            import streamlit as st
-            if st.session_state.get("use_dynamic_tier", False):
-                from src.opponent_rating import get_opponent_scorecard, load_elo_history
-                from src.csl_context import load_csl_data
-                elo_hist = load_elo_history()
-                all_matches, _, _ = load_csl_data()
-                card = get_opponent_scorecard(m["opponent"], m["date"], elo_history=elo_hist,
-                                               standings_by_round=_ctx_rounds, matches=all_matches)
-                opponent_tier = card["tier"]
-        except Exception as e:
-            st.warning(f"Dynamic tier failed: {e}")
+            from src.opponent_rating import get_opponent_scorecard, load_elo_history
+            from src.csl_context import load_csl_data
+            elo_hist = load_elo_history()
+            all_matches, _, _ = load_csl_data()
+            card = get_opponent_scorecard(m["opponent"], m["date"], elo_history=elo_hist,
+                                           standings_by_round=_ctx_rounds, matches=all_matches)
+            opponent_tier = card["tier"]
+        except Exception:
+            pass
         p = rule_predict(m["opponent"], enable_ema=enable_ema,
                          opponent_tier_override=opponent_tier, **pred_args)
         results.append((m, p, a, ctx))

@@ -95,7 +95,8 @@ def render_history_expanders(home_preds, guoan_matches):
         crest_h = team_crest_html(opp, "sm")
         derby_tag = ' 🔥德比' if opp in DERBY_RIVALS else ''
         st.markdown(f'<span id="hist-{i}"></span>', unsafe_allow_html=True)
-        st.markdown(f"{crest_h} **{m['date']} vs {opp}{derby_tag}** | 预测{p:,.0f} 实际{a:,.0f} | 误差{p - a:+,.0f} APE{ape:.1f}%", unsafe_allow_html=True)
+        dyn_tier = classify_opponent_tier(opp, match_date=m["date"])
+        st.markdown(f"{crest_h} **{m['date']} vs {opp}{derby_tag}** `{dyn_tier}` | 预测{p:,.0f} 实际{a:,.0f} | 误差{p - a:+,.0f} APE{ape:.1f}%", unsafe_allow_html=True)
         pred_args = build_pred_args(m, ctx, {'summer': dt_m.month in [7,8], 'match_year': m["date"][:4]})
         r_h = optimizer.optimize(opp, **pred_args)
 
@@ -247,7 +248,7 @@ def render_history_expanders(home_preds, guoan_matches):
           {act_price_summary}判断：{audit_judgment}
         </div>""", unsafe_allow_html=True)
 
-        # V8.1: EMA赛后校准 — 每场已赛主场更新校准因子
+        # V8.1: 赛后校准已禁用
         rule_update(
             match_id=f"{m['date']}_{opp}",
             opponent=opp,

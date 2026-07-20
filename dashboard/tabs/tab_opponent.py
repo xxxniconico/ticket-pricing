@@ -32,8 +32,7 @@ def render_opponent_analysis(all_matches):
     trows = ""
     for t in tiers_order:
         base = TIER_BASE.get(t, 0)
-        enable_ema = st.session_state.get("enable_ema_calibration", False)
-        cf = get_effective_calibration(t, enable_ema=enable_ema)
+        cf = get_effective_calibration(t, enable_ema=False)
         cal_color = "#ff6b6b" if cf > 1.01 else "#51cf66" if cf < 0.99 else "#8a8f98"
         opps_str = " · ".join(tier_opps.get(t, []))
         trows += (
@@ -49,7 +48,7 @@ def render_opponent_analysis(all_matches):
       <thead><tr><th>级别</th><th>基值(张)</th><th>校准因子</th><th>校准后</th><th style="text-align:left">对手</th></tr></thead>
       <tbody>{trows}</tbody>
     </table>""", unsafe_allow_html=True)
-    st.caption("基值来自 KMeans 聚类均值 · EMA 校准默认关闭（实验开关在页顶）· 开启后需 ≥8 场/级")
+    st.caption("基值来自 KMeans 聚类均值")
     
     # ── 对手表现数据 ──
     st.divider()

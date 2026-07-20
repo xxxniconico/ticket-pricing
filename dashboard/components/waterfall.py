@@ -39,7 +39,7 @@ def compute_waterfall_decomposition(h2_json_str, guoan_matches_ser, _version=20)
             st_df = pd.read_parquet(st_path)
             for rnd in st_df['round'].unique():
                 rnd_data = st_df[st_df['round'] == rnd]
-                key = f'{yr}_{int(rnd):02d}'
+                key = f'{yr}_{int(''.join(filter(str.isdigit, str(rnd)))):02d}'
                 if key not in _ctx_standings:
                     _ctx_standings[key] = {}
                 for _, row in rnd_data.iterrows():
@@ -381,7 +381,7 @@ def compute_h1_waterfall(guoan_matches_ser, _version=1):
             st_df = pd.read_parquet(st_path)
             for rnd in st_df['round'].unique():
                 rnd_data = st_df[st_df['round'] == rnd]
-                key = f'{yr}_{int(rnd):02d}'
+                key = f'{yr}_{int(''.join(filter(str.isdigit, str(rnd)))):02d}'
                 if key not in _ctx_standings:
                     _ctx_standings[key] = {}
                 for _, row in rnd_data.iterrows():
@@ -630,7 +630,7 @@ def compute_h2_waterfall(h2_json_str, guoan_matches_ser, _version=1):
             st_df = pd.read_parquet(st_path)
             for rnd in st_df['round'].unique():
                 rnd_data = st_df[st_df['round'] == rnd]
-                key = f'{yr}_{int(rnd):02d}'
+                key = f'{yr}_{int(''.join(filter(str.isdigit, str(rnd)))):02d}'
                 if key not in _ctx_standings:
                     _ctx_standings[key] = {}
                 for _, row in rnd_data.iterrows():

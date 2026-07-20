@@ -35,7 +35,7 @@ _ALL_PROMOTED = PROMOTED_2023 | PROMOTED_2024 | PROMOTED_2026
 DERBY_BONUS = {"上海申花": 30, "山东泰山": 20, "天津津门虎": 20}
 FROZEN_TIERS = {"上海申花": "S"}
 
-TOPIC_SCORES = {"title_race": 15, "relegation": 8, "new_promoted": 5, "star_player": 10, "default": 0}
+TOPIC_SCORES = {"new_promoted": 5, "star_player": 10, "default": 0}
 
 # ── 自动话题检测 ───────────────────────────────────────────────────────────
 def _detect_topic(opponent, match_date, standings_by_round, matches):
@@ -46,59 +46,11 @@ def _detect_topic(opponent, match_date, standings_by_round, matches):
     
     tags = []
     
-    # 1. 升班马首赛季
+    # 升班马首赛季（排名相关话题已由 PERF 覆盖）
     if t in PROMOTED_2026:
-        tags.append("new_promoted")
+        return "new_promoted"
     
-    # 2. 争冠/保级：基于扣分后积分榜排名
-    if standings_by_round:
-        # 计算扣分后积分并重新排名
-        yr = str(dt.year)
-        ded = {}
-        try:
-            from src.csl_context import load_csl_data
-            _, _, ded_data = load_csl_data()
-            ded = ded_data.get("deductions_by_club", {})
-        except Exception:
-            pass
-        
-        # 从 matches 计算各队实际积分
-        team_pts = {}
-        for m in matches:
-            if not m.get("completed") or m["hg"] is None: continue
-            md = m["date"]
-            if md > match_date: continue
-            if not md.startswith(yr): continue
-            for side, gf, ga in [(m["home"], m["hg"], m["ag"]), (m["away"], m["ag"], m["hg"])]:
-                t2 = _normalize_club_name(side)
-                if t2 not in team_pts: team_pts[t2] = 0
-                if gf > ga: team_pts[t2] += 3
-                elif gf == ga: team_pts[t2] += 1
-        
-        # 扣分
-        for team_name in team_pts:
-            team_pts[team_name] -= ded.get(team_name, 0)
-        
-        # 排名
-        ranked = sorted(team_pts.items(), key=lambda x: -x[1])
-        total_teams = len(ranked)
-        for i, (team_name, _) in enumerate(ranked):
-            if _normalize_club_name(team_name) == t:
-                opp_rank = i + 1
-                if opp_rank <= 2:
-                    tags.append("title_race")
-                elif opp_rank >= total_teams - 1:
-                    tags.append("relegation")
-                break
-    
-    # 3. 德比对手不额外加话题（已有 DERBY bonus）
-    # (DERBY_BONUS 已经覆盖)
-    
-    # 优先级: title_race/relegation > 其他（争冠/保级话题不应被升班马标签覆盖）
-    for priority in ["title_race", "relegation", "star_player", "new_promoted"]:
-        if priority in tags:
-            return priority
-    return tags[0] if tags else "default"
+    return "default"
 
 ALL_CSL_TEAMS_2026 = [
     "上海申花", "成都蓉城", "山东泰山", "天津津门虎",
@@ -270,8 +222,11 @@ def _load_guoan_home_attendance():
     if not _ALL_UNIFIED.exists():
         return pd.DataFrame(columns=["match_date", "opponent", "attendance", "match_tier"])
     df = pd.read_parquet(_ALL_UNIFIED)
+    df["数量"] = pd.to_numeric(df["数量"])
+    df["实际支付价格"] = pd.to_numeric(df["实际支付价格"])
+    df["is_home"] = df["is_home"] == "True"
     # 对齐看板口径：CSL only, 排除 partial/bundle, 用 数量列求和
-    csl = df[(df["competition"] == "CSL") & (~df["is_partial"]) & (~df["is_bundle"])]
+    csl = df[(df["competition"] == "CSL") & (df["is_partial"] == "False") & (df["is_bundle"] == "False")]
     home = csl[csl["is_home"] == True].copy()
     home["match_date"] = pd.to_datetime(home["match_date"])
     from src.csl_context import _normalize_club_name
@@ -285,7 +240,7 @@ def _attendance_percentile(opponent, guoan_home_history):
     opp_data = guoan_home_history[guoan_home_history["opponent"] == t]
     if opp_data.empty:
         # 升班马/无历史: 给最低档, 由 brand prior 接管
-        if t in _ALL_PROMOTED: return 5.0  # 升班马最低
+        if t in _ALL_PROMOTED: return 5.0  # 升班马保守默认（P1-2: 15→5）（不依赖排名）
         return 15.0  # 其他老队无数据: 偏低
     # 样本衰减: <4场向整体均值收缩 (fix P2-2)
     n = len(opp_data)
@@ -317,7 +272,7 @@ def _cur_year_att_ratio(opponent, match_date, guoan_home_history):
     if n == 0:
         return None  # 升班马，无任何工体交锋数据
     if n == 1:
-        return 1.0   # 只有1场，无法对比趋势，默认中性
+        return None  # 只有1场，无法判断趋势，不加分（同升班马）
     # 最近 min(2, n//2) 场 vs 整体历史均值（避免对半切放大极端值）
     recent_n = min(2, max(1, n // 2))
     recent = opp_data.tail(recent_n)
@@ -340,6 +295,54 @@ def _has_cur_data(opponent, match_date, guoan_home_history):
     ]
     return len(opp_data) >= 1
 
+
+def _get_perf(opponent, match_date, standings_by_round, matches):
+    """排名分位：基于积分榜排名的号召力分（0-100）。
+    
+    不依赖历史票房数据——升班马和老牌队平等对待。
+    rank=1 → 100, rank=16 → 0。
+    """
+    from src.csl_context import _normalize_club_name
+    t = _normalize_club_name(opponent)
+    dt = pd.Timestamp(match_date)
+    yr = str(dt.year)
+    
+    # 从 matches 计算积分（含扣分——反映官方积分榜，球迷看的就这个）
+    ded = {}
+    try:
+        from src.csl_context import load_csl_data
+        _, _, ded_data = load_csl_data()
+        ded = ded_data.get("deductions_by_club", {})
+    except Exception:
+        pass
+    
+    team_pts = {}
+    for m in matches:
+        if not m.get("completed") or m["hg"] is None: continue
+        md = m["date"]
+        if md > match_date: continue
+        if not md.startswith(yr): continue
+        for side, gf, ga in [(m["home"], m["hg"], m["ag"]), (m["away"], m["ag"], m["hg"])]:
+            t2 = _normalize_club_name(side)
+            if t2 not in team_pts: team_pts[t2] = 0
+            if gf > ga: team_pts[t2] += 3
+            elif gf == ga: team_pts[t2] += 1
+    
+    for team_name in team_pts:
+        team_pts[team_name] -= ded.get(team_name, 0)
+    
+    ranked = sorted(team_pts.items(), key=lambda x: -x[1])
+    total = len(ranked)
+    if total <= 1:
+        return 50.0
+    
+    for i, (team_name, _) in enumerate(ranked):
+        if team_name == t:
+            rank = i + 1
+            return max(0.0, min(100.0, (total - rank) / (total - 1) * 100.0))
+    
+    return 50.0  # 没找到排名，默认中等
+
 def compute_appeal(opponent, match_date,
                    guoan_home_history=None, cur_year_attendance=None,
                    hist_avg_attendance=None, last_h2h=None, topic_tag=None,
@@ -355,12 +358,20 @@ def compute_appeal(opponent, match_date,
         cur_scaled = (cur_ratio - 0.5) / 1.0 * 100.0  # 0.5→0, 1.0→50, 1.5→100
     else:
         cur_scaled = 0.0  # 升班马无数据，不加分
+    # 排名分位（不依赖历史，升班马和老牌队平等）
+    perf = _get_perf(t, match_date, standings_by_round or {}, matches or [])
     # Auto-detect topic if not explicitly provided
     if topic_tag is None:
         topic_tag = _detect_topic(t, match_date, standings_by_round or {}, matches or [])
     topic_raw = TOPIC_SCORES.get(topic_tag or "default", 0.0)
-    ap_raw = (0.40 * hist_pct + 0.25 * derby_raw
-            + 0.20 * cur_scaled + 0.15 * topic_raw)
+    # 有历史数据: HIST主导,PERF微调；无历史: PERF主导
+    n_hist = len(guoan_home_history[guoan_home_history["opponent"] == t])
+    if n_hist >= 1:
+        w_hist, w_perf = 0.35, 0.10  # 真实票房说了算
+    else:
+        w_hist, w_perf = 0.15, 0.25  # 没历史，排名多信一点
+    ap_raw = (w_hist * hist_pct + w_perf * perf + 0.15 * derby_raw
+            + 0.10 * cur_scaled + 0.10 * topic_raw)
     return max(0.0, min(100.0, ap_raw))
 
 
@@ -502,18 +513,27 @@ def get_effective_tier(opponent, match_date,
     if st >= 80 and ap >= 70: return "S"
     # A: strong ST + decent AP, OR 德比级票房
     if (st >= 55 and ap >= 40) or hist_pct >= 90: return "A"
+    # 老牌强队保护：历史票房中上 + 实力不弱 → A
+    if hist_pct >= 55 and st >= 45: return "A"
     # B floor: 高票房球队 (≥80%) 不下探
     if hist_pct >= 80: return "B"
     # AP-protected B: high appeal teams keep B even if ST is weak
     if ap >= 35 and st >= 20: return "B"
     # C: weak ST or very low AP
-    if st < 35 or ap < 25: return "C"
-    # Default B
-    return "B"
+    if st < 35 or ap < 25:
+        tier = "C"
+    else:
+        tier = "B"
+    # Soft boundary: 边界球队有机会升档
+    if soft_boundary:
+        alt = _check_soft_boundary(st, ap, tier)
+        if alt is not None:
+            return alt
+    return tier
 
 def _check_soft_boundary(st, ap, current_tier):
-    if current_tier == "C" and st >= 32 and ap >= 19: return "B"
-    if current_tier == "B" and ((st >= 47 and ap >= 25) or (st >= 67 and ap >= 39)): return "A"
+    if current_tier == "C" and st >= 35 and ap >= 25: return "B"
+    if current_tier == "B" and ((st >= 60 and ap >= 30) or (st >= 67 and ap >= 39)): return "A"
     if current_tier == "A" and st >= 77 and ap >= 67: return "S"
     return None
 
@@ -545,6 +565,7 @@ def get_opponent_scorecard(opponent, match_date,
                        "L5_PPG": _compute_l5_ppg(t, match_date, matches),
                        "GD_per": _compute_gd_per(t, match_date, matches)},
             "AP_sub": {"HIST_ATT_pct": _attendance_percentile(t, guoan_home_history),
+                       "PERF": _get_perf(t, match_date, standings_by_round or {}, matches or []),
                        "DERBY_bonus": DERBY_BONUS.get(t, 0.0),
                        "CUR_YEAR_ratio": _cur_year_att_ratio(t, match_date, guoan_home_history),
                        "TOPIC": TOPIC_SCORES.get(_detect_topic(t, match_date, standings_by_round or {}, matches or []), 0.0)},

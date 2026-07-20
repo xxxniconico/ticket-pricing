@@ -97,6 +97,9 @@ def verify() -> dict:
 
     # pandas 读
     pdf = pd.read_parquet(parquet)
+    pdf["数量"] = pd.to_numeric(pdf["数量"])
+    pdf["实际支付价格"] = pd.to_numeric(pdf["实际支付价格"])
+    pdf["is_home"] = pdf["is_home"] == "True"
     pn = len(pdf)
     pqty = int(pdf["数量"].sum()) if "数量" in pdf.columns else 0
     pavg = float(pdf["实际支付价格"].mean()) if "实际支付价格" in pdf.columns else 0.0

@@ -48,9 +48,12 @@ class SeasonEngine:
             return
 
         all_data = pd.read_parquet(parquet)
+        all_data["数量"] = pd.to_numeric(all_data["数量"])
+        all_data["实际支付价格"] = pd.to_numeric(all_data["实际支付价格"])
+        all_data["is_home"] = all_data["is_home"] == "True"
         csl = all_data[
             (all_data["competition"] == "CSL") & (all_data["is_home"])
-            & (~all_data["is_bundle"]) & (~all_data["is_partial"])
+            & (all_data["is_bundle"] == "False") & (all_data["is_partial"] == "False")
             & (all_data["match_date"].str.startswith(prior_season))
         ]
 

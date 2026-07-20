@@ -488,7 +488,11 @@ def _load_unified_data() -> pd.DataFrame:
     import os
     path = os.path.join(os.path.dirname(__file__), "..", "data", "processed", "all_unified.parquet")
     if os.path.exists(path):
-        return pd.read_parquet(path)
+        df = pd.read_parquet(path)
+        df["数量"] = pd.to_numeric(df["数量"])
+        df["实际支付价格"] = pd.to_numeric(df["实际支付价格"])
+        df["is_home"] = df["is_home"] == "True"
+        return df
     return pd.DataFrame()
 
 

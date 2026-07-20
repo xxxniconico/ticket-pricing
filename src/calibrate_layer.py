@@ -105,6 +105,9 @@ def _init_from_existing():
             return
 
         all_data = pd.read_parquet(parquet)
+        all_data["数量"] = pd.to_numeric(all_data["数量"])
+        all_data["实际支付价格"] = pd.to_numeric(all_data["实际支付价格"])
+        all_data["is_home"] = all_data["is_home"] == "True"
         all_data["match_date_dt"] = pd.to_datetime(all_data["match_date"])
 
         csl_2026 = all_data[

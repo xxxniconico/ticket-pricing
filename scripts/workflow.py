@@ -273,7 +273,10 @@ def cmd_backtest(args):
         return
 
     df = pd.read_parquet(parquet)
-    csl = df[(df['competition'] == 'CSL') & (~df['is_partial']) & (~df['is_bundle'])]
+    df["数量"] = pd.to_numeric(df["数量"])
+    df["实际支付价格"] = pd.to_numeric(df["实际支付价格"])
+    df["is_home"] = df["is_home"] == "True"
+    csl = df[(df['competition'] == 'CSL') & (df["is_partial"] == "False") & (df["is_bundle"] == "False")]
 
     # 收集所有场次
     records = []

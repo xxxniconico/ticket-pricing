@@ -142,8 +142,7 @@ def render_prediction_detail(target_match, guoan_matches, standings, mae, key_pr
         final_mult *= m_val
     final_mult = max(final_mult, PENALTY_FLOOR)
     raw_pred = min(base * final_mult, 20000)
-    enable_ema = st.session_state.get("enable_ema_calibration", False)
-    cal_factor = get_effective_calibration(tier, enable_ema=enable_ema)
+    cal_factor = get_effective_calibration(tier, enable_ema=False)
     pred = raw_pred * cal_factor
 
     render_cumulative_bar(base, final_mult, pred, tier, cal_factor)
