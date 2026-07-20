@@ -54,6 +54,7 @@ def render_tab1(target_match, home_preds, guoan_matches, standings, mae, use_dyn
     render_recent_results(target_match, guoan_matches, standings)
 
     # ST/AP 动态评级可视化
+    st.caption("📊 动态分级")
     if use_dynamic and st_score > 0:
         hpct = ap_sub['HIST_ATT_pct']
         perf = ap_sub['PERF']
