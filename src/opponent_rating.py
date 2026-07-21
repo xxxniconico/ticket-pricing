@@ -513,8 +513,6 @@ def get_effective_tier(opponent, match_date,
     if st >= 80 and ap >= 70: return "S"
     # A: strong ST + decent AP, OR 德比级票房
     if (st >= 55 and ap >= 40) or hist_pct >= 90: return "A"
-    # 老牌强队保护：历史票房中上 + 实力不弱 → A
-    if hist_pct >= 55 and st >= 45: return "A"
     # B floor: 高票房球队 (≥80%) 不下探
     if hist_pct >= 80: return "B"
     # AP-protected B: high appeal teams keep B even if ST is weak
