@@ -41,8 +41,14 @@ def parse_price_info(price_info: str):
         qty = int(float(before))
     return price, qty
 
-def ingest_match(excel_path: str):
-    """导入单场比赛 Excel"""
+def ingest_match(excel_path: str, competition: str = "CSL"):
+    """导入单场比赛 Excel
+
+    Args:
+        excel_path: 大麦导出的 Excel 路径
+        competition: 赛事类型，默认 "CSL"。亚冠等非联赛场次必须显式传入
+                     （如 ingest_match(path, "ACL")），否则会污染 CSL 历史统计
+    """
     path = Path(excel_path)
     if not path.exists():
         print(f"ERROR: {path} not found")
@@ -125,7 +131,7 @@ def ingest_match(excel_path: str):
                 "票名称": f"{price:.0f}元", "数量": 1,
                 "floor": floor, "section": section,
                 "row_num": row_num, "seat_num": seat_num,
-                "match_tier": "", "competition": "CSL",
+                "match_tier": "", "competition": competition,
                 "is_partial": False, "比赛": f"北京国安VS{opponent}",
                 "md": pd.Timestamp(date)
             })
@@ -187,4 +193,4 @@ if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("Usage: python scripts/ingest_match.py <excel_path>")
         sys.exit(1)
-    ingest_match(sys.argv[1])
+    ingest_match(sys.argv[1], competition=comp)
