@@ -15,6 +15,10 @@ _ELO_PATH = _DATA_DIR / "elo_history.parquet"
 _APPEAL_PATH = _DATA_DIR / "appeal_scores.parquet"
 _ALL_UNIFIED = _DATA_DIR / "all_unified.parquet"
 
+# 亚冠/杯赛对手：all_unified 中 competition 被错标为 CSL，须剔除出历史票房统计
+# (2025-09-18 河内公安 1866 / 2025-11-06 大埔 1367 / 2025-12-11 麦克阿瑟FC 2158)
+ACL_OPPONENTS = {"河内公安", "大埔", "麦克阿瑟FC"}
+
 K_DEFAULT, K_EARLY, K_LATE, HOME_ADV = 20, 30, 15, 65.0
 
 INITIAL_ELO_2023 = {
@@ -227,6 +231,8 @@ def _load_guoan_home_attendance():
     df["is_home"] = df["is_home"] == "True"
     # 对齐看板口径：CSL only, 排除 partial/bundle, 用 数量列求和
     csl = df[(df["competition"] == "CSL") & (df["is_partial"] == "False") & (df["is_bundle"] == "False")]
+    # 剔除被错标为 CSL 的亚冠场次（ACL_OPPONENTS），防止污染 AP 吸引力分/历史上座
+    csl = csl[~csl["opponent"].isin(ACL_OPPONENTS)]
     home = csl[csl["is_home"] == True].copy()
     home["match_date"] = pd.to_datetime(home["match_date"])
     from src.csl_context import _normalize_club_name

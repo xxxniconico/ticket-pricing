@@ -492,6 +492,9 @@ def _load_unified_data() -> pd.DataFrame:
         df["数量"] = pd.to_numeric(df["数量"])
         df["实际支付价格"] = pd.to_numeric(df["实际支付价格"])
         df["is_home"] = df["is_home"] == "True"
+        # 剔除被错标为 CSL 的亚冠场次（同 opponent_rating.ACL_OPPONENTS）
+        acl = {"河内公安", "大埔", "麦克阿瑟FC"}
+        df = df[~df["opponent"].isin(acl)]
         return df
     return pd.DataFrame()
 
