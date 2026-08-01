@@ -133,10 +133,13 @@ def ingest_match(excel_path: str, competition: str = "CSL"):
                 "row_num": row_num, "seat_num": seat_num,
                 "match_tier": "", "competition": competition,
                 "is_partial": False, "比赛": f"北京国安VS{opponent}",
-                "md": pd.Timestamp(date)
+                "md": date
             })
     
     new_df = pd.DataFrame(rows)
+    # 历史 parquet 全列 large_string（NaN 存 null）；新数据必须同风格，否则
+    # object 列 str+float 混排导致 pyarrow ArrowTypeError
+    new_df = new_df.astype("string")
     match_id = new_df["match_id"].iloc[0]
     new_count = len(new_df)
     
@@ -154,8 +157,12 @@ def ingest_match(excel_path: str, competition: str = "CSL"):
     
     merged.to_parquet(parquet_path, index=False)
     
-    # Rebuild match_features
-    mf = merged.groupby("match_id").agg(
+    # Rebuild match_features（用数值化副本计算，原 merged 保持字符串风格供 parquet）
+    num = merged.copy()
+    for col in ["实际支付价格", "数量", "section", "floor", "row_num"]:
+        if col in num.columns:
+            num[col] = pd.to_numeric(num[col], errors="coerce")
+    mf = num.groupby("match_id").agg(
         total_tickets=("数量", "sum"),
         unique_users=("大麦用户id", "nunique"),
         avg_spend=("实际支付价格", "mean"),
@@ -167,7 +174,7 @@ def ingest_match(excel_path: str, competition: str = "CSL"):
     mf.to_parquet(PROCESSED_DIR / "match_features.parquet", index=False)
     
     # Rebuild user_stats
-    us = merged.groupby("大麦用户id").agg(
+    us = num.groupby("大麦用户id").agg(
         total_tickets=("数量", "sum"), total_spend=("实际支付价格", "sum"),
         matches_attended=("match_id", "nunique"), avg_spend=("实际支付价格", "mean"),
         first_match=("match_date", "min"), last_match=("match_date", "max"),
@@ -191,6 +198,7 @@ def ingest_match(excel_path: str, competition: str = "CSL"):
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("Usage: python scripts/ingest_match.py <excel_path>")
+        print("Usage: python scripts/ingest_match.py <excel_path> [CSL|ACL]")
         sys.exit(1)
+    comp = sys.argv[2] if len(sys.argv) > 2 else "CSL"
     ingest_match(sys.argv[1], competition=comp)
