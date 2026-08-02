@@ -194,6 +194,20 @@ def ingest_match(excel_path: str, competition: str = "CSL"):
     if path != archive_path:
         shutil.copy2(path, archive_path)
     
+    # 赛后自动校准（2026-08-03）：导入完成后补齐所有已赛未校准场次。
+    # 校准不再依赖打开"历史定价"tab（原惰性触发导致浙江8/1等场次漏校准）
+    try:
+        from scripts.update_calibration import main as _calib_main
+        import sys as _sys
+        _orig_argv = _sys.argv
+        _sys.argv = ["update_calibration.py"]
+        try:
+            _calib_main()
+        finally:
+            _sys.argv = _orig_argv
+    except Exception as e:
+        print(f"  ⚠️ 赛后校准失败（不影响导入）: {e}")
+    
     return match_id
 
 if __name__ == "__main__":

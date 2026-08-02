@@ -10,7 +10,6 @@ from dashboard.components.ctx_builder import build_pred_args
 from dashboard.components.pricing_ui import render_pricing_table, render_strategy_card
 from src.classify import DERBY_RIVALS, classify_opponent_tier
 from src.pricing_v5 import ZONE_TIERS, build_price_matrix, get_pricing_tier
-from src.rule_engine import update as rule_update
 import json
 from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent.parent
@@ -247,14 +246,6 @@ def render_history_expanders(home_preds, guoan_matches):
           预测偏差：基准 {base_qty_dev_audit:+,.0f}张 · 实际到场 {total_actual_qty:,} · 实际收入 ¥{total_actual_rev/10000:.1f}万<br>
           {act_price_summary}判断：{audit_judgment}
         </div>""", unsafe_allow_html=True)
-
-        # V8.1: 赛后校准已禁用
-        rule_update(
-            match_id=f"{m['date']}_{opp}",
-            opponent=opp,
-            actual=a,
-            **pred_args
-        )
 
 
 # ══════════════════════════════════════════════════════════
