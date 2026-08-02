@@ -36,6 +36,36 @@ def set_ctx_rounds(rounds):
 def get_ctx_rounds():
     return _ctx_rounds
 
+
+@st.cache_data(ttl=3600)
+def compute_ap_percentiles(matches, rounds):
+    """计算各对手的 AP 分位（0-1），用于基值浮动。
+
+    基于给定比赛日前的对手吸引力评分（AP）分布——预测时 AP 分位应反映
+    "当前联赛对手吸引力排序"，不包含未来比赛信息。
+    """
+    from src.opponent_rating import get_opponent_scorecard
+    scores = {}
+    for m in matches:
+        if not m.get("is_home") or not m.get("date", "").startswith("2026"):
+            continue
+        opp = m["opponent"]
+        if opp in scores:
+            continue
+        try:
+            card = get_opponent_scorecard(opp, m["date"], standings_by_round=rounds, matches=matches)
+            scores[opp] = card["AP"]
+        except Exception:
+            scores[opp] = None
+    vals = sorted([v for v in scores.values() if v is not None])
+    pcts = {}
+    for opp, v in scores.items():
+        if v is None:
+            pcts[opp] = None
+        else:
+            pcts[opp] = (sum(1 for x in vals if x <= v) - 1) / max(len(vals) - 1, 1)
+    return pcts
+
 # ── CSS ─────────────────────────────────────────────────
 def load_css():
     css_path = Path(__file__).resolve().parent.parent / "style.css"

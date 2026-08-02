@@ -144,9 +144,16 @@ def render_prediction_detail(target_match, guoan_matches, standings, mae, key_pr
     # 预测一律走引擎 predict_calibrated（与优化器同函数同参数），
     # 展示层不再自算——防止规则链与引擎漂移（历史教训：C级暑假 1.13 vs 1.30 双轨）
     # EMA 校准已默认关闭（2026-08-03 用户确认：历史残差噪音，动态分级后双重修正）
+    # AP 分位浮动（2026-08-03 用户确认加入）：同一级别内按吸引力差异化基值
     from src.rule_engine import predict_calibrated as _engine_predict
+    from dashboard.common.data_cache import compute_ap_percentiles
     pred_args0 = build_pred_args(target_match, ctx)
-    pred = _engine_predict(opp, **pred_args0, opponent_tier_override=tier)
+    try:
+        _ap_pcts = compute_ap_percentiles(guoan_matches, get_ctx_rounds())
+        _ap_pct = _ap_pcts.get(opp)
+    except Exception:
+        _ap_pct = None
+    pred = _engine_predict(opp, **pred_args0, opponent_tier_override=tier, ap_pct=_ap_pct)
     cal_factor = get_effective_calibration(tier, enable_ema=False)
 
     render_cumulative_bar(base, max(pred / max(base, 1) / max(cal_factor, 1e-9), PENALTY_FLOOR), pred, tier, cal_factor)

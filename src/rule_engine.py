@@ -87,6 +87,7 @@ def predict(opponent, derby=False, lost_bottom=False, heavy_home_loss=False,
             late_season=False,
             opponent_tier_override=None,
             opponent_st=None,
+            ap_pct=None,
             match_year=None, **__) -> float:
     if opponent_tier_override is not None and isinstance(opponent_tier_override, (int, float)):
         base = float(opponent_tier_override)
@@ -94,6 +95,12 @@ def predict(opponent, derby=False, lost_bottom=False, heavy_home_loss=False,
     else:
         tier = opponent_tier_override or classify_opponent_tier(opponent)
         base = TIER_BASE.get(tier, 8100)
+    # AP 分位浮动（2026-08-03 用户确认加入）：同一级别内按对手吸引力差异化
+    # 基值 × (1 + 0.20×(ap_pct−0.5))，限幅 ±5%。ap_pct=None 时不浮动（保持原逻辑）
+    if ap_pct is not None:
+        _ap_coef = 1.0 + 0.20 * (max(0.0, min(1.0, ap_pct)) - 0.5)
+        _ap_coef = max(0.95, min(1.05, _ap_coef))
+        base *= _ap_coef
     # Determine if opponent is "strong" (for penalty rules)
     # Priority: ST score > Tier > default False
     if opponent_st is not None:

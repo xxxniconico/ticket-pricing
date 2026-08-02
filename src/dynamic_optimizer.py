@@ -160,6 +160,17 @@ class DynamicPricingOptimizer:
         # 1. 规则引擎预测总量（硬编码基值，MAE=549）
         ctx_with_tier = dict(context)
         ctx_with_tier['opponent_tier_override'] = opp_tier
+        # AP 分位浮动：同一级别内按吸引力差异化（2026-08-03 用户确认加入）
+        # 用全联赛对手 AP 分布算分位（compute_ap_percentiles 内部按国安主场对手）
+        try:
+            from dashboard.common.data_cache import compute_ap_percentiles
+            from src.csl_context import load_csl_data, get_guoan_matches
+            _m, _r, _ = load_csl_data()
+            _g = get_guoan_matches(_m)
+            _ap_pcts = compute_ap_percentiles(_g, _r)
+            ctx_with_tier['ap_pct'] = _ap_pcts.get(opponent)
+        except Exception:
+            pass
         predicted_total = predict_attendance(opponent, **ctx_with_tier)
 
         # 动态目标权重：四级分档 (V8.2: 门槛下调, 更平滑过渡)
