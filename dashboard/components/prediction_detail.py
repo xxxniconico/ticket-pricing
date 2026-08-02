@@ -153,10 +153,23 @@ def render_prediction_detail(target_match, guoan_matches, standings, mae, key_pr
         _ap_pct = _ap_pcts.get(opp)
     except Exception:
         _ap_pct = None
+    # AP 分位浮动系数（展示用，与引擎计算同源）
+    _ap_coef = 1.0
+    if _ap_pct is not None:
+        _ap_coef = 1.0 + 0.20 * (max(0.0, min(1.0, _ap_pct)) - 0.5)
+        _ap_coef = max(0.95, min(1.05, _ap_coef))
+    if _ap_pct is not None:
+        st.markdown(
+            f"<div style='display:flex;gap:6px;flex-wrap:wrap;margin:4px 0'>"
+            f"<span class='rule-pill rule-up' title='对手吸引力分位 × AP浮动系数，同级别内差异化'>🎯 吸引力分位 {_ap_pct*100:.0f}% ×{_ap_coef:.3f}</span>"
+            f"<span style='font-size:0.62rem;color:#62666d;align-self:center'>基值 {base:,.0f} × {_ap_coef:.3f} = {base*_ap_coef:,.0f}</span>"
+            f"</div>", unsafe_allow_html=True)
     pred = _engine_predict(opp, **pred_args0, opponent_tier_override=tier, ap_pct=_ap_pct)
     cal_factor = get_effective_calibration(tier, enable_ema=False)
 
-    render_cumulative_bar(base, max(pred / max(base, 1) / max(cal_factor, 1e-9), PENALTY_FLOOR), pred, tier, cal_factor)
+    render_cumulative_bar(base * (_ap_coef if _ap_pct is not None else 1.0),
+                          max(pred / max(base * (_ap_coef if _ap_pct is not None else 1.0), 1) / max(cal_factor, 1e-9), PENALTY_FLOOR),
+                          pred, tier, cal_factor)
     render_confidence_bar(pred, mae)
 
     st.divider()
