@@ -3,15 +3,29 @@ import streamlit as st
 import pandas as pd
 from datetime import date
 
+# H2 定价实验矩阵（2026-08-03 更新：已赛 4 场补充实际数据）
+# actual_qty/actual_rev 来自 all_unified.parquet；t1-t3 为计划执行价
 EXPERIMENTS = [
-    {"date":"2026-06-27","opponent":"武汉三镇","tier":"B->C","group":"事后对照","t1":"—","t2":"—","t3":"—","status":"✅ 已赛"},
-    {"date":"2026-07-04","opponent":"山东泰山","tier":"A->A","group":"德比弹性","t1":260,"t2":374,"t3":484,"status":"⏳ 待武汉数据"},
-    {"date":"2026-07-17","opponent":"辽宁铁人","tier":"C->B","group":"升级发现","t1":160,"t2":220,"t3":300,"status":"📋 已确认"},
-    {"date":"2026-08-07","opponent":"深圳新鹏城","tier":"B->C","group":"降级发现","t1":126,"t2":180,"t3":280,"status":"📋 已确认"},
-    {"date":"2026-08-01","opponent":"浙江","tier":"B->B","group":"对照","t1":160,"t2":220,"t3":300,"status":"📋 已确认"},
-    {"date":"2026-08-22","opponent":"云南玉昆","tier":"B->B","group":"对照","t1":160,"t2":220,"t3":300,"status":"📋 已确认"},
-    {"date":"2026-10-18","opponent":"青岛西海岸","tier":"B->C","group":"降级验证","t1":126,"t2":180,"t3":280,"status":"📋 已确认"},
-    {"date":"2026-11-08","opponent":"重庆铜梁龙","tier":"C->B","group":"升级验证","t1":160,"t2":220,"t3":300,"status":"📋 已确认"},
+    {"date":"2026-06-27","opponent":"武汉三镇","tier":"B->C","group":"事后对照",
+     "t1":170,"t2":230,"t3":320,"status":"✅ 已赛",
+     "actual_qty":6238,"actual_rev":342.7,"q1":3243,"q2":762,"q3":1567,"q4":125,"q5":503,"q6":38},
+    {"date":"2026-07-04","opponent":"山东泰山","tier":"A->A","group":"德比弹性",
+     "t1":260,"t2":360,"t3":480,"status":"✅ 已赛",
+     "actual_qty":12956,"actual_rev":516.8,"q1":3761,"q2":3873,"q3":3472,"q4":1170,"q5":598,"q6":82},
+    {"date":"2026-07-17","opponent":"辽宁铁人","tier":"C->B","group":"升级发现",
+     "t1":160,"t2":220,"t3":300,"status":"✅ 已赛",
+     "actual_qty":7362,"actual_rev":383.3,"q1":3732,"q2":754,"q3":1870,"q4":493,"q5":477,"q6":36},
+    {"date":"2026-08-01","opponent":"浙江","tier":"B->B","group":"对照",
+     "t1":160,"t2":220,"t3":300,"status":"✅ 已赛",
+     "actual_qty":9912,"actual_rev":250.5,"q1":3761,"q2":1775,"q3":2798,"q4":799,"q5":712,"q6":67},
+    {"date":"2026-08-07","opponent":"深圳新鹏城","tier":"B->C","group":"降级发现",
+     "t1":126,"t2":180,"t3":280,"status":"⏳ 待赛"},
+    {"date":"2026-08-22","opponent":"云南玉昆","tier":"B->B","group":"对照",
+     "t1":160,"t2":220,"t3":300,"status":"⏳ 待赛"},
+    {"date":"2026-10-18","opponent":"青岛西海岸","tier":"B->C","group":"降级验证",
+     "t1":126,"t2":180,"t3":280,"status":"⏳ 待赛"},
+    {"date":"2026-11-08","opponent":"重庆铜梁龙","tier":"C->B","group":"升级验证",
+     "t1":160,"t2":220,"t3":300,"status":"⏳ 待赛"},
 ]
 
 def render_experiment_tab():
@@ -22,7 +36,7 @@ def render_experiment_tab():
     today = date.today().isoformat()
     next_match = None
     for e in EXPERIMENTS:
-        if e["status"].startswith("⏳") or e["status"].startswith("📋"):
+        if e["status"].startswith("⏳"):
             if e["date"] > today:
                 next_match = e
                 break
@@ -35,6 +49,9 @@ def render_experiment_tab():
                  column_config={
                      "date":"日期","opponent":"对手","tier":"Tier变化",
                      "group":"实验组","t1":"T1","t2":"T2","t3":"T3",
+                     "actual_qty":"实际销量","actual_rev":"实际收入(万)",
+                     "q1":"T1实售","q2":"T2实售","q3":"T3实售",
+                     "q4":"T4实售","q5":"T5实售","q6":"T6实售",
                      "status":"状态"
                  })
     

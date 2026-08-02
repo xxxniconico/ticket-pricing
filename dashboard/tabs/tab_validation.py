@@ -47,8 +47,6 @@ def render_validation_tab(home_preds, guoan_matches, all_matches):
     
     # Future match plan (hardcoded targets)
     future_plan = [
-        {"date":"2026-07-17","opponent":"辽宁铁人","tier":"C->B","group":"升级发现","t1":160,"t2":220,"t3":300,"status":"已确认"},
-        {"date":"2026-08-01","opponent":"浙江","tier":"B->B","group":"对照","t1":160,"t2":220,"t3":300,"status":"已确认"},
         {"date":"2026-08-07","opponent":"深圳新鹏城","tier":"B->C","group":"降级发现","t1":126,"t2":180,"t3":280,"status":"已确认"},
         {"date":"2026-10-18","opponent":"青岛西海岸","tier":"B->C","group":"降级验证","t1":126,"t2":180,"t3":280,"status":"已确认"},
         {"date":"2026-11-08","opponent":"重庆铜梁龙","tier":"C->B","group":"升级验证","t1":160,"t2":220,"t3":300,"status":"已确认"},
@@ -56,9 +54,18 @@ def render_validation_tab(home_preds, guoan_matches, all_matches):
     
     # Past matches: read actual pricing from decisions
     past_matches = [
-        {"date":"2026-06-27","opponent":"武汉三镇","tier":"B->C","group":"事后对照","status":"已赛"},
-        {"date":"2026-07-04","opponent":"山东泰山","tier":"A->A","group":"德比弹性","status":"已赛"},
+        {"date":"2026-06-27","opponent":"武汉三镇","tier":"B->C","group":"事后对照","status":"✅ 已赛"},
+        {"date":"2026-07-04","opponent":"山东泰山","tier":"A->A","group":"德比弹性","status":"✅ 已赛"},
+        {"date":"2026-07-17","opponent":"辽宁铁人","tier":"C->B","group":"升级发现","status":"✅ 已赛"},
+        {"date":"2026-08-01","opponent":"浙江","tier":"B->B","group":"对照","status":"✅ 已赛"},
     ]
+    # 实际销量/收入（all_unified.parquet，2026-08-03 更新）
+    _actual_map = {
+        "2026-06-27_武汉三镇": {"qty": 6238, "rev": 342.7},
+        "2026-07-04_山东泰山": {"qty": 12956, "rev": 516.8},
+        "2026-07-17_辽宁铁人": {"qty": 7362, "rev": 383.3},
+        "2026-08-01_浙江": {"qty": 9912, "rev": 250.5},
+    }
     
     exp_data = []
     for pm in past_matches:
@@ -67,11 +74,19 @@ def render_validation_tab(home_preds, guoan_matches, all_matches):
         row = dict(pm)
         for zt in ['T1','T2','T3','T4','T5','T6']:
             row[zt.lower()] = prices.get(zt) if prices.get(zt) else None
+        act = _actual_map.get(key, {})
+        row["actual_qty"] = act.get("qty")
+        row["actual_rev"] = act.get("rev")
         exp_data.append(row)
     for fm in future_plan:
         exp_data.append(fm)
     
-    st.dataframe(pd.DataFrame(exp_data), use_container_width=True, hide_index=True)
+    st.dataframe(pd.DataFrame(exp_data), use_container_width=True, hide_index=True,
+                 column_config={
+                     "date":"日期","opponent":"对手","tier":"Tier变化","group":"实验组",
+                     "t1":"T1价","t2":"T2价","t3":"T3价","t4":"T4价","t5":"T5价","t6":"T6价",
+                     "actual_qty":"实际销量","actual_rev":"实际收入(万)","status":"状态",
+                 })
     st.divider()
     st.markdown("**策略验证 · 赛后追踪**")
     st.caption("反事实分解：分级效应 + 调价效应 = 总策略贡献。票面收入口径。")
