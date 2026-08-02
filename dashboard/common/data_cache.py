@@ -187,13 +187,17 @@ def get_actual(m):
 
 def _face_to_tier_map(md):
     """按当场票名称面价从低到高映射 T1-T6。
-    票名称如"260元"→260。每场取所有面价升序，对应 T1(最低)..T6(最高)。
-    返回 {面价数字: 档位}。
+    票名称如"260元"→260；或直接是档位标签"T1".."T6"（辽宁7/17等场次）。
+    每场取所有面价升序，对应 T1(最低)..T6(最高)。返回 {面价数字: 档位}。
     """
     import re as _re
     faces = set()
-    for name in md["票名称"].dropna().unique():
-        mt = _re.search(r"(\d+)", str(name))
+    names = [str(n) for n in md["票名称"].dropna().unique()]
+    # 若本场票名称就是 T1..T6 标签（无面值），直接返回标签映射
+    if all(n.strip() in ("T1","T2","T3","T4","T5","T6") for n in names):
+        return {int(n.strip()[1]): n.strip() for n in names}
+    for name in names:
+        mt = _re.search(r"(\d+)", name)
         if mt:
             faces.add(int(mt.group(1)))
     faces = sorted(faces)
@@ -204,7 +208,11 @@ def _face_to_tier_map(md):
 
 def _parse_face(name):
     import re as _re
-    mt = _re.search(r"(\d+)", str(name))
+    name = str(name).strip()
+    # 档位标签 T1..T6：面值未知（辽宁7/17等场次），返回档位序号供 _face_to_tier_map 直映
+    if name in ("T1","T2","T3","T4","T5","T6"):
+        return int(name[1])
+    mt = _re.search(r"(\d+)", name)
     return int(mt.group(1)) if mt else None
 
 
@@ -263,7 +271,21 @@ def _get_zone_face_revenue(m):
             f2t = _face_to_tier_map(md)
             md["zt"] = md["票名称"].map(_parse_face).map(f2t)
             # 票面收入 = 票名称面价 × 数量
+            # T1..T6 标签场次（辽宁7/17）面值在 _parse_face 只给序号，需用决策记录执行价还原
             md["face_unit"] = md["票名称"].map(_parse_face)
+            names0 = [str(n) for n in md["票名称"].dropna().unique()]
+            if all(str(n).strip() in ("T1","T2","T3","T4","T5","T6") for n in names0):
+                try:
+                    import json as _json
+                    _dec = _json.load(open(ROOT / "data/processed/pricing_decisions.json"))
+                    _px = None
+                    for _dd in _dec.get("decisions", []):
+                        if _dd["match"]["date"] == m["date"] and str(_dd["match"]["opponent"]) in str(m.get("opponent","")):
+                            _px = _dd["prices"]; break
+                    if _px:
+                        md["face_unit"] = md["zt"].map(lambda z: _px.get(z, 0))
+                except Exception:
+                    pass
             md["face_revenue"] = md["face_unit"] * md["数量"]
             result = {}
             for zt in ZONE_TIERS:
