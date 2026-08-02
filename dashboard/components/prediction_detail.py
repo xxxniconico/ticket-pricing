@@ -170,7 +170,15 @@ def render_prediction_detail(target_match, guoan_matches, standings, mae, key_pr
     render_cumulative_bar(base * (_ap_coef if _ap_pct is not None else 1.0),
                           max(pred / max(base * (_ap_coef if _ap_pct is not None else 1.0), 1) / max(cal_factor, 1e-9), PENALTY_FLOOR),
                           pred, tier, cal_factor)
-    render_confidence_bar(pred, mae)
+    # 个性化置信区间：z=1.40 × 全局残差std × 对手波动因子（2026-08-03 探索验证，82%覆盖率）
+    try:
+        from dashboard.common.data_cache import compute_global_resid_std, compute_opp_volatility_factor
+        _gstd = compute_global_resid_std(guoan_matches)
+        _vfac = compute_opp_volatility_factor(opp)
+        _ci_width = 1.40 * _gstd * _vfac
+    except Exception:
+        _ci_width = None
+    render_confidence_bar(pred, mae, ci_width=_ci_width)
 
     st.divider()
     st.markdown("**定价建议**")

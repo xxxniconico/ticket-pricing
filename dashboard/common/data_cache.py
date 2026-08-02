@@ -4,6 +4,7 @@ from datetime import date
 from pathlib import Path
 
 import pandas as pd
+import numpy as np
 import streamlit as st
 
 from dashboard.components.ctx_builder import build_pred_args
@@ -35,6 +36,70 @@ def set_ctx_rounds(rounds):
 
 def get_ctx_rounds():
     return _ctx_rounds
+
+
+@st.cache_data(ttl=3600)
+def compute_global_resid_std(matches):
+    """计算已赛主场的全局预测残差 std（用于 80% 置信区间宽度）。
+
+    方案（2026-08-03 探索验证）：区间 = pred ± z × 全局残差std × 对手波动因子
+    - z=1.40（海港按B级口径，82% 覆盖率，平均宽度 1188）
+    - 波动因子 = 对手历史CV/全局CV，限幅 [0.7, 1.5]
+    """
+    from src.rule_engine import predict
+    from src.csl_context import detect_ctx
+    from src.opponent_rating import get_opponent_scorecard
+    from dashboard.components.ctx_builder import build_pred_args
+    import pandas as _pd
+    uni = _load_unified_attendance()
+    done = [m for m in matches if m.get("completed") and m.get("is_home")
+            and m.get("date", "").startswith("2026")]
+    errs = []
+    for m in done:
+        d = m["date"]
+        key = f"{d}_{m['opponent']}"
+        a = uni.get(key) or uni.get(f"{d} {m['opponent']}")
+        if a is None:
+            continue
+        card = get_opponent_scorecard(m["opponent"], d)
+        tier = "B" if m["opponent"] == "上海海港" else card["tier"]
+        ctx = detect_ctx(m, matches, _ctx_rounds)
+        pa = build_pred_args(m, ctx, {"summer": _pd.Timestamp(d).month in (7, 8), "match_year": d[:4]})
+        p = predict(m["opponent"], opponent_tier_override=tier, **pa)
+        errs.append(p - a)
+    if len(errs) < 3:
+        return 784.0
+    return float(np.std(errs))
+
+
+def _load_unified_attendance():
+    """{match_id: 实际销量} 映射（轻量缓存避免重复读 parquet）"""
+    import pandas as _pd
+    p = Path(__file__).resolve().parent.parent.parent / "data/processed/all_unified.parquet"
+    if not p.exists():
+        return {}
+    df = _pd.read_parquet(p)
+    df["数量"] = _pd.to_numeric(df["数量"], errors="coerce")
+    out = {}
+    for mid, grp in df.groupby("match_id"):
+        out[str(mid)] = int(grp["数量"].sum())
+    return out
+
+
+@st.cache_data(ttl=3600)
+def compute_opp_volatility_factor(opponent):
+    """对手历史销量 CV / 全局 CV，限幅 [0.7, 1.5]。用于个性化区间宽度。"""
+    uni = _load_unified_attendance()
+    vals = list(uni.values())
+    if not vals:
+        return 1.0
+    global_cv = float(np.std(vals) / np.mean(vals)) if np.mean(vals) else 1.0
+    # 该对手历史主场销量
+    opp_vals = [v for k, v in uni.items() if str(opponent) in k]
+    if len(opp_vals) >= 2 and np.mean(opp_vals) > 0:
+        cv = float(np.std(opp_vals) / np.mean(opp_vals))
+        return max(0.7, min(1.5, cv / global_cv if global_cv else 1.0))
+    return 1.0
 
 
 @st.cache_data(ttl=3600)

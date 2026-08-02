@@ -153,11 +153,19 @@ def render_cumulative_bar(base, final_mult, pred, tier, _cal_factor):
       <div style="font-size:0.6rem;color:#62666d;margin-top:2px">惩罚底线 ×{penalty_floor} · 上限 20,000张</div>
     </div>""", unsafe_allow_html=True)
 
-def render_confidence_bar(pred, mae):
+def render_confidence_bar(pred, mae, ci_width=None):
+    """预测置信区间条。
+
+    ci_width: 半宽（张）。None 时回退到固定 MAE×1.5（旧逻辑）。
+    2026-08-03 起采用个性化方案：ci_width = z(1.40) × 全局残差std × 对手波动因子
+    （82% 覆盖率，海港B级口径验证）。
+    """
     if mae == 0:
         return
-    ci_low = max(0, pred - mae * 1.5)
-    ci_high = min(20000, pred + mae * 1.5)
+    if ci_width is None:
+        ci_width = mae * 1.5
+    ci_low = max(0, pred - ci_width)
+    ci_high = min(20000, pred + ci_width)
     pct_low = ci_low / 20000 * 100
     pct_pred = pred / 20000 * 100
     pct_high = ci_high / 20000 * 100
@@ -168,7 +176,7 @@ def render_confidence_bar(pred, mae):
         <div class="bar-marker" style="left:{pct_pred}%"></div>
       </div>
       <div class="ci-labels"><span>悲观 {ci_low:,.0f}</span><span>乐观 {ci_high:,.0f}</span></div>
-      <div class="ci-note">基于赛季 MAE {mae:,.0f} 张 · 80% 置信区间</div>
+      <div class="ci-note">±{ci_width:,.0f} 张 · 个性化区间（全局残差×对手波动）</div>
     </div>""", unsafe_allow_html=True)
 
 def render_strategy_card(r, pred_args, actual_revenue=None, actual_attendance=None):
