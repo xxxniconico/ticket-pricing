@@ -35,6 +35,8 @@ MULTIPLIERS = {
     "season_opener": 1.17,
     "short_rest": 0.78, "midweek": 0.86,
     "summer": 1.13,
+    "summer_C": 1.30,   # C级暑假（辽宁7/17验证 ratio=1.33；勿改回1.13）
+    "late_season": 0.80,  # 10月后赛季末战意衰减（展示层与引擎共用，单一事实源）
     "midseason_restart": 1.10,
     "top3_form": 1.08,
 }
@@ -76,6 +78,7 @@ def predict(opponent, derby=False, lost_bottom=False, heavy_home_loss=False,
             saturday=False, season_opener=False,
             short_rest=False, midweek=False, summer=False,
             midseason_restart=False, top3_form=False,
+            late_season=False,
             opponent_tier_override=None,
             opponent_st=None,
             match_year=None, **__) -> float:
@@ -114,10 +117,11 @@ def predict(opponent, derby=False, lost_bottom=False, heavy_home_loss=False,
     if midseason_restart and not season_opener: mult *= MULTIPLIERS["midseason_restart"]
     if midweek and not lost_bottom: mult *= MULTIPLIERS["midweek"]
     if short_rest and not lost_bottom and not heavy_home_loss: mult *= MULTIPLIERS["short_rest"]
-    if summer and tier == "C": mult *= 1.30
+    if summer and tier == "C": mult *= MULTIPLIERS["summer_C"]
     elif summer and tier == "B": mult *= MULTIPLIERS["summer"]
     elif summer and tier in ("S","A"): mult *= 1.08
     elif summer and tier is None: mult *= 1.08 if is_strong else MULTIPLIERS["summer"]  # continuous mode uses ST
+    if late_season: mult *= MULTIPLIERS["late_season"]
     if top3_form and tier in ("B","C", None): mult *= MULTIPLIERS["top3_form"]
     if mult < PENALTY_FLOOR: mult = PENALTY_FLOOR
     return min(base * mult, 20000.0)

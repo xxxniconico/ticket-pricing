@@ -64,8 +64,11 @@ def build_rules_triggered(target_match, ctx, guoan_matches, use_dynamic=False):
     if mr and not so:
         rules.append(("盛夏重启", f"距上场≥28天 下半季回归 ×1.10", 1.10,
                       f"长休{28 if not prev_matches else (dt - pd.Timestamp(prev_matches[-1]['date'])).days}天后球迷回流，B级6月重启场次历史均值1.22x，保守标定1.10"))
-    if sm and tier in ("B", "C"):
-        rules.append(("暑假效应", f"7-8月暑假运营活动 x{MULTIPLIERS["summer"]}", MULTIPLIERS["summer"],
+    if sm and tier == "C":
+        rules.append(("暑假效应", f"7-8月暑假效应 x{MULTIPLIERS['summer_C']}", MULTIPLIERS["summer_C"],
+                      "C级暑假实测（辽宁7/17 ratio=1.33）加成最大，勿与B级共用1.13"))
+    elif sm and tier == "B":
+        rules.append(("暑假效应", f"7-8月暑假运营活动 x{MULTIPLIERS['summer']}", MULTIPLIERS["summer"],
                       "暑假期间球迷观赛时间充裕，运营促销活动叠加"))
     elif sm and tier in ("S", "A"):
         rules.append(("暑假效应", "7-8月暑假效应 x1.08", 1.08,
@@ -74,7 +77,8 @@ def build_rules_triggered(target_match, ctx, guoan_matches, use_dynamic=False):
         rules.append(("榜首", f"国安排名前3 ×{MULTIPLIERS['top3_form']}", MULTIPLIERS["top3_form"],
                       "争冠/亚冠预期溢价，仅 B/C 级生效"))
     if late:
-        rules.append(("赛季末", f"{dt.month}月 战意衰减 ×0.80", 0.80, "10月以后赛季末，若球队已无争冠/保级悬念，上座下滑"))
+        rules.append(("赛季末", f"{dt.month}月 战意衰减 ×{MULTIPLIERS['late_season']}", MULTIPLIERS["late_season"],
+                      "10月以后赛季末，若球队已无争冠/保级悬念，上座下滑"))
     if mid and not chl and not hh:
         rules.append(("工作日", f"周{'一二三四五六日'[dt.weekday()]} 工作日衰减 ×{MULTIPLIERS['midweek']}",
                       MULTIPLIERS["midweek"], "周二/三/四工作日影响，不与连败/惨败叠加"))
@@ -137,15 +141,14 @@ def render_prediction_detail(target_match, guoan_matches, standings, mae, key_pr
     rules_triggered, tier, base = build_rules_triggered(target_match, ctx, guoan_matches, use_dynamic)
     render_rule_pills(rules_triggered)
 
-    final_mult = 1.0
-    for _, _, m_val, _ in rules_triggered[1:]:
-        final_mult *= m_val
-    final_mult = max(final_mult, PENALTY_FLOOR)
-    raw_pred = min(base * final_mult, 20000)
-    cal_factor = get_effective_calibration(tier, enable_ema=False)
-    pred = raw_pred * cal_factor
+    # 预测一律走引擎 predict_calibrated（与优化器同函数同参数，含 EMA 校准），
+    # 展示层不再自算——防止规则链与引擎漂移（历史教训：C级暑假 1.13 vs 1.30 双轨）
+    from src.rule_engine import predict_calibrated as _engine_predict
+    pred_args0 = build_pred_args(target_match, ctx)
+    pred = _engine_predict(opp, **pred_args0, opponent_tier_override=tier)
+    cal_factor = get_effective_calibration(tier, enable_ema=True)
 
-    render_cumulative_bar(base, final_mult, pred, tier, cal_factor)
+    render_cumulative_bar(base, max(pred / max(base, 1) / max(cal_factor, 1e-9), PENALTY_FLOOR), pred, tier, cal_factor)
     render_confidence_bar(pred, mae)
 
     st.divider()
@@ -161,7 +164,7 @@ def render_prediction_detail(target_match, guoan_matches, standings, mae, key_pr
     if strategy_mode == "balanced":
         st.caption("平衡模式：T1-T3 降价抢量 + T4-T6 涨价补收入")
 
-    pred_args = build_pred_args(target_match, ctx)
+    pred_args = pred_args0
     optimizer = get_optimizer()
     # Check for pricing overrides
     import json
