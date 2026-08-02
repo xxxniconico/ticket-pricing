@@ -56,8 +56,14 @@ def _tier_sample_count(tier: str) -> int:
     )
 
 def get_effective_calibration(tier: str, enable_ema: bool = True) -> float:
-    """EMA 校准因子。默认关闭；开启时样本 < 8 场强制 1.0。"""
+    """EMA 校准因子。默认关闭；开启时样本 < 3 场强制 1.0。
+
+    S 级永久禁用（2026-08-03 用户确认）：S 级仅申花 1 场样本，校准无统计意义，
+    恒返回 1.0——勿改回（避免单场 ratio 过度影响 S 级基值 12600）。
+    """
     if not enable_ema:
+        return 1.0
+    if tier == "S":
         return 1.0
     if _tier_sample_count(tier) < _EMA_MIN_SAMPLES:
         return 1.0
@@ -142,6 +148,9 @@ def update(match_id, opponent, actual, **ctx):
     # Ensure tier is a valid string key
     if not isinstance(tier, str) or tier not in ("S", "A", "B", "C"):
         tier = classify_opponent_tier(opponent)
+    # S 级永久禁用 EMA（仅申花 1 场样本，校准无意义；2026-08-03 用户确认）
+    if tier == "S":
+        return
     ratio = actual / raw if raw > 0 else 1.0
     old = cal["tier"].get(tier, 1.0)
     new = round(_ALPHA * ratio + (1 - _ALPHA) * old, 4)
