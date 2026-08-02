@@ -110,7 +110,7 @@ def load_csl_data(csl_path: str = _CSL_PATH, deductions_path: str = _DEDUCTIONS_
             "source": m.get("source", ""),
         })
 
-    # Build standings
+    # Build standings（逐轮快照：自算排名，含扣分 deduction）
     ts = defaultdict(lambda: {"p": 0, "w": 0, "d": 0, "l": 0, "gf": 0, "ga": 0, "pts": 0})
     rounds = {}
     for m in sorted(matches, key=lambda x: x["date"]):
@@ -128,7 +128,50 @@ def load_csl_data(csl_path: str = _CSL_PATH, deductions_path: str = _DEDUCTIONS_
         rank.sort(key=lambda x: (-x[4], -x[5], -x[6]))
         rounds[rnd] = {t: i + 1 for i, (t, *_) in enumerate(rank)}
 
+    # 最新轮用 json 官方 standings 覆盖（官方榜含扣分+延期处理；自算榜受 postponed 场次
+    # 影响场次不齐会失真——2026-08-03 发现国安自算#3 vs 官方#7，top3_form 误触发）
+    official = _official_standings_map(data)
+    if official:
+        latest_rnd = max(rounds.keys(), key=_rnd_num, default=None)
+        if latest_rnd:
+            rounds[latest_rnd] = official
+
     return matches, rounds, deductions
+
+
+def _rnd_num(r):
+    """'第21轮' → 21"""
+    try: return int(str(r).replace("第", "").replace("轮", ""))
+    except: return 0
+
+
+def _official_standings_map(data):
+    """从 csl json 的官方 standings 构建 {normalized_team: rank}（按有效分排序）。
+
+    官方榜由数据源直接提供：包含扣分后的 effective_points，postponed 场次由官方口径
+    处理（如补赛安排），比分数据自算无法还原。找不到返回 {}。
+    """
+    for lg in data.get("leagues", []):
+        if lg.get("league_id") == "CSL" or "中超" in lg.get("name", ""):
+            st = lg.get("standings", [])
+            if not st:
+                return {}
+            def _key(s):
+                eff = s.get("effective_points")
+                if eff is None:
+                    eff = s.get("points", 0) - s.get("penalty_points", 0)
+                sm = s.get("summary") or {}
+                return (-eff, -(s.get("goal_difference") or 0),
+                        -(sm.get("goals_for", 0) if isinstance(sm, dict) else 0))
+            ordered = sorted(st, key=_key)
+            # 去重：同归一化名保留排名最高的一条（数据源存在残留队名如'大连英博'旧行）
+            out: dict[str, int] = {}
+            for i, s in enumerate(ordered):
+                nm = _normalize_club_name(s.get("club_name", ""))
+                if nm and nm not in out:
+                    out[nm] = i + 1
+            return out
+    return {}
 
 
 def get_guoan_matches(matches):

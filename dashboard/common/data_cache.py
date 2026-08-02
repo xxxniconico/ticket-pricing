@@ -178,10 +178,27 @@ def _get_zone_face_revenue(m):
 
 # ── Standings Builder ───────────────────────────────────
 @st.cache_data(ttl=7200)
-def build_standings_2026(all_matches):
+def build_standings_2026(all_matches=None):
+    """逐轮排名快照 {round: {team: rank}}。最新轮用 json 官方 standings（含扣分）。
+
+    历史教训（2026-08-03）：自算排名不扣分+postponed 场次场次不齐，
+    导致国安显示 #3（官方 #7），top3_form 误触发 ×1.08 溢价。
+    """
+    try:
+        _, rounds, _ = load_csl_data()
+        return rounds
+    except Exception:
+        # 极端 fallback：仅当数据源完全不可用时按已赛比分自算（无扣分，精度受限）
+        from src.csl_context import load_csl_data as _ld
+        return _build_standings_fallback(all_matches)
+
+
+def _build_standings_fallback(all_matches):
     ts = defaultdict(lambda: {"p": 0, "w": 0, "d": 0, "l": 0, "gf": 0, "ga": 0, "pts": 0})
     standings = {}
-    for m in sorted([x for x in all_matches if x['date'].startswith('2026')], key=lambda x: x['date']):
+    if not all_matches:
+        return standings
+    for m in sorted([x for x in all_matches if str(x.get('date', '')).startswith('2026')], key=lambda x: x['date']):
         if not m.get('completed'):
             continue
         rnd, h, a = m['round'], m['home'], m['away']
