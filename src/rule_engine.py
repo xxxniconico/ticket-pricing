@@ -132,7 +132,13 @@ def predict(opponent, derby=False, lost_bottom=False, heavy_home_loss=False,
     if mult < PENALTY_FLOOR: mult = PENALTY_FLOOR
     return min(base * mult, 20000.0)
 
-def predict_calibrated(opponent, enable_ema=True, **kwargs):
+def predict_calibrated(opponent, enable_ema=False, **kwargs):
+    """预测 + EMA 校准。2026-08-03 起默认关闭 EMA（用户确认）。
+
+    理由：EMA 因子是历史残差拟合（0.96-0.98），动态分级后模型已变准，
+    乘上它会双重修正、扩大预测噪音。近期(6-8月)验证：关 EMA MAE 380→254（−33%）。
+    如需临时开启显式传 enable_ema=True。
+    """
     raw = predict(opponent, **kwargs)
     tier = kwargs.get('opponent_tier_override') or classify_opponent_tier(opponent)
     return raw * get_effective_calibration(tier, enable_ema=enable_ema)

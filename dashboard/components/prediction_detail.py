@@ -141,12 +141,13 @@ def render_prediction_detail(target_match, guoan_matches, standings, mae, key_pr
     rules_triggered, tier, base = build_rules_triggered(target_match, ctx, guoan_matches, use_dynamic)
     render_rule_pills(rules_triggered)
 
-    # 预测一律走引擎 predict_calibrated（与优化器同函数同参数，含 EMA 校准），
+    # 预测一律走引擎 predict_calibrated（与优化器同函数同参数），
     # 展示层不再自算——防止规则链与引擎漂移（历史教训：C级暑假 1.13 vs 1.30 双轨）
+    # EMA 校准已默认关闭（2026-08-03 用户确认：历史残差噪音，动态分级后双重修正）
     from src.rule_engine import predict_calibrated as _engine_predict
     pred_args0 = build_pred_args(target_match, ctx)
     pred = _engine_predict(opp, **pred_args0, opponent_tier_override=tier)
-    cal_factor = get_effective_calibration(tier, enable_ema=True)
+    cal_factor = get_effective_calibration(tier, enable_ema=False)
 
     render_cumulative_bar(base, max(pred / max(base, 1) / max(cal_factor, 1e-9), PENALTY_FLOOR), pred, tier, cal_factor)
     render_confidence_bar(pred, mae)
