@@ -216,44 +216,49 @@ def _parse_face(name):
     return int(mt.group(1)) if mt else None
 
 
-@st.cache_data(ttl=3600)
 def _get_zone_qtys(m):
     from src.pricing_v5 import get_zone_sections
     csl = _get_csl_parquet()
     if csl is None:
         return {}
+    opp_filter = str(m.get("opponent", ""))
     for mid in csl["match_id"].unique():
         md = csl[csl["match_id"] == mid]
-        if str(md["match_date"].iloc[0]).startswith(m["date"]):
-            md = md.copy()
-            f2t = _face_to_tier_map(md)
-            md["zt"] = md["票名称"].map(_parse_face).map(f2t)
-            result = {}
-            for zt in ZONE_TIERS:
-                result[zt] = int(md[md["zt"] == zt]["数量"].sum())
-            return result
+        if not str(md["match_date"].iloc[0]).startswith(m["date"]):
+            continue
+        if opp_filter and opp_filter not in str(md["opponent"].iloc[0]):
+            continue
+        md = md.copy()
+        f2t = _face_to_tier_map(md)
+        md["zt"] = md["票名称"].map(_parse_face).map(f2t)
+        result = {}
+        for zt in ZONE_TIERS:
+            result[zt] = int(md[md["zt"] == zt]["数量"].sum())
+        return result
     return {}
 
-@st.cache_data(ttl=3600)
 def _get_zone_actual_revenue(m):
     """返回每档实际收入（从 parquet 实际支付价格列求和）。"""
     from src.pricing_v5 import get_zone_sections
     csl = _get_csl_parquet()
     if csl is None:
         return {}
+    opp_filter = str(m.get("opponent", ""))
     for mid in csl["match_id"].unique():
         md = csl[csl["match_id"] == mid]
-        if str(md["match_date"].iloc[0]).startswith(m["date"]):
-            md = md.copy()
-            f2t = _face_to_tier_map(md)
-            md["zt"] = md["票名称"].map(_parse_face).map(f2t)
-            result = {}
-            for zt in ZONE_TIERS:
-                result[zt] = float(md[md["zt"] == zt]["实际支付价格"].sum())
-            return result
+        if not str(md["match_date"].iloc[0]).startswith(m["date"]):
+            continue
+        if opp_filter and opp_filter not in str(md["opponent"].iloc[0]):
+            continue
+        md = md.copy()
+        f2t = _face_to_tier_map(md)
+        md["zt"] = md["票名称"].map(_parse_face).map(f2t)
+        result = {}
+        for zt in ZONE_TIERS:
+            result[zt] = float(md[md["zt"] == zt]["实际支付价格"].sum())
+        return result
     return {}
 
-@st.cache_data(ttl=3600)
 def _get_zone_face_revenue(m):
     """返回每档票面收入（从 parquet 票价信息列解析面值 × 数量）。
     
@@ -264,33 +269,37 @@ def _get_zone_face_revenue(m):
     csl = _get_csl_parquet()
     if csl is None:
         return {}
+    opp_filter = str(m.get("opponent", ""))
     for mid in csl["match_id"].unique():
         md = csl[csl["match_id"] == mid]
-        if str(md["match_date"].iloc[0]).startswith(m["date"]):
-            md = md.copy()
-            f2t = _face_to_tier_map(md)
-            md["zt"] = md["票名称"].map(_parse_face).map(f2t)
-            # 票面收入 = 票名称面价 × 数量
-            # T1..T6 标签场次（辽宁7/17）面值在 _parse_face 只给序号，需用决策记录执行价还原
-            md["face_unit"] = md["票名称"].map(_parse_face)
-            names0 = [str(n) for n in md["票名称"].dropna().unique()]
-            if all(str(n).strip() in ("T1","T2","T3","T4","T5","T6") for n in names0):
-                try:
-                    import json as _json
-                    _dec = _json.load(open(ROOT / "data/processed/pricing_decisions.json"))
-                    _px = None
-                    for _dd in _dec.get("decisions", []):
-                        if _dd["match"]["date"] == m["date"] and str(_dd["match"]["opponent"]) in str(m.get("opponent","")):
-                            _px = _dd["prices"]; break
-                    if _px:
-                        md["face_unit"] = md["zt"].map(lambda z: _px.get(z, 0))
-                except Exception:
-                    pass
-            md["face_revenue"] = md["face_unit"] * md["数量"]
-            result = {}
-            for zt in ZONE_TIERS:
-                result[zt] = float(md[md["zt"] == zt]["face_revenue"].sum())
-            return result
+        if not str(md["match_date"].iloc[0]).startswith(m["date"]):
+            continue
+        if opp_filter and opp_filter not in str(md["opponent"].iloc[0]):
+            continue
+        md = md.copy()
+        f2t = _face_to_tier_map(md)
+        md["zt"] = md["票名称"].map(_parse_face).map(f2t)
+        # 票面收入 = 票名称面价 × 数量
+        # T1..T6 标签场次（辽宁7/17）面值在 _parse_face 只给序号，需用决策记录执行价还原
+        md["face_unit"] = md["票名称"].map(_parse_face)
+        names0 = [str(n) for n in md["票名称"].dropna().unique()]
+        if all(str(n).strip() in ("T1","T2","T3","T4","T5","T6") for n in names0):
+            try:
+                import json as _json
+                _dec = _json.load(open(ROOT / "data/processed/pricing_decisions.json"))
+                _px = None
+                for _dd in _dec.get("decisions", []):
+                    if _dd["match"]["date"] == m["date"] and str(_dd["match"]["opponent"]) in str(m.get("opponent","")):
+                        _px = _dd["prices"]; break
+                if _px:
+                    md["face_unit"] = md["zt"].map(lambda z: _px.get(z, 0))
+            except Exception:
+                pass
+        md["face_revenue"] = md["face_unit"] * md["数量"]
+        result = {}
+        for zt in ZONE_TIERS:
+            result[zt] = float(md[md["zt"] == zt]["face_revenue"].sum())
+        return result
     return {}
 
 # ── Standings Builder ───────────────────────────────────

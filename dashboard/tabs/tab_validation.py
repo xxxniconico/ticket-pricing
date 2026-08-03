@@ -291,6 +291,7 @@ def render_validation_tab(home_preds, guoan_matches, all_matches):
             'inv_eff_detail': inv_eff_detail,
             'confirmed': confirmed, 'baseline': baseline_prices,
             'has_adjustment': has_adjustment, 'note': note, 'ts': ts,
+            'zone_qty': zone_qty, 'face_rev': face_rev_dict,
         })
 
         # ══ KPI 卡片 ══
@@ -399,8 +400,10 @@ def render_validation_tab(home_preds, guoan_matches, all_matches):
             for zt in ZT:
                 cp = r['confirmed'].get(zt, 0)
                 bp = r['baseline'].get(zt, 0)
-                aq = snap_data.get('actual', {}).get('quantities', {}).get(zt, 0)
-                ar = snap_data.get('actual', {}).get('revenues', {}).get(zt, 0)
+                # 实际量/收入：从 record 取（每场独立，修复 2026-08-03 作用域 bug——
+                # 旧代码引用循环外 zone_qty/face_rev_dict，4张卡全显示最后一场(浙江)的数据）
+                aq = r.get('zone_qty', {}).get(zt, snap_data.get('actual', {}).get('quantities', {}).get(zt, 0))
+                ar = r.get('face_rev', {}).get(zt, snap_data.get('actual', {}).get('revenues', {}).get(zt, 0))
                 # 预测量: 优先用同对手份额 × 基准总量
                 if cf_shares:
                     bq = cf_total * cf_shares.get(zt, 0.1)
@@ -469,7 +472,7 @@ def render_validation_tab(home_preds, guoan_matches, all_matches):
             # Key tier deviations
             for zt in ZT:
                 bq = snap_data.get('baseline', {}).get('base_qtys', {}).get(zt, 0)
-                aq = snap_data.get('actual', {}).get('quantities', {}).get(zt, 0)
+                aq = r.get('zone_qty', {}).get(zt, snap_data.get('actual', {}).get('quantities', {}).get(zt, 0))
                 if bq and bq > 100:
                     dev = (aq - bq) / bq
                     if abs(dev) > 0.3:
