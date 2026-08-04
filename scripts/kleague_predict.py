@@ -16,17 +16,22 @@ import math
 import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+from kleague_teams import cn  # noqa: E402
+
 ROOT = Path(__file__).resolve().parents[1]
 SEASONS = (2022, 2023, 2024, 2025)
+CURRENT_SEASON = 2026
 
 LAM_HOME_BASE = 1.376   # 2022-2025 主场场均进球
 LAM_AWAY_BASE = 1.181   # 客场场均进球
 HOME_COEF = LAM_HOME_BASE / LAM_AWAY_BASE  # 1.165
 DRAW_RATE = 0.286       # 全样本平局率
+CUR_WEIGHT = 0.4        # 当前赛季攻防权重（其余给历史）; 当前赛季>=10场才启用
 
 
 def load_history():
-    """返回 {team: {home_goals: [...], away_goals: [...]}} 2026赛季前的攻防表现"""
+    """返回 {team: {gf: [...], ga: [...]}} 历史(2022-2025)攻防表现"""
     stats = {}
     for s in SEASONS:
         d = json.load(open(ROOT / f"data/raw/kleague_{s}_all_matches.json", encoding="utf-8"))
@@ -43,16 +48,50 @@ def load_history():
     return stats
 
 
-def team_adjust(stats, team):
-    """球队攻防调整因子：相对基线。返回 (attack, defense)"""
-    if team not in stats or len(stats[team]["gf"]) < 10:
-        return 1.0, 1.0
-    s = stats[team]
-    n = len(s["gf"])
-    avg_gf = sum(s["gf"]) / n
-    avg_ga = sum(s["ga"]) / n
+def load_current():
+    """当前赛季(2026)攻防表现, 用于状态修正"""
+    stats = {}
+    try:
+        d = json.load(open(ROOT / f"data/raw/kleague_{CURRENT_SEASON}_all_matches.json", encoding="utf-8"))
+    except FileNotFoundError:
+        return stats
+    for m in d:
+        for side in ("home", "away"):
+            t = m[side]
+            stats.setdefault(t, {"gf": [], "ga": []})
+            if side == "home":
+                stats[t]["gf"].append(m["home_goals"])
+                stats[t]["ga"].append(m["away_goals"])
+            else:
+                stats[t]["gf"].append(m["away_goals"])
+                stats[t]["ga"].append(m["home_goals"])
+    return stats
+
+
+def _avg_factor(s: dict, team: str, min_matches: int = 10):
+    if team not in s or len(s[team]["gf"]) < min_matches:
+        return None
+    n = len(s[team]["gf"])
+    avg_gf = sum(s[team]["gf"]) / n
+    avg_ga = sum(s[team]["ga"]) / n
     league_gf = (LAM_HOME_BASE + LAM_AWAY_BASE) / 2
     return avg_gf / league_gf, avg_ga / league_gf
+
+
+def team_adjust(stats, cur_stats, team):
+    """球队攻防调整因子：历史基线 + 当前赛季状态混合。返回 (attack, defense)"""
+    hist = _avg_factor(stats, team)
+    cur = _avg_factor(cur_stats, team)
+    if hist is None and cur is None:
+        return 1.0, 1.0  # 无任何数据(如升班马赛季初) → 中性
+    if hist is None:
+        return cur  # 升班马: 只有当前赛季数据 → 纯当前
+    if cur is None:
+        return hist  # 当前赛季无足够样本 → 纯历史
+    # 混合: 当前赛季权重 CUR_WEIGHT
+    att = (1 - CUR_WEIGHT) * hist[0] + CUR_WEIGHT * cur[0]
+    deff = (1 - CUR_WEIGHT) * hist[1] + CUR_WEIGHT * cur[1]
+    return att, deff
 
 
 def odds_to_lambda(h_odds, d_odds, a_odds):
@@ -100,13 +139,14 @@ def poisson_matrix(lh, la, max_goals=8):
 
 def predict(home, away, h_odds=None, d_odds=None, a_odds=None):
     stats = load_history()
+    cur_stats = load_current()
 
     if h_odds:
         lh, la = odds_to_lambda(h_odds, d_odds, a_odds)
         src = "赔率反推"
     else:
-        att_h, def_h = team_adjust(stats, home)
-        att_a, def_a = team_adjust(stats, away)
+        att_h, def_h = team_adjust(stats, cur_stats, home)
+        att_a, def_a = team_adjust(stats, cur_stats, away)
         lh = LAM_HOME_BASE * att_h * def_a
         la = LAM_AWAY_BASE * att_a * def_h
         src = "历史基线+攻防调整"
@@ -135,7 +175,7 @@ def predict(home, away, h_odds=None, d_odds=None, a_odds=None):
 
 def render_card(r):
     print("═" * 46)
-    print(f"🇰🇷 K League 1  {r['home']} vs {r['away']}")
+    print(f"🇰🇷 K League 1  {cn(r['home'])} ({r['home']}) vs {cn(r['away'])} ({r['away']})")
     print(f"   λ: {r['lambda'][0]} / {r['lambda'][1]}  ({r['src']})")
     print("═" * 46)
     print(f"  主胜 {r['probs']['H']:.1%} | 平 {r['probs']['D']:.1%} | 客胜 {r['probs']['A']:.1%}")
