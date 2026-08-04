@@ -20,6 +20,17 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 LEAGUE_ID = 292
 OUT_DIR = PROJECT_ROOT / "data" / "raw"
 
+# Rebrand/renamed teams -> latest canonical name (2026), shared with
+# fetch_kleague_sofascore.py so all seasons use one name set.
+TEAM_ALIASES = {
+    "Ulsan Hyundai FC": "Ulsan HD",
+    "Jeonbuk Motors": "Jeonbuk Hyundai Motors",
+    "Daejeon Citizen": "Daejeon Hana Citizen",
+    "Jeju United FC": "Jeju SK",
+    "Suwon City FC": "Suwon FC",
+    "Suwon Bluewings": "Suwon Samsung Bluewings",
+}
+
 
 def get_key() -> str:
     env = os.environ.get("API_FOOTBALL_KEY", "").strip()
@@ -74,6 +85,8 @@ def convert(fixtures: list[dict]) -> list[dict]:
         # Sangju Sangmu FC renamed to Gimcheon Sangmu FC mid-2022 (Oct); normalize.
         if home == "Sangju Sangmu FC": home = "Gimcheon Sangmu FC"
         if away == "Sangju Sangmu FC": away = "Gimcheon Sangmu FC"
+        home = TEAM_ALIASES.get(home, home)
+        away = TEAM_ALIASES.get(away, away)
         out.append({
             "round": rnd,
             "date": f["fixture"]["date"][:10],
