@@ -9,6 +9,7 @@
 产出:
   - elo_history.parquet              全量重算 (2023→最新)
   - standings_2026_by_round.parquet  当季逐轮排名
+  - 动态分级: 每轮结束后自动重算 (cron 每天 03:15 兜底 + ingest_match 整轮完成实时触发, 2026-08-05)
   - rating_snapshot_YYYYMMDD.json    对手评分快照
   - data/processed/sync_csl_data_log.json  执行日志 (最近 30 条)
 

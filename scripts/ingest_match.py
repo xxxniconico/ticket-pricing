@@ -207,8 +207,75 @@ def ingest_match(excel_path: str, competition: str = "CSL"):
             _sys.argv = _orig_argv
     except Exception as e:
         print(f"  ⚠️ 赛后校准失败（不影响导入）: {e}")
-    
+
+    # 赛后动态分级自动刷新（2026-08-05）：整轮完成后重算 ELO/ST/AP/tier。
+    # 16 队单循环每轮 8 场，最新轮已赛满 8 场才触发（延期轮不算）。
+    # 兜底：cron 每天 03:15 也会跑 sync_csl_data.py。
+    try:
+        _refresh_tiers_after_round()
+    except Exception as e:
+        print(f"  ⚠️ 分级刷新失败（不影响导入）: {e}")
+
     return match_id
+
+
+def _refresh_tiers_after_round():
+    """检测最新轮是否完整（8场），完整则调 sync_csl_data.py 重算分级快照。"""
+    import re as _re
+    from collections import Counter as _Counter
+    import subprocess as _sp
+
+    cfl_path = Path("/mnt/c/Users/xxxsu/.openclaw/workspace/csl_project_v2/data/csl_final_production_ready.json")
+    if not cfl_path.exists():
+        print("  ℹ️ 分级刷新跳过: CFL 源不存在")
+        return
+
+    data = json.load(open(cfl_path))
+    per_round = _Counter()
+    for lg in data.get("leagues", []):
+        if "中超" not in lg.get("name", ""):
+            continue
+        for m in lg.get("matches", []):
+            s = m.get("score", {}) or {}
+            if s.get("home") is None:
+                continue
+            r = m.get("round", "")
+            if r.startswith("第"):
+                per_round[r] += 1
+
+    def _rn(r):
+        mm = _re.search(r"(\d+)", r)
+        return int(mm.group(1)) if mm else 0
+
+    complete = [r for r, c in per_round.items() if c >= 8]
+    if not complete:
+        print("  ℹ️ 分级刷新跳过: 无完整轮")
+        return
+    latest_complete = max(complete, key=_rn)
+
+    # 快照已覆盖轮次: 用最新快照的 as_of 日期 vs 该轮比赛最大日期
+    snap_dir = Path("/home/xxxsuli/ticket-pricing/data/processed")
+    snaps = sorted(snap_dir.glob("rating_snapshot_*.json"))
+    if snaps:
+        d = json.load(open(snaps[-1]))
+        as_of = d.get("as_of", "")
+        # 该轮最大比赛日期
+        round_dates = [m["date"][:10] for lg in data.get("leagues", [])
+                       if "中超" in lg.get("name", "")
+                       for m in lg.get("matches", [])
+                       if m.get("round") == latest_complete and (m.get("score") or {}).get("home") is not None]
+        max_date = max(round_dates) if round_dates else ""
+        if as_of >= max_date:
+            print(f"  ℹ️ 分级已最新 (快照 {as_of} >= 轮末 {max_date})")
+            return
+
+    print(f"  🔄 最新完整轮 {latest_complete} 结束 → 刷新动态分级...")
+    _sp.run(
+        [sys.executable, "scripts/sync_csl_data.py"],
+        cwd="/home/xxxsuli/ticket-pricing",
+        timeout=300,
+    )
+    print(f"  ✅ 分级刷新完成: {latest_complete}")
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
