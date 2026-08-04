@@ -213,11 +213,17 @@ def rebuild_standings(matches: list[dict]):
     ]
     # 按 round 分桶
     buckets: dict[str, list[dict]] = {}
+    dropped_round_empty = 0
     for m in games:
         rnd = m.get("round", "")
         if not rnd.startswith("第"):
+            dropped_round_empty += 1
             continue
         buckets.setdefault(rnd, []).append(m)
+
+    if dropped_round_empty:
+        _log("WARN", f"CFL {len(games)} 场中 {dropped_round_empty} 场 round 为空被丢弃 "
+                      "(若为前几轮重复记录属正常, 若为完赛场次则数据源异常)")
 
     if not buckets:
         _log("WARN", "无 2026 已赛数据, standings 跳过")
@@ -284,7 +290,61 @@ def rebuild_standings(matches: list[dict]):
     df = pd.DataFrame(rows)
     _log("OK", f"standings 重算: {len(df)} 行, "
            f"{df['round'].nunique()} 轮, 最新 {df['date'].max()}")
+
+    # ── 完整性校验（防静默数据丢失, 2026-08-05 加入）────────────────
+    issues = _validate_standings(df, buckets)
+    if issues:
+        _log("ERROR", "standings 完整性校验失败: " + " | ".join(issues))
+    else:
+        _log("OK", "standings 完整性校验通过")
     return df
+
+
+# ── 防线2: 独立校验脚本可复用的核心 ──────────────────────────────
+def _validate_standings(df, buckets=None):
+    """返回问题列表(空=通过)。检查: 每轮场次、round 空残留、played 单调性。
+    buckets 可选——由 rebuild_standings 内部传入已分桶比赛; 外部调用时用 None 跳过场次检查。"""
+    import re
+    issues = []
+
+    # 1) 每轮比赛场次: 16队单循环 → 每轮最多 8 场（延期会少于8, 不算错）
+    if buckets is not None:
+        for rnd, games in buckets.items():
+            n = len(games)
+            if n > 8:
+                issues.append(f"{rnd} 场次={n} (>8 异常)")
+
+    # 2) round 空残留: 已赛比赛必须都有完整 round
+    if buckets is not None:
+        empty = [g for g in buckets if not str(g).startswith("第")]
+        if empty:
+            issues.append(f"round 空残留 {len(empty)} 轮")
+
+    # 3) played 单调性: 每队逐轮 played 必须 +0/+1（跳轮=漏场）
+    if not df.empty:
+        teams = df["team"].unique()
+        for t in teams:
+            sub = df[df["team"] == t].sort_values(
+                "round", key=lambda s: s.map(lambda r: int(re.search(r"(\d+)", r).group(1)) if re.search(r"(\d+)", r) else 0)
+            )
+            prev = 0
+            for _, r in sub.iterrows():
+                if r["played"] < prev:
+                    issues.append(f"{t} {r['round']} played 回退 {prev}→{r['played']}")
+                if r["played"] > prev + 1:
+                    issues.append(f"{t} {r['round']} played 跳变 +{r['played']-prev} (漏场?)")
+                prev = r["played"]
+
+    # 4) 最新轮次覆盖队数: 正常16队, 延期轮可少, 但<12 说明大面积缺失
+    if not df.empty:
+        last_rnd = df["round"].iloc[-1]  # 已按轮排序插入
+        n_last = (df["round"] == last_rnd).sum()
+        if n_last > 16:
+            issues.append(f"最新轮 {last_rnd} 有 {n_last} 队 (>16 异常)")
+        if 0 < n_last < 12:
+            issues.append(f"最新轮 {last_rnd} 只有 {n_last} 队 (<12, 疑似大面积缺失)")
+
+    return issues
 
 
 # ── Step 4: 写 snapshot ────────────────────────────────────────
@@ -385,10 +445,17 @@ def main():
         # Step 3: standings
         if not args.skip_standings:
             standings = rebuild_standings(matches)
+            # ── 写盘前阻断式校验: 数据不完整则拒绝写盘 (2026-08-05) ──
+            issues = _validate_standings(standings)  # 外部调用无 buckets, 跳过程次检查
+            if issues and not args.dry_run:
+                raise RuntimeError(
+                    "standings 校验失败, 拒绝写盘: " + " | ".join(issues)
+                )
             entry["steps"]["standings"] = {
                 "rows": len(standings),
                 "rounds": int(standings["round"].nunique()) if not standings.empty else 0,
                 "max_date": str(standings["date"].max()) if not standings.empty else None,
+                "issues": issues,
             }
             if not args.dry_run and not standings.empty:
                 _backup(STANDINGS_2026)
@@ -409,6 +476,21 @@ def main():
 
         entry["status"] = "ok"
         _log("INFO", "=== 同步成功 ===")
+
+        # ── 防线3: CFL 源质量 + standings 自洽复核 (2026-08-05) ──
+        if not args.dry_run:
+            try:
+                import subprocess
+                r = subprocess.run(
+                    [sys.executable, str(ROOT / "scripts/verify_standings.py")],
+                    capture_output=True, text=True, timeout=60,
+                )
+                if r.returncode == 0:
+                    _log("OK", "verify_standings 通过")
+                else:
+                    _log("WARN", "verify_standings 发现问题: " + r.stdout[-1500:])
+            except Exception as ve:
+                _log("WARN", f"verify_standings 执行失败: {ve!r}")
     except Exception as e:
         entry["status"] = "error"
         entry["error"] = repr(e)
