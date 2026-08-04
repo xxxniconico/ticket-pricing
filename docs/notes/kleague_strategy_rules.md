@@ -77,3 +77,19 @@
 - [ ] 用 2026 赛季 126 场做 OOS 验证（回测口径铁律：规则只用 2022-2025 拟合）
 - [ ] 赔率 gap 验证（the-odds-api `soccer_korea_kleague1`）
 - [ ] 队名中文映射（Ulsan HD=蔚山HD、Jeonbuk Hyundai Motors=全北现代 等）
+
+---
+
+## standings 数据三道防线（2026-08-05，commit 9a920e6）
+
+**背景**：8/4 发现 standings parquet 国安排名错误（第4 vs 官方第7）——CFL 源前5轮 17 场 round 为空被丢弃。已修复（f571072）+ 建立防线防复发：
+
+| 防线 | 位置 | 作用 |
+|------|------|------|
+| ① 去重完整round优先 | sync_csl_data.py  | CFL 重复记录（空round+完整round双版本）保留完整版 |
+| ② standings 完整性校验 | sync_csl_data.py  | 写盘前阻断：每轮≤8场/played单调/最新轮12-16队 |
+| ③ 源质量检测 | scripts/verify_standings.py | sync 末尾自动联动：重复记录+round空(INFO)/场次守恒+parquet自洽(FAIL) |
+
+**校验盲区（已确认）**：played 单调性无法区分"延期"（+0）与"漏场"（+0）——由③的场次守恒兜底（无少赛轮但总量≠轮数×8 即 FAIL）。
+
+**已知遗留（INFO 不阻断）**：CFL 源文件仍有 17 组重复+17 场 round 空（Hermes 爬虫侧），sync 已能正确处理，建议 Hermes 清理源文件。
