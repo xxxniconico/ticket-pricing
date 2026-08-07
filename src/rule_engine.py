@@ -88,7 +88,8 @@ def predict(opponent, derby=False, lost_bottom=False, heavy_home_loss=False,
             opponent_tier_override=None,
             opponent_st=None,
             ap_pct=None,
-            match_year=None, **__) -> float:
+            match_year=None,
+            price_level=None, **__) -> float:
     if opponent_tier_override is not None and isinstance(opponent_tier_override, (int, float)):
         base = float(opponent_tier_override)
         tier = None  # continuous mode, no tier
@@ -137,7 +138,27 @@ def predict(opponent, derby=False, lost_bottom=False, heavy_home_loss=False,
     if late_season: mult *= MULTIPLIERS["late_season"]
     if top3_form and tier in ("B","C", None): mult *= MULTIPLIERS["top3_form"]
     if mult < PENALTY_FLOOR: mult = PENALTY_FLOOR
-    return min(base * mult, 20000.0)
+    q = min(base * mult, 20000.0)
+
+    # 执行价修正（2026-08-07 用户确认加入）：实际定价级别 ≠ 分级默认定价级别时，
+    # 按档位恒定弹性逐档折算需求。Q_adj = Σ_i share_i × Q × (P_exec_i/P_ref_i)^(-ε_i)
+    # 例：深圳8/7 建议 C 级价(S_C ¥140起) 实际执行 B 级价(S_B ¥160起) → 需求下调约4%
+    if price_level is not None and tier is not None:
+        from src.pricing_v5 import build_price_matrix, get_elasticity, v10_volume_shares
+        default_level = f"S_{tier}"  # 分级默认定价级别（C级→S_C, B级→S_B...）
+        if price_level != default_level:
+            matrix = build_price_matrix()
+            shares = v10_volume_shares(q)
+            ref_p = matrix[default_level]
+            exec_p = matrix[price_level]
+            q_adj = 0.0
+            for zt in shares:
+                eps = get_elasticity(zt, default_level)  # 弹性用对手分级（买家构成决定敏感度）
+                ratio = exec_p[zt] / ref_p[zt]
+                q_adj += shares[zt] * q * (ratio ** (-eps))
+            q = min(q_adj, 20000.0)
+
+    return q
 
 def predict_calibrated(opponent, enable_ema=False, **kwargs):
     """预测 + EMA 校准。2026-08-03 起默认关闭 EMA（用户确认）。
