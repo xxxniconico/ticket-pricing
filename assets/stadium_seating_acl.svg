@@ -152,7 +152,7 @@
 <text x="684.2" y="236.7" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">227</text>
 <path id="sec-226" d="M650.48,240.11L689.31,214.85A274.56,170.04,0,0,0,653.51,197.02L622.02,225.94A218.24,135.16,0,0,1,650.48,240.11Z" fill="#f9a61a" stroke="#1a1a1a" stroke-width="0.55"/>
 <text x="654.4" y="219.1" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">226</text>
-<path id="sec-225" d="M622.02,225.94L653.51,197.02A274.56,170.04,0,0,0,613.41,183.14L590.14,214.91A218.24,135.16,0,0,1,622.02,225.94Z" fill="#ffffff" stroke="#1a1a1a" stroke-width="0.55"/>
+<path id="sec-225" d="M622.02,225.94L653.51,197.02A274.56,170.04,0,0,0,613.41,183.14L590.14,214.91A218.24,135.16,0,0,1,622.02,225.94Z" fill="#f66d81" stroke="#1a1a1a" stroke-width="0.55"/>
 <text x="620.2" y="204.8" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">225</text>
 <path id="sec-224" d="M590.14,214.91L613.41,183.14A274.56,170.04,0,0,0,570.13,173.60L555.74,207.32A218.24,135.16,0,0,1,590.14,214.91Z" fill="#f1f530" stroke="#1a1a1a" stroke-width="0.55"/>
 <text x="582.6" y="194.2" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">224</text>
@@ -234,18 +234,18 @@
 <text x="364.5" y="252.3" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">112</text>
 <path id="sec-111" d="M369.91,271.22L331.97,251.75A218.24,135.16,0,0,0,306.90,275.02L350.50,289.24A168.96,104.64,0,0,1,369.91,271.22Z" fill="#f9a61a" stroke="#1a1a1a" stroke-width="0.55"/>
 <text x="339.0" y="271.5" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">111</text>
-<path id="sec-110" d="M350.50,289.24L306.90,275.02A218.24,135.16,0,0,0,290.10,300.99L337.50,309.35A168.96,104.64,0,0,1,350.50,289.24Z" fill="#ffffff" stroke="#1a1a1a" stroke-width="0.55"/>
+<path id="sec-110" d="M350.50,289.24L306.90,275.02A218.24,135.16,0,0,0,290.10,300.99L337.50,309.35A168.96,104.64,0,0,1,350.50,289.24Z" fill="#c39bd3" stroke="#1a1a1a" stroke-width="0.55"/>
 <text x="320.3" y="293.4" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">110</text>
 <path id="sec-109" d="M337.50,309.35L290.10,300.99A218.24,135.16,0,0,0,282.29,328.55L331.45,330.68A168.96,104.64,0,0,1,337.50,309.35Z" fill="#ffffff" stroke="#1a1a1a" stroke-width="0.55"/>
 <text x="309.3" y="317.3" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">109</text>
 <path id="sec-108" d="M331.45,330.68L282.29,328.55A218.24,135.16,0,0,0,283.82,356.51L332.63,352.33A168.96,104.64,0,0,1,331.45,330.68Z" fill="#ffffff" stroke="#1a1a1a" stroke-width="0.55"/>
 <text x="306.5" y="342.0" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">108</text>
-<path id="sec-107" d="M332.63,352.33L283.82,356.51A218.24,135.16,0,0,0,294.60,383.68L340.98,373.36A168.96,104.64,0,0,1,332.63,352.33Z" fill="#ffffff" stroke="#1a1a1a" stroke-width="0.55"/>
+<path id="sec-107" d="M332.63,352.33L283.82,356.51A218.24,135.16,0,0,0,294.60,383.68L340.98,373.36A168.96,104.64,0,0,1,332.63,352.33Z" fill="#c39bd3" stroke="#1a1a1a" stroke-width="0.55"/>
 <text x="312.0" y="366.6" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">107</text>
 <path id="sec-vip-200" d="M414.73,462.42L392.72,494.52A274.56,170.04,0,0,0,514.37,507.81L511.42,472.97A218.24,135.16,0,0,1,414.73,462.42Z" fill="#fff" stroke="#1a1a1a" stroke-width="0.7"/>
 <text x="457.2" y="488.3" text-anchor="middle" dominant-baseline="middle" font-size="11" font-weight="600" font-family="SimHei,Arial,sans-serif" fill="#333">主席台</text>
 <g id="legend">
-<rect x="778" y="548" width="224" height="120" rx="6" fill="#ffffff" fill-opacity="0.93" stroke="#888" stroke-width="1"/>
+<rect x="778" y="546" width="224" height="140" rx="6" fill="#ffffff" fill-opacity="0.93" stroke="#888" stroke-width="1"/>
 <text x="790" y="566" font-size="12" font-weight="600" font-family="SimHei,Arial,sans-serif" fill="#222">亚冠 9月 主场票价</text>
 <rect x="790" y="574" width="14" height="10" fill="#27d08a"/>
 <text x="812" y="583" font-size="10" font-family="Arial,sans-serif" fill="#333">L1（T1+T2 合并 36区） ¥200</text>
@@ -257,5 +257,7 @@
 <text x="812" y="637" font-size="10" font-family="Arial,sans-serif" fill="#333">T5 ¥540</text>
 <rect x="790" y="646" width="14" height="10" fill="#b9bc9f"/>
 <text x="812" y="655" font-size="10" font-family="Arial,sans-serif" fill="#333">T6 ¥780（无商务服务）</text>
+<rect x="790" y="662" width="14" height="10" fill="#c39bd3"/>
+<text x="812" y="671" font-size="10" font-family="Arial,sans-serif" fill="#333">球迷区 107/110（球迷通道售卖）</text>
 </g>
 </svg>

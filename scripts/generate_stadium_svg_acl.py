@@ -16,13 +16,14 @@ C = {
 }
 AWAY = {"126", "234", "235", "334", "335"}
 SEG = {"125", "127", "233", "236", "333", "336"}
+FAN = {"107", "110"}  # 死忠球迷区：走球迷通道售卖，不进入正常售卖流程
 WHITE = {"205", "206", "207", "239", "240", "301", "302", "303", "304", "305", "306", "339", "340"}
 
 SECTION_PRICE: dict[str, int] = {}
 # 最新档位映射（2026-08 中超最近场次销售实证：山东7/4 T4扩容实验+浙江8/1+深圳8/7）
 for s in ("101", "102"):
     SECTION_PRICE[s] = 780
-for s in ("103", "114", "115", "116", "117", "130"):
+for s in ("103", "114", "115", "116", "117", "130", "225"):
     SECTION_PRICE[s] = 540
 for s in (
     "104", "113", "118", "129", "218", "219", "220", "221", "222", "223", "224",
@@ -109,6 +110,8 @@ def fill_for(sid: str) -> str:
         return "url(#awayPattern)"
     if sid in SEG:
         return "#b7b7b7"
+    if sid in FAN:
+        return "#c39bd3"
     if sid in WHITE:
         return "#ffffff"
     p = SECTION_PRICE.get(sid)
@@ -399,7 +402,7 @@ def build_svg() -> str:
         *render_ring(RING_100, "100", 0, RING_100_SOUTH_N, RING_100_ROTATION),
         *vip_paths(),
         '<g id="legend">',
-        '<rect x="778" y="548" width="224" height="120" rx="6" fill="#ffffff" fill-opacity="0.93" stroke="#888" stroke-width="1"/>',
+        '<rect x="778" y="546" width="224" height="140" rx="6" fill="#ffffff" fill-opacity="0.93" stroke="#888" stroke-width="1"/>',
         '<text x="790" y="566" font-size="12" font-weight="600" font-family="SimHei,Arial,sans-serif" fill="#222">亚冠 9月 主场票价</text>',
         '<rect x="790" y="574" width="14" height="10" fill="#27d08a"/>',
         '<text x="812" y="583" font-size="10" font-family="Arial,sans-serif" fill="#333">L1（T1+T2 合并 36区） ¥200</text>',
@@ -411,6 +414,8 @@ def build_svg() -> str:
         '<text x="812" y="637" font-size="10" font-family="Arial,sans-serif" fill="#333">T5 ¥540</text>',
         '<rect x="790" y="646" width="14" height="10" fill="#b9bc9f"/>',
         '<text x="812" y="655" font-size="10" font-family="Arial,sans-serif" fill="#333">T6 ¥780（无商务服务）</text>',
+        '<rect x="790" y="662" width="14" height="10" fill="#c39bd3"/>',
+        '<text x="812" y="671" font-size="10" font-family="Arial,sans-serif" fill="#333">球迷区 107/110（球迷通道售卖）</text>',
         '</g>',
         "</svg>",
     ]
