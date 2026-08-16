@@ -236,9 +236,9 @@
 <text x="339.0" y="271.5" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">111</text>
 <path id="sec-110" d="M350.50,289.24L306.90,275.02A218.24,135.16,0,0,0,290.10,300.99L337.50,309.35A168.96,104.64,0,0,1,350.50,289.24Z" fill="#c39bd3" stroke="#1a1a1a" stroke-width="0.55"/>
 <text x="320.3" y="293.4" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">110</text>
-<path id="sec-109" d="M337.50,309.35L290.10,300.99A218.24,135.16,0,0,0,282.29,328.55L331.45,330.68A168.96,104.64,0,0,1,337.50,309.35Z" fill="#ffffff" stroke="#1a1a1a" stroke-width="0.55"/>
+<path id="sec-109" d="M337.50,309.35L290.10,300.99A218.24,135.16,0,0,0,282.29,328.55L331.45,330.68A168.96,104.64,0,0,1,337.50,309.35Z" fill="#c39bd3" stroke="#1a1a1a" stroke-width="0.55"/>
 <text x="309.3" y="317.3" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">109</text>
-<path id="sec-108" d="M331.45,330.68L282.29,328.55A218.24,135.16,0,0,0,283.82,356.51L332.63,352.33A168.96,104.64,0,0,1,331.45,330.68Z" fill="#ffffff" stroke="#1a1a1a" stroke-width="0.55"/>
+<path id="sec-108" d="M331.45,330.68L282.29,328.55A218.24,135.16,0,0,0,283.82,356.51L332.63,352.33A168.96,104.64,0,0,1,331.45,330.68Z" fill="#c39bd3" stroke="#1a1a1a" stroke-width="0.55"/>
 <text x="306.5" y="342.0" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">108</text>
 <path id="sec-107" d="M332.63,352.33L283.82,356.51A218.24,135.16,0,0,0,294.60,383.68L340.98,373.36A168.96,104.64,0,0,1,332.63,352.33Z" fill="#c39bd3" stroke="#1a1a1a" stroke-width="0.55"/>
 <text x="312.0" y="366.6" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">107</text>
@@ -258,6 +258,6 @@
 <rect x="790" y="646" width="14" height="10" fill="#b9bc9f"/>
 <text x="812" y="655" font-size="10" font-family="Arial,sans-serif" fill="#333">T6 ¥780（无商务服务）</text>
 <rect x="790" y="662" width="14" height="10" fill="#c39bd3"/>
-<text x="812" y="671" font-size="10" font-family="Arial,sans-serif" fill="#333">球迷区 107/110（球迷通道售卖）</text>
+<text x="812" y="671" font-size="10" font-family="Arial,sans-serif" fill="#333">球迷区 107-110（球迷通道售卖）</text>
 </g>
 </svg>

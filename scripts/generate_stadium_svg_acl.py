@@ -16,7 +16,7 @@ C = {
 }
 AWAY = {"126", "234", "235", "334", "335"}
 SEG = {"125", "127", "233", "236", "333", "336"}
-FAN = {"107", "110"}  # 死忠球迷区：走球迷通道售卖，不进入正常售卖流程
+FAN = {"107", "108", "109", "110"}  # 死忠球迷区（一层西侧）：走球迷通道售卖，不进入正常售卖流程
 WHITE = {"205", "206", "207", "239", "240", "301", "302", "303", "304", "305", "306", "339", "340"}
 
 SECTION_PRICE: dict[str, int] = {}
@@ -415,7 +415,7 @@ def build_svg() -> str:
         '<rect x="790" y="646" width="14" height="10" fill="#b9bc9f"/>',
         '<text x="812" y="655" font-size="10" font-family="Arial,sans-serif" fill="#333">T6 ¥780（无商务服务）</text>',
         '<rect x="790" y="662" width="14" height="10" fill="#c39bd3"/>',
-        '<text x="812" y="671" font-size="10" font-family="Arial,sans-serif" fill="#333">球迷区 107/110（球迷通道售卖）</text>',
+        '<text x="812" y="671" font-size="10" font-family="Arial,sans-serif" fill="#333">球迷区 107-110（球迷通道售卖）</text>',
         '</g>',
         "</svg>",
     ]
