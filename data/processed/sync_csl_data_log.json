@@ -648,5 +648,75 @@
       "snapshot": "/home/xxxsuli/ticket-pricing/data/processed/rating_snapshot_20260812.json"
     },
     "status": "ok"
+  },
+  {
+    "ts": "2026-08-15T03:32:22+08:00",
+    "snapshot_date": "2026-08-15",
+    "dry_run": false,
+    "steps": {
+      "load": {
+        "total": 652,
+        "by_source": {
+          "mcp_history": 481,
+          "cfl_fixtures_api": 171
+        },
+        "years": [
+          "2023",
+          "2024",
+          "2025",
+          "2026"
+        ],
+        "teams": 22
+      },
+      "elo": {
+        "rows": 1304,
+        "teams": 22,
+        "min_date": "2023-04-15",
+        "max_date": "2026-08-09"
+      },
+      "standings": {
+        "rows": 352,
+        "rounds": 22,
+        "max_date": "2026-08-09",
+        "issues": []
+      },
+      "snapshot": "/home/xxxsuli/ticket-pricing/data/processed/rating_snapshot_20260815.json"
+    },
+    "status": "ok"
+  },
+  {
+    "ts": "2026-08-16T10:02:02+08:00",
+    "snapshot_date": "2026-08-16",
+    "dry_run": false,
+    "steps": {
+      "load": {
+        "total": 660,
+        "by_source": {
+          "mcp_history": 481,
+          "cfl_fixtures_api": 179
+        },
+        "years": [
+          "2023",
+          "2024",
+          "2025",
+          "2026"
+        ],
+        "teams": 22
+      },
+      "elo": {
+        "rows": 1320,
+        "teams": 22,
+        "min_date": "2023-04-15",
+        "max_date": "2026-08-15"
+      },
+      "standings": {
+        "rows": 368,
+        "rounds": 23,
+        "max_date": "2026-08-15",
+        "issues": []
+      },
+      "snapshot": "/home/xxxsuli/ticket-pricing/data/processed/rating_snapshot_20260816.json"
+    },
+    "status": "ok"
   }
 ]
