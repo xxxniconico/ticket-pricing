@@ -32,7 +32,7 @@
     <rect x="616.9" y="323.6" width="14.1" height="28.8" fill="none" stroke="rgba(255,255,255,0.78)" stroke-width="0.612" opacity="0.82"/>
     <rect x="364.0" y="290.0" width="272.0" height="96.0" rx="4" fill="none" stroke="#1a4d2c" stroke-width="1.15"/>
   </g>
-<path id="sec-307" d="M259.94,420.52L192.23,443.79A352.00,218.00,0,0,0,221.71,471.49L282.93,442.12A274.56,170.04,0,0,1,259.94,420.52Z" fill="#ffffff" stroke="#1a1a1a" stroke-width="0.55"/>
+<path id="sec-307" d="M259.94,420.52L192.23,443.79A352.00,218.00,0,0,0,221.71,471.49L282.93,442.12A274.56,170.04,0,0,1,259.94,420.52Z" fill="#27d08a" stroke="#1a1a1a" stroke-width="0.55"/>
 <text x="238.4" y="444.8" text-anchor="middle" dominant-baseline="middle" font-size="8.5" font-family="Arial,Helvetica,sans-serif" fill="#111">307</text>
 <path id="sec-306" d="M282.93,442.12L221.71,471.49A352.00,218.00,0,0,0,257.63,496.09L310.95,461.31A274.56,170.04,0,0,1,282.93,442.12Z" fill="#ffffff" stroke="#1a1a1a" stroke-width="0.55"/>
 <text x="267.6" y="468.1" text-anchor="middle" dominant-baseline="middle" font-size="8.5" font-family="Arial,Helvetica,sans-serif" fill="#111">306</text>
@@ -126,7 +126,7 @@
 <text x="531.4" y="489.4" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">240</text>
 <path id="sec-239" d="M544.02,470.38L555.39,504.54A274.56,170.04,0,0,0,599.45,496.49L579.05,463.98A218.24,135.16,0,0,1,544.02,470.38Z" fill="#ffffff" stroke="#1a1a1a" stroke-width="0.55"/>
 <text x="569.7" y="484.4" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">239</text>
-<path id="sec-238" d="M579.05,463.98L599.45,496.49A274.56,170.04,0,0,0,640.72,484.01L611.86,454.06A218.24,135.16,0,0,1,579.05,463.98Z" fill="#f9a61a" stroke="#1a1a1a" stroke-width="0.55"/>
+<path id="sec-238" d="M579.05,463.98L599.45,496.49A274.56,170.04,0,0,0,640.72,484.01L611.86,454.06A218.24,135.16,0,0,1,579.05,463.98Z" fill="#ffffff" stroke="#1a1a1a" stroke-width="0.55"/>
 <text x="608.1" y="475.1" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">238</text>
 <path id="sec-237" d="M611.86,454.06L640.72,484.01A274.56,170.04,0,0,0,678.06,467.43L641.54,440.88A218.24,135.16,0,0,1,611.86,454.06Z" fill="#f9a61a" stroke="#1a1a1a" stroke-width="0.55"/>
 <text x="643.5" y="462.0" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">237</text>
@@ -152,21 +152,21 @@
 <text x="684.2" y="236.7" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">227</text>
 <path id="sec-226" d="M650.48,240.11L689.31,214.85A274.56,170.04,0,0,0,653.51,197.02L622.02,225.94A218.24,135.16,0,0,1,650.48,240.11Z" fill="#f9a61a" stroke="#1a1a1a" stroke-width="0.55"/>
 <text x="654.4" y="219.1" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">226</text>
-<path id="sec-225" d="M622.02,225.94L653.51,197.02A274.56,170.04,0,0,0,613.41,183.14L590.14,214.91A218.24,135.16,0,0,1,622.02,225.94Z" fill="#f66d81" stroke="#1a1a1a" stroke-width="0.55"/>
+<path id="sec-225" d="M622.02,225.94L653.51,197.02A274.56,170.04,0,0,0,613.41,183.14L590.14,214.91A218.24,135.16,0,0,1,622.02,225.94Z" fill="#ffffff" stroke="#1a1a1a" stroke-width="0.55"/>
 <text x="620.2" y="204.8" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">225</text>
-<path id="sec-224" d="M590.14,214.91L613.41,183.14A274.56,170.04,0,0,0,570.13,173.60L555.74,207.32A218.24,135.16,0,0,1,590.14,214.91Z" fill="#f66d81" stroke="#1a1a1a" stroke-width="0.55"/>
+<path id="sec-224" d="M590.14,214.91L613.41,183.14A274.56,170.04,0,0,0,570.13,173.60L555.74,207.32A218.24,135.16,0,0,1,590.14,214.91Z" fill="#f1f530" stroke="#1a1a1a" stroke-width="0.55"/>
 <text x="582.6" y="194.2" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">224</text>
-<path id="sec-223" d="M555.74,207.32L570.13,173.60A274.56,170.04,0,0,0,524.89,168.66L519.78,203.40A218.24,135.16,0,0,1,555.74,207.32Z" fill="#f66d81" stroke="#1a1a1a" stroke-width="0.55"/>
+<path id="sec-223" d="M555.74,207.32L570.13,173.60A274.56,170.04,0,0,0,524.89,168.66L519.78,203.40A218.24,135.16,0,0,1,555.74,207.32Z" fill="#f1f530" stroke="#1a1a1a" stroke-width="0.55"/>
 <text x="542.8" y="187.7" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">223</text>
-<path id="sec-222" d="M519.78,203.40L524.89,168.66A274.56,170.04,0,0,0,478.95,168.46L483.27,203.24A218.24,135.16,0,0,1,519.78,203.40Z" fill="#f66d81" stroke="#1a1a1a" stroke-width="0.55"/>
+<path id="sec-222" d="M519.78,203.40L524.89,168.66A274.56,170.04,0,0,0,478.95,168.46L483.27,203.24A218.24,135.16,0,0,1,519.78,203.40Z" fill="#f1f530" stroke="#1a1a1a" stroke-width="0.55"/>
 <text x="501.7" y="185.4" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">222</text>
-<path id="sec-221" d="M483.27,203.24L478.95,168.46A274.56,170.04,0,0,0,433.60,173.01L447.22,206.85A218.24,135.16,0,0,1,483.27,203.24Z" fill="#f66d81" stroke="#1a1a1a" stroke-width="0.55"/>
+<path id="sec-221" d="M483.27,203.24L478.95,168.46A274.56,170.04,0,0,0,433.60,173.01L447.22,206.85A218.24,135.16,0,0,1,483.27,203.24Z" fill="#f1f530" stroke="#1a1a1a" stroke-width="0.55"/>
 <text x="460.6" y="187.4" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">221</text>
-<path id="sec-220" d="M447.22,206.85L433.60,173.01A274.56,170.04,0,0,0,390.12,182.17L412.66,214.14A218.24,135.16,0,0,1,447.22,206.85Z" fill="#f66d81" stroke="#1a1a1a" stroke-width="0.55"/>
+<path id="sec-220" d="M447.22,206.85L433.60,173.01A274.56,170.04,0,0,0,390.12,182.17L412.66,214.14A218.24,135.16,0,0,1,447.22,206.85Z" fill="#f1f530" stroke="#1a1a1a" stroke-width="0.55"/>
 <text x="420.6" y="193.5" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">220</text>
-<path id="sec-219" d="M412.66,214.14L390.12,182.17A274.56,170.04,0,0,0,349.70,195.70L380.53,224.89A218.24,135.16,0,0,1,412.66,214.14Z" fill="#f66d81" stroke="#1a1a1a" stroke-width="0.55"/>
+<path id="sec-219" d="M412.66,214.14L390.12,182.17A274.56,170.04,0,0,0,349.70,195.70L380.53,224.89A218.24,135.16,0,0,1,412.66,214.14Z" fill="#f1f530" stroke="#1a1a1a" stroke-width="0.55"/>
 <text x="382.8" y="203.8" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">219</text>
-<path id="sec-218" d="M380.53,224.89L349.70,195.70A274.56,170.04,0,0,0,313.50,213.21L351.75,238.81A218.24,135.16,0,0,1,380.53,224.89Z" fill="#f66d81" stroke="#1a1a1a" stroke-width="0.55"/>
+<path id="sec-218" d="M380.53,224.89L349.70,195.70A274.56,170.04,0,0,0,313.50,213.21L351.75,238.81A218.24,135.16,0,0,1,380.53,224.89Z" fill="#f1f530" stroke="#1a1a1a" stroke-width="0.55"/>
 <text x="348.3" y="217.7" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">218</text>
 <path id="sec-217" d="M351.75,238.81L313.50,213.21A274.56,170.04,0,0,0,282.51,234.22L327.13,255.50A218.24,135.16,0,0,1,351.75,238.81Z" fill="#f9a61a" stroke="#1a1a1a" stroke-width="0.55"/>
 <text x="318.1" y="235.1" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">217</text>
@@ -186,7 +186,7 @@
 <text x="325.5" y="390.0" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">106</text>
 <path id="sec-105" d="M356.14,392.88L314.19,408.89A218.24,135.16,0,0,0,341.73,431.06L377.47,410.05A168.96,104.64,0,0,1,356.14,392.88Z" fill="#f9a61a" stroke="#1a1a1a" stroke-width="0.55"/>
 <text x="346.6" y="411.1" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">105</text>
-<path id="sec-104" d="M377.47,410.05L341.73,431.06A218.24,135.16,0,0,0,376.06,449.25L404.05,424.13A168.96,104.64,0,0,1,377.47,410.05Z" fill="#f66d81" stroke="#1a1a1a" stroke-width="0.55"/>
+<path id="sec-104" d="M377.47,410.05L341.73,431.06A218.24,135.16,0,0,0,376.06,449.25L404.05,424.13A168.96,104.64,0,0,1,377.47,410.05Z" fill="#f1f530" stroke="#1a1a1a" stroke-width="0.55"/>
 <text x="374.2" y="429.1" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">104</text>
 <path id="sec-103" d="M404.05,424.13L376.06,449.25A218.24,135.16,0,0,0,415.70,462.67L434.74,434.52A168.96,104.64,0,0,1,404.05,424.13Z" fill="#f66d81" stroke="#1a1a1a" stroke-width="0.55"/>
 <text x="407.1" y="443.2" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">103</text>
@@ -196,7 +196,7 @@
 <text x="492.5" y="457.8" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">101</text>
 <path id="sec-130" d="M513.56,442.30L517.52,472.72A218.24,135.16,0,0,0,561.93,467.60L547.95,438.34A168.96,104.64,0,0,1,513.56,442.30Z" fill="#f66d81" stroke="#1a1a1a" stroke-width="0.55"/>
 <text x="535.4" y="455.9" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">130</text>
-<path id="sec-129" d="M547.95,438.34L561.93,467.60A218.24,135.16,0,0,0,603.69,456.93L580.27,430.08A168.96,104.64,0,0,1,547.95,438.34Z" fill="#f66d81" stroke="#1a1a1a" stroke-width="0.55"/>
+<path id="sec-129" d="M547.95,438.34L561.93,467.60A218.24,135.16,0,0,0,603.69,456.93L580.27,430.08A168.96,104.64,0,0,1,547.95,438.34Z" fill="#f1f530" stroke="#1a1a1a" stroke-width="0.55"/>
 <text x="573.9" y="448.8" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">129</text>
 <path id="sec-128" d="M580.27,430.08L603.69,456.93A218.24,135.16,0,0,0,641.00,441.16L609.16,417.87A168.96,104.64,0,0,1,580.27,430.08Z" fill="#f9a61a" stroke="#1a1a1a" stroke-width="0.55"/>
 <text x="609.1" y="437.0" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">128</text>
@@ -218,7 +218,7 @@
 <text x="649.7" y="262.0" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">120</text>
 <path id="sec-119" d="M618.85,263.63L653.52,241.93A218.24,135.16,0,0,0,618.29,224.42L591.58,250.06A168.96,104.64,0,0,1,618.85,263.63Z" fill="#f9a61a" stroke="#1a1a1a" stroke-width="0.55"/>
 <text x="621.2" y="244.5" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">119</text>
-<path id="sec-118" d="M591.58,250.06L618.29,224.42A218.24,135.16,0,0,0,578.00,211.77L560.39,240.27A168.96,104.64,0,0,1,591.58,250.06Z" fill="#f66d81" stroke="#1a1a1a" stroke-width="0.55"/>
+<path id="sec-118" d="M591.58,250.06L618.29,224.42A218.24,135.16,0,0,0,578.00,211.77L560.39,240.27A168.96,104.64,0,0,1,591.58,250.06Z" fill="#f1f530" stroke="#1a1a1a" stroke-width="0.55"/>
 <text x="587.5" y="231.1" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">118</text>
 <path id="sec-117" d="M560.39,240.27L578.00,211.77A218.24,135.16,0,0,0,534.36,204.53L526.60,234.67A168.96,104.64,0,0,1,560.39,240.27Z" fill="#f66d81" stroke="#1a1a1a" stroke-width="0.55"/>
 <text x="550.1" y="222.2" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">117</text>
@@ -228,19 +228,19 @@
 <text x="470.5" y="219.5" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">115</text>
 <path id="sec-114" d="M457.12,236.79L444.61,207.27A218.24,135.16,0,0,0,402.34,217.13L424.39,244.42A168.96,104.64,0,0,1,457.12,236.79Z" fill="#f66d81" stroke="#1a1a1a" stroke-width="0.55"/>
 <text x="431.7" y="225.8" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">114</text>
-<path id="sec-113" d="M424.39,244.42L402.34,217.13A218.24,135.16,0,0,0,364.25,232.17L394.90,256.07A168.96,104.64,0,0,1,424.39,244.42Z" fill="#f66d81" stroke="#1a1a1a" stroke-width="0.55"/>
+<path id="sec-113" d="M424.39,244.42L402.34,217.13A218.24,135.16,0,0,0,364.25,232.17L394.90,256.07A168.96,104.64,0,0,1,424.39,244.42Z" fill="#f1f530" stroke="#1a1a1a" stroke-width="0.55"/>
 <text x="395.9" y="236.9" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">113</text>
 <path id="sec-112" d="M394.90,256.07L364.25,232.17A218.24,135.16,0,0,0,331.97,251.75L369.91,271.22A168.96,104.64,0,0,1,394.90,256.07Z" fill="#f9a61a" stroke="#1a1a1a" stroke-width="0.55"/>
 <text x="364.5" y="252.3" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">112</text>
 <path id="sec-111" d="M369.91,271.22L331.97,251.75A218.24,135.16,0,0,0,306.90,275.02L350.50,289.24A168.96,104.64,0,0,1,369.91,271.22Z" fill="#f9a61a" stroke="#1a1a1a" stroke-width="0.55"/>
 <text x="339.0" y="271.5" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">111</text>
-<path id="sec-110" d="M350.50,289.24L306.90,275.02A218.24,135.16,0,0,0,290.10,300.99L337.50,309.35A168.96,104.64,0,0,1,350.50,289.24Z" fill="#f9a61a" stroke="#1a1a1a" stroke-width="0.55"/>
+<path id="sec-110" d="M350.50,289.24L306.90,275.02A218.24,135.16,0,0,0,290.10,300.99L337.50,309.35A168.96,104.64,0,0,1,350.50,289.24Z" fill="#ffffff" stroke="#1a1a1a" stroke-width="0.55"/>
 <text x="320.3" y="293.4" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">110</text>
-<path id="sec-109" d="M337.50,309.35L290.10,300.99A218.24,135.16,0,0,0,282.29,328.55L331.45,330.68A168.96,104.64,0,0,1,337.50,309.35Z" fill="#f9a61a" stroke="#1a1a1a" stroke-width="0.55"/>
+<path id="sec-109" d="M337.50,309.35L290.10,300.99A218.24,135.16,0,0,0,282.29,328.55L331.45,330.68A168.96,104.64,0,0,1,337.50,309.35Z" fill="#ffffff" stroke="#1a1a1a" stroke-width="0.55"/>
 <text x="309.3" y="317.3" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">109</text>
-<path id="sec-108" d="M331.45,330.68L282.29,328.55A218.24,135.16,0,0,0,283.82,356.51L332.63,352.33A168.96,104.64,0,0,1,331.45,330.68Z" fill="#f9a61a" stroke="#1a1a1a" stroke-width="0.55"/>
+<path id="sec-108" d="M331.45,330.68L282.29,328.55A218.24,135.16,0,0,0,283.82,356.51L332.63,352.33A168.96,104.64,0,0,1,331.45,330.68Z" fill="#ffffff" stroke="#1a1a1a" stroke-width="0.55"/>
 <text x="306.5" y="342.0" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">108</text>
-<path id="sec-107" d="M332.63,352.33L283.82,356.51A218.24,135.16,0,0,0,294.60,383.68L340.98,373.36A168.96,104.64,0,0,1,332.63,352.33Z" fill="#f9a61a" stroke="#1a1a1a" stroke-width="0.55"/>
+<path id="sec-107" d="M332.63,352.33L283.82,356.51A218.24,135.16,0,0,0,294.60,383.68L340.98,373.36A168.96,104.64,0,0,1,332.63,352.33Z" fill="#ffffff" stroke="#1a1a1a" stroke-width="0.55"/>
 <text x="312.0" y="366.6" text-anchor="middle" dominant-baseline="middle" font-size="7.5" font-family="Arial,Helvetica,sans-serif" fill="#111">107</text>
 <path id="sec-vip-200" d="M414.73,462.42L392.72,494.52A274.56,170.04,0,0,0,514.37,507.81L511.42,472.97A218.24,135.16,0,0,1,414.73,462.42Z" fill="#fff" stroke="#1a1a1a" stroke-width="0.7"/>
 <text x="457.2" y="488.3" text-anchor="middle" dominant-baseline="middle" font-size="11" font-weight="600" font-family="SimHei,Arial,sans-serif" fill="#333">主席台</text>
