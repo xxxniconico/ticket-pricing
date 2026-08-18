@@ -6,7 +6,7 @@
 乘数: 53场网格搜索
   derby=1.25 derby_B=1.05 lost_bottom=0.65 heavy_home_loss=0.85
   away_winless=0.94 away_winless_losses=0.82(S/A=0.77) saturday=1.02
-  season_opener=1.15 short_rest=0.78 midweek=0.92
+  season_opener=1.17 short_rest=0.78 midweek=0.86
   summer=1.15 (B/C级, 7-8月, 暑假运营活动)
   midseason_restart=1.10 (>=28天间隔, 6-7月, 非赛季首场)
 年份因子: year_2023=1.45 (S级豁免)
