@@ -78,17 +78,17 @@
 <text x="711.3" y="194.8" text-anchor="middle" dominant-baseline="middle" font-size="8.5" font-family="Arial,Helvetica,sans-serif" fill="#111">326</text>
 <path id="sec-325" d="M669.26,204.12L717.00,166.35A352.00,218.00,0,0,0,672.44,147.95L634.50,189.76A274.56,170.04,0,0,1,669.26,204.12Z" fill="#f9a61a" stroke="#1a1a1a" stroke-width="0.55"/>
 <text x="673.8" y="176.6" text-anchor="middle" dominant-baseline="middle" font-size="8.5" font-family="Arial,Helvetica,sans-serif" fill="#111">325</text>
-<path id="sec-324" d="M634.50,189.76L672.44,147.95A352.00,218.00,0,0,0,623.88,133.95L596.63,178.84A274.56,170.04,0,0,1,634.50,189.76Z" fill="#f1f530" stroke="#1a1a1a" stroke-width="0.55"/>
+<path id="sec-324" d="M634.50,189.76L672.44,147.95A352.00,218.00,0,0,0,623.88,133.95L596.63,178.84A274.56,170.04,0,0,1,634.50,189.76Z" fill="#9ec5fe" stroke="#1a1a1a" stroke-width="0.55"/>
 <text x="632.2" y="162.1" text-anchor="middle" dominant-baseline="middle" font-size="8.5" font-family="Arial,Helvetica,sans-serif" fill="#111">324</text>
-<path id="sec-323" d="M596.63,178.84L623.88,133.95A352.00,218.00,0,0,0,572.45,124.67L556.51,171.60A274.56,170.04,0,0,1,596.63,178.84Z" fill="#f1f530" stroke="#1a1a1a" stroke-width="0.55"/>
+<path id="sec-323" d="M596.63,178.84L623.88,133.95A352.00,218.00,0,0,0,572.45,124.67L556.51,171.60A274.56,170.04,0,0,1,596.63,178.84Z" fill="#9ec5fe" stroke="#1a1a1a" stroke-width="0.55"/>
 <text x="587.6" y="151.7" text-anchor="middle" dominant-baseline="middle" font-size="8.5" font-family="Arial,Helvetica,sans-serif" fill="#111">323</text>
-<path id="sec-322" d="M556.51,171.60L572.45,124.67A352.00,218.00,0,0,0,519.35,120.33L515.09,168.22A274.56,170.04,0,0,1,556.51,171.60Z" fill="#f1f530" stroke="#1a1a1a" stroke-width="0.55"/>
+<path id="sec-322" d="M556.51,171.60L572.45,124.67A352.00,218.00,0,0,0,519.35,120.33L515.09,168.22A274.56,170.04,0,0,1,556.51,171.60Z" fill="#9ec5fe" stroke="#1a1a1a" stroke-width="0.55"/>
 <text x="541.0" y="145.6" text-anchor="middle" dominant-baseline="middle" font-size="8.5" font-family="Arial,Helvetica,sans-serif" fill="#111">322</text>
-<path id="sec-321" d="M515.09,168.22L519.35,120.33A352.00,218.00,0,0,0,465.80,121.03L473.32,168.76A274.56,170.04,0,0,1,515.09,168.22Z" fill="#f1f530" stroke="#1a1a1a" stroke-width="0.55"/>
+<path id="sec-321" d="M515.09,168.22L519.35,120.33A352.00,218.00,0,0,0,465.80,121.03L473.32,168.76A274.56,170.04,0,0,1,515.09,168.22Z" fill="#9ec5fe" stroke="#1a1a1a" stroke-width="0.55"/>
 <text x="493.4" y="144.0" text-anchor="middle" dominant-baseline="middle" font-size="8.5" font-family="Arial,Helvetica,sans-serif" fill="#111">321</text>
-<path id="sec-320" d="M473.32,168.76L465.80,121.03A352.00,218.00,0,0,0,413.03,126.76L432.17,173.23A274.56,170.04,0,0,1,473.32,168.76Z" fill="#f1f530" stroke="#1a1a1a" stroke-width="0.55"/>
+<path id="sec-320" d="M473.32,168.76L465.80,121.03A352.00,218.00,0,0,0,413.03,126.76L432.17,173.23A274.56,170.04,0,0,1,473.32,168.76Z" fill="#9ec5fe" stroke="#1a1a1a" stroke-width="0.55"/>
 <text x="445.9" y="146.9" text-anchor="middle" dominant-baseline="middle" font-size="8.5" font-family="Arial,Helvetica,sans-serif" fill="#111">320</text>
-<path id="sec-319" d="M432.17,173.23L413.03,126.76A352.00,218.00,0,0,0,362.29,137.38L392.58,181.51A274.56,170.04,0,0,1,432.17,173.23Z" fill="#f1f530" stroke="#1a1a1a" stroke-width="0.55"/>
+<path id="sec-319" d="M432.17,173.23L413.03,126.76A352.00,218.00,0,0,0,362.29,137.38L392.58,181.51A274.56,170.04,0,0,1,432.17,173.23Z" fill="#9ec5fe" stroke="#1a1a1a" stroke-width="0.55"/>
 <text x="399.7" y="154.2" text-anchor="middle" dominant-baseline="middle" font-size="8.5" font-family="Arial,Helvetica,sans-serif" fill="#111">319</text>
 <path id="sec-318" d="M392.58,181.51L362.29,137.38A352.00,218.00,0,0,0,314.73,152.64L355.49,193.42A274.56,170.04,0,0,1,392.58,181.51Z" fill="#f9a61a" stroke="#1a1a1a" stroke-width="0.55"/>
 <text x="355.9" y="165.7" text-anchor="middle" dominant-baseline="middle" font-size="8.5" font-family="Arial,Helvetica,sans-serif" fill="#111">318</text>
@@ -245,19 +245,21 @@
 <path id="sec-vip-200" d="M414.73,462.42L392.72,494.52A274.56,170.04,0,0,0,514.37,507.81L511.42,472.97A218.24,135.16,0,0,1,414.73,462.42Z" fill="#fff" stroke="#1a1a1a" stroke-width="0.7"/>
 <text x="457.2" y="488.3" text-anchor="middle" dominant-baseline="middle" font-size="11" font-weight="600" font-family="SimHei,Arial,sans-serif" fill="#333">主席台</text>
 <g id="legend">
-<rect x="778" y="546" width="224" height="140" rx="6" fill="#ffffff" fill-opacity="0.93" stroke="#888" stroke-width="1"/>
+<rect x="778" y="546" width="224" height="158" rx="6" fill="#ffffff" fill-opacity="0.93" stroke="#888" stroke-width="1"/>
 <text x="790" y="566" font-size="12" font-weight="600" font-family="SimHei,Arial,sans-serif" fill="#222">亚冠 9月 主场票价</text>
 <rect x="790" y="574" width="14" height="10" fill="#27d08a"/>
-<text x="812" y="583" font-size="10" font-family="Arial,sans-serif" fill="#333">L1（T1+T2 合并 36区） ¥200</text>
+<text x="812" y="583" font-size="10" font-family="Arial,sans-serif" fill="#333">L1（T1+T2 合并 16区） ¥200</text>
 <rect x="790" y="592" width="14" height="10" fill="#f9a61a"/>
 <text x="812" y="601" font-size="10" font-family="Arial,sans-serif" fill="#333">T3 ¥300</text>
-<rect x="790" y="610" width="14" height="10" fill="#f1f530"/>
-<text x="812" y="619" font-size="10" font-family="Arial,sans-serif" fill="#333">T4 ¥460</text>
-<rect x="790" y="628" width="14" height="10" fill="#f66d81"/>
-<text x="812" y="637" font-size="10" font-family="Arial,sans-serif" fill="#333">T5 ¥540</text>
-<rect x="790" y="646" width="14" height="10" fill="#b9bc9f"/>
-<text x="812" y="655" font-size="10" font-family="Arial,sans-serif" fill="#333">T6 ¥1080（含商务餐饮）</text>
-<rect x="790" y="662" width="14" height="10" fill="#c39bd3"/>
-<text x="812" y="671" font-size="10" font-family="Arial,sans-serif" fill="#333">球迷区 107-110（T3六折¥180）</text>
+<rect x="790" y="610" width="14" height="10" fill="#9ec5fe"/>
+<text x="812" y="619" font-size="10" font-family="Arial,sans-serif" fill="#333">319-324 工会区 ¥276（6折）</text>
+<rect x="790" y="628" width="14" height="10" fill="#f1f530"/>
+<text x="812" y="637" font-size="10" font-family="Arial,sans-serif" fill="#333">T4 ¥460（12区，不含319-324）</text>
+<rect x="790" y="646" width="14" height="10" fill="#f66d81"/>
+<text x="812" y="655" font-size="10" font-family="Arial,sans-serif" fill="#333">T5 ¥540</text>
+<rect x="790" y="664" width="14" height="10" fill="#b9bc9f"/>
+<text x="812" y="673" font-size="10" font-family="Arial,sans-serif" fill="#333">T6 ¥1080（含商务餐饮）</text>
+<rect x="790" y="682" width="14" height="10" fill="#c39bd3"/>
+<text x="812" y="691" font-size="10" font-family="Arial,sans-serif" fill="#333">球迷区 107-110（T3六折¥180）</text>
 </g>
 </svg>

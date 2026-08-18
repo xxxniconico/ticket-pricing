@@ -12,6 +12,7 @@ C = {
     540: "#f66d81",
     460: "#f1f530",
     300: "#f9a61a",
+    276: "#9ec5fe",
     200: "#27d08a",
 }
 AWAY = {"126", "234", "235", "334", "335"}
@@ -27,9 +28,11 @@ for s in ("103", "114", "115", "116", "117", "130"):
     SECTION_PRICE[s] = 540
 for s in (
     "104", "113", "118", "129", "218", "219", "220", "221", "222", "223", "224", "225",
-    "319", "320", "321", "322", "323", "324",
 ):
     SECTION_PRICE[s] = 460
+# 319-324：工会区（正常定价应为 T3 ¥300；工会 1,000 张/场 6 折 ¥276）
+for s in ("319", "320", "321", "322", "323", "324"):
+    SECTION_PRICE[s] = 276
 for s in (
     "105", "106", "111", "112", "119", "120", "121", "122", "123", "124", "128",
     "208", "209", "210", "211", "212", "213", "214", "215", "216", "217",
@@ -402,20 +405,22 @@ def build_svg() -> str:
         *render_ring(RING_100, "100", 0, RING_100_SOUTH_N, RING_100_ROTATION),
         *vip_paths(),
         '<g id="legend">',
-        '<rect x="778" y="546" width="224" height="140" rx="6" fill="#ffffff" fill-opacity="0.93" stroke="#888" stroke-width="1"/>',
+        '<rect x="778" y="546" width="224" height="158" rx="6" fill="#ffffff" fill-opacity="0.93" stroke="#888" stroke-width="1"/>',
         '<text x="790" y="566" font-size="12" font-weight="600" font-family="SimHei,Arial,sans-serif" fill="#222">亚冠 9月 主场票价</text>',
         '<rect x="790" y="574" width="14" height="10" fill="#27d08a"/>',
-        '<text x="812" y="583" font-size="10" font-family="Arial,sans-serif" fill="#333">L1（T1+T2 合并 36区） ¥200</text>',
+        '<text x="812" y="583" font-size="10" font-family="Arial,sans-serif" fill="#333">L1（T1+T2 合并 16区） ¥200</text>',
         '<rect x="790" y="592" width="14" height="10" fill="#f9a61a"/>',
         '<text x="812" y="601" font-size="10" font-family="Arial,sans-serif" fill="#333">T3 ¥300</text>',
-        '<rect x="790" y="610" width="14" height="10" fill="#f1f530"/>',
-        '<text x="812" y="619" font-size="10" font-family="Arial,sans-serif" fill="#333">T4 ¥460</text>',
-        '<rect x="790" y="628" width="14" height="10" fill="#f66d81"/>',
-        '<text x="812" y="637" font-size="10" font-family="Arial,sans-serif" fill="#333">T5 ¥540</text>',
-        '<rect x="790" y="646" width="14" height="10" fill="#b9bc9f"/>',
-        '<text x="812" y="655" font-size="10" font-family="Arial,sans-serif" fill="#333">T6 ¥1080（含商务餐饮）</text>',
-        '<rect x="790" y="662" width="14" height="10" fill="#c39bd3"/>',
-        '<text x="812" y="671" font-size="10" font-family="Arial,sans-serif" fill="#333">球迷区 107-110（T3六折¥180）</text>',
+        '<rect x="790" y="610" width="14" height="10" fill="#9ec5fe"/>',
+        '<text x="812" y="619" font-size="10" font-family="Arial,sans-serif" fill="#333">319-324 工会区 ¥276（6折）</text>',
+        '<rect x="790" y="628" width="14" height="10" fill="#f1f530"/>',
+        '<text x="812" y="637" font-size="10" font-family="Arial,sans-serif" fill="#333">T4 ¥460（12区，不含319-324）</text>',
+        '<rect x="790" y="646" width="14" height="10" fill="#f66d81"/>',
+        '<text x="812" y="655" font-size="10" font-family="Arial,sans-serif" fill="#333">T5 ¥540</text>',
+        '<rect x="790" y="664" width="14" height="10" fill="#b9bc9f"/>',
+        '<text x="812" y="673" font-size="10" font-family="Arial,sans-serif" fill="#333">T6 ¥1080（含商务餐饮）</text>',
+        '<rect x="790" y="682" width="14" height="10" fill="#c39bd3"/>',
+        '<text x="812" y="691" font-size="10" font-family="Arial,sans-serif" fill="#333">球迷区 107-110（T3六折¥180）</text>',
         '</g>',
         "</svg>",
     ]
