@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- 纯矢量：path + text，无内嵌 PNG/JPEG；由 scripts/generate_stadium_svg_acl.py 生成（亚冠9月 L1合并版） -->
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 686" width="1024" height="686">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 714" width="1024" height="714">
   <defs>
     <pattern id="awayPattern" width="5" height="5" patternUnits="userSpaceOnUse">
       <rect width="5" height="5" fill="#fff"/>
