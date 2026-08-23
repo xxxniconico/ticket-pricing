@@ -209,31 +209,11 @@ class DynamicPricingOptimizer:
         # 3. 获取该级别的基准价
         base_prices = self.price_matrix[opp_level]
 
-        # 4. 份额分配（V10: 销量驱动分段 + T4+T5合并模型）
-        # T1-T3: 按预测上座P分段 (2025+2026 25场票名称校准)
-        # T4+T5合并=13.4%, 内部按P分配 (山东+辽宁扩容后标定)
+        # 4. 份额分配（V10: 单一事实源 src/pricing_v5.v10_volume_shares，
+        #   含暑期 t45=0.15 分支 + T4 内部占比三点分段；2026-08-23 云南样本落地）
         P = predicted_total
-        if P >= 11000:
-            t1, t2, t3 = 0.260, 0.270, 0.320
-        elif P >= 8000:
-            t1, t2, t3 = 0.370, 0.220, 0.290
-        elif P >= 5000:
-            t1, t2, t3 = 0.480, 0.130, 0.270
-        else:
-            t1, t2, t3 = 0.530, 0.080, 0.260
-        t45 = 0.134  # T4+T5 合并份额 (山东13.6% + 辽宁13.2% 平均, 2026-07结构调整后)
-        # 内部 T4 占比: 山东(P=12956→0.662) + 辽宁(P=7362→0.508) 两点线性拟合
-        # 旧公式(0.50+(P-5000)/10000*0.20)来自结构调整前样本, 高估T4低估T5, 已废弃
-        t4_ratio = 0.508 + (P - 7362) * (0.662 - 0.508) / (12956 - 7362)
-        t4_ratio = max(0.45, min(0.70, t4_ratio))
-        raw = {
-            "T1": t1, "T2": t2, "T3": t3,
-            "T4": t45 * t4_ratio,
-            "T5": t45 * (1 - t4_ratio),
-            "T6": 0.006,
-        }
-        s = sum(raw.values())
-        volume_shares = {zt: raw[zt] / s for zt in ZONE_TIERS}
+        from src.pricing_v5 import v10_volume_shares
+        volume_shares = v10_volume_shares(P, summer=context.get("summer", False))
 
         base_demand = {}
         for zt in ZONE_TIERS:

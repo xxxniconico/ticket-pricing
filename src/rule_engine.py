@@ -36,6 +36,7 @@ MULTIPLIERS = {
     "short_rest": 0.78, "midweek": 0.86,
     "summer": 1.13,
     "summer_C": 1.30,   # C级暑假（辽宁7/17验证 ratio=1.33；勿改回1.13）
+    "summer_saturday": 1.047,  # 暑期×周六交互（浙江1.049/云南1.046 两样本确认, 2026-08-23落地）
     "late_season": 0.80,  # 10月后赛季末战意衰减（展示层与引擎共用，单一事实源）
     "midseason_restart": 1.10,
     "top3_form": 1.08,
@@ -135,6 +136,7 @@ def predict(opponent, derby=False, lost_bottom=False, heavy_home_loss=False,
     elif summer and tier == "B": mult *= MULTIPLIERS["summer"]
     elif summer and tier in ("S","A"): mult *= 1.08
     elif summer and tier is None: mult *= 1.08 if is_strong else MULTIPLIERS["summer"]  # continuous mode uses ST
+    if summer and saturday: mult *= MULTIPLIERS["summer_saturday"]  # 暑期×周六交互（两样本 ≈1.047）
     if late_season: mult *= MULTIPLIERS["late_season"]
     if top3_form and tier in ("B","C", None): mult *= MULTIPLIERS["top3_form"]
     if mult < PENALTY_FLOOR: mult = PENALTY_FLOOR
@@ -148,7 +150,7 @@ def predict(opponent, derby=False, lost_bottom=False, heavy_home_loss=False,
         default_level = f"S_{tier}"  # 分级默认定价级别（C级→S_C, B级→S_B...）
         if price_level != default_level:
             matrix = build_price_matrix()
-            shares = v10_volume_shares(q)
+            shares = v10_volume_shares(q, summer=summer)
             ref_p = matrix[default_level]
             exec_p = matrix[price_level]
             q_adj = 0.0

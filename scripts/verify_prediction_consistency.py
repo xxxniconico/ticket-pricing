@@ -28,6 +28,8 @@ for opp, date, tier, kwargs in cases:
         if tier == "C": mult *= MULTIPLIERS["summer_C"]
         elif tier == "B": mult *= MULTIPLIERS["summer"]
         else: mult *= 1.08
+    if kwargs.get("summer") and kwargs.get("saturday"):
+        mult *= MULTIPLIERS["summer_saturday"]  # 暑期×周六交互（2026-08-23 云南样本确认落地）
     mult = max(mult, PENALTY_FLOOR)
     display_raw = min(base * mult, 20000)
     ok = abs(display_raw - p_raw) < 1e-6
