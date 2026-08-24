@@ -8,7 +8,7 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "assets" / "stadium_seating_acl.svg"
 
 C = {
-    780: "#b9bc9f",
+    680: "#b9bc9f",
     540: "#f66d81",
     460: "#f1f530",
     300: "#f9a61a",
@@ -23,7 +23,7 @@ WHITE = {"205", "206", "207", "239", "240", "301", "302", "303", "304", "305", "
 SECTION_PRICE: dict[str, int] = {}
 # 最新档位映射（2026-08 中超最近场次销售实证：山东7/4 T4扩容实验+浙江8/1+深圳8/7）
 for s in ("101", "102"):
-    SECTION_PRICE[s] = 780
+    SECTION_PRICE[s] = 680
 for s in ("103", "114", "115", "116", "117", "130"):
     SECTION_PRICE[s] = 540
 for s in (
@@ -418,7 +418,7 @@ def build_svg() -> str:
         '<rect x="790" y="646" width="14" height="10" fill="#f66d81"/>',
         '<text x="812" y="655" font-size="10" font-family="Arial,sans-serif" fill="#333">T5 ¥540</text>',
         '<rect x="790" y="664" width="14" height="10" fill="#b9bc9f"/>',
-        '<text x="812" y="673" font-size="10" font-family="Arial,sans-serif" fill="#333">T6 ¥1080（含商务餐饮）</text>',
+        '<text x="812" y="673" font-size="10" font-family="Arial,sans-serif" fill="#333">T6 ¥680</text>',
         '<rect x="790" y="682" width="14" height="10" fill="#c39bd3"/>',
         '<text x="812" y="691" font-size="10" font-family="Arial,sans-serif" fill="#333">球迷区 107-110（T3六折¥180）</text>',
         '</g>',
