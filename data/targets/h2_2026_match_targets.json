@@ -1,16 +1,16 @@
 {
   "model_version": "V5.4+V8.2+2026-08-31动态分级重算",
-  "updated": "2026-08-31 20:52",
+  "updated": "2026-08-31 21:15",
   "completed": {
     "matches": 7,
     "revenue": 18135034,
     "quantity": 59583
   },
   "summary": {
-    "total_target_revenue": 20786213,
-    "total_target_quantity": 72296,
-    "annual_projection_revenue": 38921247,
-    "annual_projection_quantity": 131879,
+    "total_target_revenue": 21028151,
+    "total_target_quantity": 72155,
+    "annual_projection_revenue": 39163185,
+    "annual_projection_quantity": 131738,
     "vs_2025_revenue_pct": -15.7,
     "vs_2025_quantity_pct": -11.4
   },
@@ -72,26 +72,26 @@
       "opponent": "辽宁铁人楠波湾",
       "round": "第19轮",
       "tier": "C",
-      "pricing_tier": "S_C",
+      "pricing_tier": "S_B",
       "predicted_quantity": 7888,
       "strategy": "balanced",
       "revenue_weight": 0.35,
-      "target_revenue": 1729416,
-      "target_quantity": 8166,
-      "target_avg_price": 211.8,
+      "target_revenue": 1971354,
+      "target_quantity": 8025,
+      "target_avg_price": 245.6,
       "base_prices": {
-        "T1": 140,
-        "T2": 200,
-        "T3": 280,
-        "T4": 440,
-        "T5": 500,
-        "T6": 1030
+        "T1": 160,
+        "T2": 220,
+        "T3": 300,
+        "T4": 460,
+        "T5": 540,
+        "T6": 1080
       },
       "context": [],
       "risks": [
         "summer"
       ],
-      "model_version": "V5.4+V8.2+2026-08-31动态分级重算"
+      "model_version": "V5.4+V8.2+2026-08-31动态分级重算(B执行)"
     },
     {
       "date": "2026-08-01",
