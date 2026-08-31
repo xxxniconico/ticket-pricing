@@ -97,7 +97,7 @@ def load_csl_data(csl_path: str = _CSL_PATH, deductions_path: str = _DEDUCTIONS_
         s = m.get("score", {})
         hg = _safe_score(s.get("home")) if isinstance(s, dict) else None
         ag = _safe_score(s.get("away")) if isinstance(s, dict) else None
-        ok = hg is not None and ag is not None and m.get("status") != "scheduled"
+        ok = hg is not None and ag is not None  # 有比分即视为已赛（CFL 源偶有 status=scheduled 但已带比分）
         # Use round from JSON data, fall back to computed
         rd = m.get("round", f"第{i // 8 + 1}轮")
         matches.append({
