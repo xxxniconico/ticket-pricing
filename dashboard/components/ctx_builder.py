@@ -28,7 +28,7 @@ def build_pred_args(match, ctx, overrides=None):
     args = {
         "derby": opp in DERBY_RIVALS,
         "saturday": dt.weekday() == 5,
-        "late_season": dt.month >= 10,
+        "late_season": dt.month >= 11,  # 冬季（11月起北京转冷，上座下降）
         "midweek": dt.weekday() in (1, 2, 3),
         "summer": dt.month in (7, 8),
         "season_opener": ctx.get("season_opener", False),
@@ -57,7 +57,7 @@ def build_rule_labels(pred_args):
     if pred_args.get("top3_form"):
         labels.append("榜首")
     if pred_args.get("late_season"):
-        labels.append("赛季末")
+        labels.append("冬季")
     if pred_args.get("consecutive_home_losses"):
         labels.append("主场连败")
     elif pred_args.get("poor_home_form"):

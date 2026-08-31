@@ -37,9 +37,9 @@ for opp, date, tier, kwargs in cases:
     print(f"{opp:<12} {tier:<3} {p_raw:>10.0f} {p_cal:>10.0f} | 展示层×{mult:.3f}={display_raw:>8.0f} {'✅' if ok else '❌ 不一致!'}")
 
 # 暑假乘数一致性
-print(f"\nMULTIPLIERS: summer={MULTIPLIERS['summer']} summer_C={MULTIPLIERS['summer_C']} late_season={MULTIPLIERS['late_season']}")
+print(f"\nMULTIPLIERS: summer={MULTIPLIERS['summer']} summer_C={MULTIPLIERS['summer_C']} winter={MULTIPLIERS['winter']}")
 print(f"C级暑假引擎 {predict('深圳新鹏城', opponent_tier_override='C', match_date='2026-08-07', summer=True):.0f} = 5700×1.30 = {5700*1.30:.0f} {'✅' if abs(predict('深圳新鹏城', opponent_tier_override='C', match_date='2026-08-07', summer=True)-7410)<1e-6 else '❌'}")
-print(f"late_season 引擎生效: {predict('青岛海牛', opponent_tier_override='C', match_date='2026-11-15', late_season=True):.0f} = 5700×0.80 = {5700*0.80:.0f} {'✅' if abs(predict('青岛海牛', opponent_tier_override='C', match_date='2026-11-15', late_season=True)-4560)<1e-6 else '❌'}")
+print(f"winter 引擎生效: {predict('青岛海牛', opponent_tier_override='C', match_date='2026-11-15', late_season=True):.0f} = 5700×0.85 = {5700*0.85:.0f} {'✅' if abs(predict('青岛海牛', opponent_tier_override='C', match_date='2026-11-15', late_season=True)-4845)<1e-6 else '❌'}")
 print("\n" + ("全部一致 ✅" if all_ok else "存在不一致 ❌"))
 
 # 常驻防漂移测试：改动 rule_engine.py 或 prediction_detail.py 后运行本脚本。

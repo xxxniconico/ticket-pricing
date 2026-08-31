@@ -58,7 +58,7 @@ SNAPSHOT_PATH = ROOT / "data" / "processed" / "sales_snapshots.json"
 
 # 校准基值计算时剥离的乘数（timing + 战绩情境）
 _CALIB_STRIP_KEYS = frozenset({
-    "saturday", "midweek", "late_season", "season_opener", "short_rest", "summer",
+    "saturday", "midweek", "winter", "season_opener", "short_rest", "summer",
     "away_winless", "away_winless_losses", "consecutive_home_losses", "heavy_home_loss", "derby",
     "midseason_restart", "top3_form",
 })

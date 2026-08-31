@@ -123,7 +123,7 @@ def render_recent_results(target_match, guoan_matches, standings):
 
 def render_rule_pills(rules_triggered):
     EMOJI = {"基值":"📊","揭幕战":"🎉","德比":"🔥","A级德比":"🔥","周六场":"📅",
-             "赛季末":"🍂","工作日":"📉","客场不胜":"🚌","客场连败":"🚌",
+             "冬季":"❄️","工作日":"📉","客场不胜":"🚌","客场连败":"🚌",
              "主场连败":"💔","主场惨败":"💔","双赛周":"⏱️","暑假":"☀️","盛夏重启":"🌞","榜首":"🏆"}
     pills = []
     for i, (name, desc, m_val, detail) in enumerate(rules_triggered):

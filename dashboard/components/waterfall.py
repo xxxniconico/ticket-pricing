@@ -137,7 +137,7 @@ def compute_waterfall_decomposition(h2_json_str, guoan_matches_ser, _version=20)
             args = dict(
                 derby=opp in _dr, saturday=dt.weekday() == 5,
                 midweek=dt.weekday() in (1, 2, 3), summer=dt.month in (7, 8),
-                late_season=dt.month >= 10,
+                late_season=dt.month >= 11,  # 冬季
                 midseason_restart=ctx.get("midseason_restart", False),
                 away_winless=ctx.get("away_winless", False),
                 away_winless_losses=ctx.get("away_winless_losses", False),
@@ -429,7 +429,7 @@ def compute_h1_waterfall(guoan_matches_ser, _version=1):
         base_args = dict(
             derby=opp in _dr, saturday=dt.weekday() == 5,
             midweek=dt.weekday() in (1, 2, 3), summer=dt.month in (7, 8),
-            late_season=dt.month >= 10,
+            late_season=dt.month >= 11,  # 冬季
             midseason_restart=ctx.get("midseason_restart", False),
             short_rest=ctx.get("short_rest", False),
             season_opener=ctx.get("season_opener", False),
@@ -676,7 +676,7 @@ def compute_h2_waterfall(h2_json_str, guoan_matches_ser, _version=1):
         args = dict(
             derby=opp in _dr, saturday=dt.weekday() == 5,
             midweek=dt.weekday() in (1, 2, 3), summer=dt.month in (7, 8),
-            late_season=dt.month >= 10,
+            late_season=dt.month >= 11,  # 冬季
             midseason_restart=ctx.get("midseason_restart", False),
             short_rest=ctx.get("short_rest", False),
             season_opener=ctx.get("season_opener", False),

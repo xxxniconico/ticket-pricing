@@ -644,6 +644,6 @@ if __name__ == "__main__":
     r = opt.optimize("天津津门虎", midweek=True)
     opt.print_result(r)
 
-    # C级：大连 赛季末
+    # C级：大连 冬季（11月天冷）
     r = opt.optimize("大连英博海发", late_season=True, midweek=True)
     opt.print_result(r)

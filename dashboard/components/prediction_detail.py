@@ -77,8 +77,8 @@ def build_rules_triggered(target_match, ctx, guoan_matches, use_dynamic=False):
         rules.append(("榜首", f"国安排名前3 ×{MULTIPLIERS['top3_form']}", MULTIPLIERS["top3_form"],
                       "争冠/亚冠预期溢价，仅 B/C 级生效"))
     if late:
-        rules.append(("赛季末", f"{dt.month}月 战意衰减 ×{MULTIPLIERS['late_season']}", MULTIPLIERS["late_season"],
-                      "10月以后赛季末，若球队已无争冠/保级悬念，上座下滑"))
+        rules.append(("冬季", f"{dt.month}月 天冷 ×{MULTIPLIERS['winter']}", MULTIPLIERS["winter"],
+                      "11月起北京转冷，上座下降（历史≤10°C干净样本均值0.83，取0.85缓冲）"))
     if mid and not chl and not hh:
         rules.append(("工作日", f"周{'一二三四五六日'[dt.weekday()]} 工作日衰减 ×{MULTIPLIERS['midweek']}",
                       MULTIPLIERS["midweek"], "周二/三/四工作日影响，不与连败/惨败叠加"))

@@ -311,7 +311,7 @@ def render_home_card(match):
     if sat:
         rules_triggered.append(("周六场", "周末上座溢价 ×1.05", 1.05, "周六比赛日球迷时间充裕，V5.1网格搜索最优溢价约5%"))
     if late:
-        rules_triggered.append(("赛季末", f"{dt.month}月 战意衰减 ×0.80", 0.80, "10月以后赛季末，若球队已无争冠/保级悬念，上座下滑。乘数0.80"))
+        rules_triggered.append(("冬季", f"{dt.month}月 天冷 ×0.85", 0.85, "11月起北京转冷，上座下降。乘数0.85（历史≤10°C样本均值0.83）"))
     if mid and not lb and not hh:
         rules_triggered.append(("工作日", f"周{'一二三四五六日'[dt.weekday()]} 工作日衰减 ×0.90", 0.90, "周二/三/四工作日影响-10%，乘数0.90。不与lost_bottom/heavy叠加"))
     if aw:
@@ -599,7 +599,7 @@ with left:
             dt = pd.Timestamp(m["date"])
             opp = m["opponent"]
             p = rule_predict(opp, derby=opp in {"上海申花","山东泰山"},
-                            saturday=dt.weekday()==5, late_season=dt.month>=10, midweek=dt.weekday() in [1,2,3],
+                            saturday=dt.weekday()==5, late_season=dt.month>=11, midweek=dt.weekday() in [1,2,3],
                             summer=dt.month in [7,8],
                             season_opener=(m==home_done[0]),
                             match_year=m["date"][:4],
@@ -629,7 +629,7 @@ with left:
             prices_fixed = {zt: _pm[pt_hist][zt] for zt in ZONE_TIERS}
             fixed_rev=sum(zone_qty.get(zt,0)*prices_fixed[zt] for zt in ZONE_TIERS)
             pred_args={'derby':opp in {"上海申花","山东泰山"},
-                       'saturday':dt.weekday()==5,'late_season':dt.month>=10,
+                       'saturday':dt.weekday()==5,'late_season':dt.month>=11,
                        'midweek':dt.weekday() in [1,2,3],'summer':dt.month in [7,8],
                        'season_opener':(m==home_done[0]),
                        'match_year':m["date"][:4],
@@ -646,7 +646,7 @@ with left:
             if pred_args.get('derby'): rules_parts.append("德比溢价")
             if pred_args.get('saturday'): rules_parts.append("周六场")
             if pred_args.get('midweek'): rules_parts.append("工作日")
-            if pred_args.get('late_season'): rules_parts.append("赛季末衰减")
+            if pred_args.get('late_season'): rules_parts.append("冬季衰减")
             if pred_args.get('lost_bottom'): rules_parts.append("输保级队惩罚")
             if pred_args.get('heavy_home_loss'): rules_parts.append("主场惨败惩罚")
             if pred_args.get('away_winless'): rules_parts.append("客场不胜")
