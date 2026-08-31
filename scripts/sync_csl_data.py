@@ -130,7 +130,8 @@ def load_unified_matches() -> list[dict]:
                 s = m.get("score", {}) or {}
                 hg = s.get("home") if isinstance(s, dict) else None
                 ag = s.get("away") if isinstance(s, dict) else None
-                if hg is None or ag is None or m.get("status") == "scheduled":
+                # 有比分即视为已赛（CFL 源偶有 status 仍为 scheduled 但已带比分）
+                if hg is None or ag is None:
                     continue
                 matches.append({
                     "date": m["date"][:10],

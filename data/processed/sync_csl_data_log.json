@@ -858,5 +858,180 @@
       "snapshot": "/home/xxxsuli/ticket-pricing/data/processed/rating_snapshot_20260823.json"
     },
     "status": "ok"
+  },
+  {
+    "ts": "2026-08-24T03:15:01+08:00",
+    "snapshot_date": "2026-08-24",
+    "dry_run": false,
+    "steps": {
+      "load": {
+        "total": 667,
+        "by_source": {
+          "mcp_history": 481,
+          "cfl_fixtures_api": 186
+        },
+        "years": [
+          "2023",
+          "2024",
+          "2025",
+          "2026"
+        ],
+        "teams": 22
+      },
+      "elo": {
+        "rows": 1334,
+        "teams": 22,
+        "min_date": "2023-04-15",
+        "max_date": "2026-08-22"
+      },
+      "standings": {
+        "rows": 384,
+        "rounds": 24,
+        "max_date": "2026-08-22",
+        "issues": []
+      },
+      "snapshot": "/home/xxxsuli/ticket-pricing/data/processed/rating_snapshot_20260824.json"
+    },
+    "status": "ok"
+  },
+  {
+    "ts": "2026-08-25T03:22:58+08:00",
+    "snapshot_date": "2026-08-25",
+    "dry_run": false,
+    "steps": {
+      "load": {
+        "total": 667,
+        "by_source": {
+          "mcp_history": 481,
+          "cfl_fixtures_api": 186
+        },
+        "years": [
+          "2023",
+          "2024",
+          "2025",
+          "2026"
+        ],
+        "teams": 22
+      },
+      "elo": {
+        "rows": 1334,
+        "teams": 22,
+        "min_date": "2023-04-15",
+        "max_date": "2026-08-22"
+      },
+      "standings": {
+        "rows": 384,
+        "rounds": 24,
+        "max_date": "2026-08-22",
+        "issues": []
+      },
+      "snapshot": "/home/xxxsuli/ticket-pricing/data/processed/rating_snapshot_20260825.json"
+    },
+    "status": "ok"
+  },
+  {
+    "ts": "2026-08-31T19:14:40+08:00",
+    "snapshot_date": "2026-08-31",
+    "dry_run": false,
+    "steps": {
+      "load": {
+        "total": 670,
+        "by_source": {
+          "mcp_history": 481,
+          "cfl_fixtures_api": 189
+        },
+        "years": [
+          "2023",
+          "2024",
+          "2025",
+          "2026"
+        ],
+        "teams": 22
+      },
+      "elo": {
+        "rows": 1340,
+        "teams": 22,
+        "min_date": "2023-04-15",
+        "max_date": "2026-08-23"
+      },
+      "standings": {
+        "rows": 384,
+        "rounds": 24,
+        "max_date": "2026-08-23",
+        "issues": []
+      },
+      "snapshot": "/home/xxxsuli/ticket-pricing/data/processed/rating_snapshot_20260831.json"
+    },
+    "status": "ok"
+  },
+  {
+    "ts": "2026-08-31T19:33:26+08:00",
+    "snapshot_date": "2026-08-31",
+    "dry_run": false,
+    "steps": {
+      "load": {
+        "total": 670,
+        "by_source": {
+          "mcp_history": 481,
+          "cfl_fixtures_api": 189
+        },
+        "years": [
+          "2023",
+          "2024",
+          "2025",
+          "2026"
+        ],
+        "teams": 22
+      },
+      "elo": {
+        "rows": 1340,
+        "teams": 22,
+        "min_date": "2023-04-15",
+        "max_date": "2026-08-23"
+      },
+      "standings": {
+        "rows": 384,
+        "rounds": 24,
+        "max_date": "2026-08-23",
+        "issues": []
+      },
+      "snapshot": "/home/xxxsuli/ticket-pricing/data/processed/rating_snapshot_20260831.json"
+    },
+    "status": "ok"
+  },
+  {
+    "ts": "2026-08-31T19:35:22+08:00",
+    "snapshot_date": "2026-08-31",
+    "dry_run": false,
+    "steps": {
+      "load": {
+        "total": 678,
+        "by_source": {
+          "mcp_history": 481,
+          "cfl_fixtures_api": 197
+        },
+        "years": [
+          "2023",
+          "2024",
+          "2025",
+          "2026"
+        ],
+        "teams": 22
+      },
+      "elo": {
+        "rows": 1356,
+        "teams": 22,
+        "min_date": "2023-04-15",
+        "max_date": "2026-08-29"
+      },
+      "standings": {
+        "rows": 400,
+        "rounds": 25,
+        "max_date": "2026-08-29",
+        "issues": []
+      },
+      "snapshot": "/home/xxxsuli/ticket-pricing/data/processed/rating_snapshot_20260831.json"
+    },
+    "status": "ok"
   }
 ]

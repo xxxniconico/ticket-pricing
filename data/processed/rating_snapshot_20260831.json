@@ -1,0 +1,380 @@
+{
+  "as_of": "2026-08-31",
+  "cards": [
+    {
+      "opponent": "上海申花",
+      "elo": 1558.9,
+      "ST": 62.8,
+      "AP": 48.4,
+      "tier": "S",
+      "soft_boundary": false,
+      "alt_tier": null,
+      "components": {
+        "ELO": 1558.8792628381532,
+        "ST_sub": {
+          "ELO_norm": 52.9597542793844,
+          "PPG": 1.52,
+          "L5_PPG": 1.8,
+          "GD_per": 0.5316455696202531
+        },
+        "AP_sub": {
+          "HIST_ATT_pct": 95.0,
+          "PERF": 46.666666666666664,
+          "DERBY_bonus": 30,
+          "CUR_YEAR_ratio": 1.095887218921123,
+          "TOPIC": 0
+        }
+      }
+    },
+    {
+      "opponent": "成都蓉城",
+      "elo": 1620.6,
+      "ST": 79.4,
+      "AP": 40.4,
+      "tier": "A",
+      "soft_boundary": false,
+      "alt_tier": null,
+      "components": {
+        "ELO": 1620.608081190024,
+        "ST_sub": {
+          "ELO_norm": 73.53602706334134,
+          "PPG": 2.04,
+          "L5_PPG": 1.4,
+          "GD_per": 1.1265822784810127
+        },
+        "AP_sub": {
+          "HIST_ATT_pct": 75.0,
+          "PERF": 100.0,
+          "DERBY_bonus": 0.0,
+          "CUR_YEAR_ratio": 0.9100370779938853,
+          "TOPIC": 0
+        }
+      }
+    },
+    {
+      "opponent": "山东泰山",
+      "elo": 1576.1,
+      "ST": 73.4,
+      "AP": 43.6,
+      "tier": "A",
+      "soft_boundary": false,
+      "alt_tier": null,
+      "components": {
+        "ELO": 1576.0850813591344,
+        "ST_sub": {
+          "ELO_norm": 58.69502711971146,
+          "PPG": 1.68,
+          "L5_PPG": 2.4,
+          "GD_per": 0.6341463414634146
+        },
+        "AP_sub": {
+          "HIST_ATT_pct": 80.0,
+          "PERF": 73.33333333333333,
+          "DERBY_bonus": 20,
+          "CUR_YEAR_ratio": 1.0260777906609044,
+          "TOPIC": 0
+        }
+      }
+    },
+    {
+      "opponent": "天津津门虎",
+      "elo": 1474.0,
+      "ST": 36.7,
+      "AP": 41.5,
+      "tier": "A",
+      "soft_boundary": false,
+      "alt_tier": null,
+      "components": {
+        "ELO": 1474.012882640929,
+        "ST_sub": {
+          "ELO_norm": 24.670960880309696,
+          "PPG": 1.2083333333333333,
+          "L5_PPG": 1.0,
+          "GD_per": -0.08641975308641975
+        },
+        "AP_sub": {
+          "HIST_ATT_pct": 90.0,
+          "PERF": 13.333333333333334,
+          "DERBY_bonus": 20,
+          "CUR_YEAR_ratio": 1.0662461868249649,
+          "TOPIC": 0
+        }
+      }
+    },
+    {
+      "opponent": "上海海港",
+      "elo": 1588.6,
+      "ST": 72.8,
+      "AP": 25.8,
+      "tier": "B",
+      "soft_boundary": false,
+      "alt_tier": null,
+      "components": {
+        "ELO": 1588.6042983947086,
+        "ST_sub": {
+          "ELO_norm": 62.86809946490287,
+          "PPG": 1.48,
+          "L5_PPG": 2.6,
+          "GD_per": 0.9146341463414634
+        },
+        "AP_sub": {
+          "HIST_ATT_pct": 50.0,
+          "PERF": 60.0,
+          "DERBY_bonus": 0.0,
+          "CUR_YEAR_ratio": 0.7255301686479044,
+          "TOPIC": 0
+        }
+      }
+    },
+    {
+      "opponent": "深圳新鹏城",
+      "elo": 1409.2,
+      "ST": 27.1,
+      "AP": 20.8,
+      "tier": "C",
+      "soft_boundary": false,
+      "alt_tier": null,
+      "components": {
+        "ELO": 1409.2287551107372,
+        "ST_sub": {
+          "ELO_norm": 3.07625170357907,
+          "PPG": 1.08,
+          "L5_PPG": 1.4,
+          "GD_per": -0.5714285714285714
+        },
+        "AP_sub": {
+          "HIST_ATT_pct": 40.0,
+          "PERF": 33.33333333333333,
+          "DERBY_bonus": 0.0,
+          "CUR_YEAR_ratio": 0.8440862431463082,
+          "TOPIC": 0
+        }
+      }
+    },
+    {
+      "opponent": "浙江",
+      "elo": 1499.6,
+      "ST": 47.1,
+      "AP": 24.7,
+      "tier": "C",
+      "soft_boundary": false,
+      "alt_tier": null,
+      "components": {
+        "ELO": 1499.566684549887,
+        "ST_sub": {
+          "ELO_norm": 33.18889484996233,
+          "PPG": 1.375,
+          "L5_PPG": 1.4,
+          "GD_per": 0.042105263157894736
+        },
+        "AP_sub": {
+          "HIST_ATT_pct": 45.0,
+          "PERF": 40.0,
+          "DERBY_bonus": 0.0,
+          "CUR_YEAR_ratio": 0.9989017170716027,
+          "TOPIC": 0
+        }
+      }
+    },
+    {
+      "opponent": "河南",
+      "elo": 1483.6,
+      "ST": 38.6,
+      "AP": 24.6,
+      "tier": "C",
+      "soft_boundary": false,
+      "alt_tier": null,
+      "components": {
+        "ELO": 1483.5555485951807,
+        "ST_sub": {
+          "ELO_norm": 27.851849531726884,
+          "PPG": 1.2916666666666667,
+          "L5_PPG": 0.8,
+          "GD_per": 0.075
+        },
+        "AP_sub": {
+          "HIST_ATT_pct": 55.00000000000001,
+          "PERF": 26.666666666666668,
+          "DERBY_bonus": 0.0,
+          "CUR_YEAR_ratio": 0.7649660768923773,
+          "TOPIC": 0
+        }
+      }
+    },
+    {
+      "opponent": "武汉三镇",
+      "elo": 1471.4,
+      "ST": 38.1,
+      "AP": 24.2,
+      "tier": "C",
+      "soft_boundary": false,
+      "alt_tier": null,
+      "components": {
+        "ELO": 1471.4051380565795,
+        "ST_sub": {
+          "ELO_norm": 23.801712685526503,
+          "PPG": 1.0434782608695652,
+          "L5_PPG": 1.6,
+          "GD_per": -0.012987012987012988
+        },
+        "AP_sub": {
+          "HIST_ATT_pct": 60.0,
+          "PERF": 6.666666666666667,
+          "DERBY_bonus": 0.0,
+          "CUR_YEAR_ratio": 0.7574698108061196,
+          "TOPIC": 0
+        }
+      }
+    },
+    {
+      "opponent": "云南玉昆",
+      "elo": 1498.4,
+      "ST": 46.7,
+      "AP": 35.3,
+      "tier": "B",
+      "soft_boundary": false,
+      "alt_tier": null,
+      "components": {
+        "ELO": 1498.4159295350096,
+        "ST_sub": {
+          "ELO_norm": 32.805309845003194,
+          "PPG": 1.4,
+          "L5_PPG": 1.4,
+          "GD_per": -0.19230769230769232
+        },
+        "AP_sub": {
+          "HIST_ATT_pct": 65.0,
+          "PERF": 66.66666666666666,
+          "DERBY_bonus": 0.0,
+          "CUR_YEAR_ratio": 1.0923392612859097,
+          "TOPIC": 0
+        }
+      }
+    },
+    {
+      "opponent": "青岛西海岸",
+      "elo": 1532.9,
+      "ST": 56.4,
+      "AP": 25.5,
+      "tier": "B",
+      "soft_boundary": false,
+      "alt_tier": null,
+      "components": {
+        "ELO": 1532.8517165551561,
+        "ST_sub": {
+          "ELO_norm": 44.28390551838538,
+          "PPG": 1.48,
+          "L5_PPG": 1.8,
+          "GD_per": -0.08974358974358974
+        },
+        "AP_sub": {
+          "HIST_ATT_pct": 40.0,
+          "PERF": 80.0,
+          "DERBY_bonus": 0.0,
+          "CUR_YEAR_ratio": 0.847845694858808,
+          "TOPIC": 0
+        }
+      }
+    },
+    {
+      "opponent": "青岛海牛",
+      "elo": 1365.2,
+      "ST": 9.6,
+      "AP": 3.9,
+      "tier": "C",
+      "soft_boundary": false,
+      "alt_tier": null,
+      "components": {
+        "ELO": 1365.2487270195368,
+        "ST_sub": {
+          "ELO_norm": 0.0,
+          "PPG": 0.84,
+          "L5_PPG": 0.0,
+          "GD_per": -0.6707317073170732
+        },
+        "AP_sub": {
+          "HIST_ATT_pct": 10.0,
+          "PERF": 0.0,
+          "DERBY_bonus": 0.0,
+          "CUR_YEAR_ratio": 0.5401289225756181,
+          "TOPIC": 0
+        }
+      }
+    },
+    {
+      "opponent": "大连英博海发",
+      "elo": 1509.4,
+      "ST": 51.2,
+      "AP": 17.7,
+      "tier": "C",
+      "soft_boundary": false,
+      "alt_tier": null,
+      "components": {
+        "ELO": 1509.3959532182741,
+        "ST_sub": {
+          "ELO_norm": 36.46531773942471,
+          "PPG": 1.48,
+          "L5_PPG": 1.6,
+          "GD_per": -0.25
+        },
+        "AP_sub": {
+          "HIST_ATT_pct": 10.0,
+          "PERF": 93.33333333333333,
+          "DERBY_bonus": 0.0,
+          "CUR_YEAR_ratio": 0.9905838041431262,
+          "TOPIC": 0
+        }
+      }
+    },
+    {
+      "opponent": "辽宁铁人",
+      "elo": 1422.1,
+      "ST": 24.2,
+      "AP": 18.2,
+      "tier": "C",
+      "soft_boundary": false,
+      "alt_tier": null,
+      "components": {
+        "ELO": 1422.0622800089798,
+        "ST_sub": {
+          "ELO_norm": 7.3540933363265895,
+          "PPG": 1.0416666666666667,
+          "L5_PPG": 0.8,
+          "GD_per": -0.2916666666666667
+        },
+        "AP_sub": {
+          "HIST_ATT_pct": 45.0,
+          "PERF": 20.0,
+          "DERBY_bonus": 0.0,
+          "CUR_YEAR_ratio": null,
+          "TOPIC": 5
+        }
+      }
+    },
+    {
+      "opponent": "重庆铜梁龙",
+      "elo": 1451.6,
+      "ST": 29.5,
+      "AP": 14.6,
+      "tier": "C",
+      "soft_boundary": false,
+      "alt_tier": null,
+      "components": {
+        "ELO": 1451.6046916445162,
+        "ST_sub": {
+          "ELO_norm": 17.201563881505383,
+          "PPG": 1.24,
+          "L5_PPG": 0.4,
+          "GD_per": -0.12
+        },
+        "AP_sub": {
+          "HIST_ATT_pct": 5.0,
+          "PERF": 53.333333333333336,
+          "DERBY_bonus": 0.0,
+          "CUR_YEAR_ratio": null,
+          "TOPIC": 5
+        }
+      }
+    }
+  ]
+}
