@@ -14,7 +14,7 @@ from dashboard.components.prediction_detail import render_prediction_detail
 from dashboard.components.pricing_ui import render_strategy_card
 from dashboard.components.waterfall import compute_h1_waterfall, compute_h2_waterfall, compute_waterfall_decomposition, draw_waterfall
 from src.classify import DERBY_RIVALS, classify_opponent_tier
-from src.csl_context import detect_ctx, get_next_guoan_match
+from src.csl_context import detect_ctx, get_next_guoan_match, _normalize_club_name
 from src.pricing_v5 import build_price_matrix, get_pricing_tier
 from dashboard.common.engine_compat import predict_calibrated_safe as rule_predict
 
@@ -23,7 +23,7 @@ ROOT = Path(__file__).resolve().parent.parent.parent
 def _resolve_match(h2_entry, guoan_matches):
     """将 H2 JSON 场次映射到 guoan_matches 中的完整 match dict。"""
     for m in guoan_matches:
-        if m["date"] == h2_entry["date"] and m["opponent"] == h2_entry["opponent"]:
+        if m["date"] == h2_entry["date"] and _normalize_club_name(m["opponent"]) == _normalize_club_name(h2_entry["opponent"]):
             return m
     return {
         "date": h2_entry["date"],
@@ -39,7 +39,7 @@ def _h2_actual_revenue(match_date, opponent, guoan_matches):
     for m in guoan_matches:
         if not m.get("completed") or not m.get("is_home"):
             continue
-        if m["date"] == match_date and m["opponent"] == opponent:
+        if m["date"] == match_date and _normalize_club_name(m["opponent"]) == _normalize_club_name(opponent):
             zone_rev = _get_zone_face_revenue(m)  # 票面收入
             return sum(zone_rev.values()) if zone_rev else None
     return None
