@@ -305,7 +305,7 @@
       "opponent": "大连英博海发",
       "elo": 1509.4,
       "ST": 51.2,
-      "AP": 17.7,
+      "AP": 18.2,
       "tier": "C",
       "soft_boundary": false,
       "alt_tier": null,
@@ -322,7 +322,7 @@
           "PERF": 93.33333333333333,
           "DERBY_bonus": 0.0,
           "CUR_YEAR_ratio": 0.9905838041431262,
-          "TOPIC": 0
+          "TOPIC": 5
         }
       }
     },

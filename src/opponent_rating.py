@@ -39,7 +39,11 @@ _ALL_PROMOTED = PROMOTED_2023 | PROMOTED_2024 | PROMOTED_2026
 DERBY_BONUS = {"上海申花": 30, "山东泰山": 20, "天津津门虎": 20}
 FROZEN_TIERS = {"上海申花": "S"}
 
-TOPIC_SCORES = {"new_promoted": 5, "star_player": 10, "default": 0}
+TOPIC_SCORES = {"new_promoted": 5, "star_player": 10, "incident": 5, "default": 0}
+
+# 恩怨局观察项（用户确认 2026-08-31）：国安 vs 大连英博 8/28 双方群殴，
+# 低权重留痕，不改级别；下赛季看实际票房再决定是否升级。
+INCIDENT_TOPIC_TEAMS = {"大连英博海发"}
 
 # ── 自动话题检测 ───────────────────────────────────────────────────────────
 def _detect_topic(opponent, match_date, standings_by_round, matches):
@@ -53,6 +57,10 @@ def _detect_topic(opponent, match_date, standings_by_round, matches):
     # 升班马首赛季（排名相关话题已由 PERF 覆盖）
     if t in PROMOTED_2026:
         return "new_promoted"
+
+    # 恩怨局留痕（如 2026-08-28 国安vs大连英博群殴），低权重、不改级别
+    if t in INCIDENT_TOPIC_TEAMS:
+        return "incident"
     
     return "default"
 
