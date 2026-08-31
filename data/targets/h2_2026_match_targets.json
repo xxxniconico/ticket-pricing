@@ -1,16 +1,16 @@
 {
-  "model_version": "V5.4+V8.2",
-  "updated": "2026-06-13 21:59",
+  "model_version": "V5.4+V8.2+2026-08-31动态分级重算",
+  "updated": "2026-08-31 20:52",
   "completed": {
     "matches": 7,
     "revenue": 18135034,
     "quantity": 59583
   },
   "summary": {
-    "total_target_revenue": 20586338,
-    "total_target_quantity": 69580,
-    "annual_projection_revenue": 38721372,
-    "annual_projection_quantity": 129163,
+    "total_target_revenue": 20786213,
+    "total_target_quantity": 72296,
+    "annual_projection_revenue": 38921247,
+    "annual_projection_quantity": 131879,
     "vs_2025_revenue_pct": -15.7,
     "vs_2025_quantity_pct": -11.4
   },
@@ -19,14 +19,14 @@
       "date": "2026-06-27",
       "opponent": "武汉三镇",
       "round": "第16轮",
-      "tier": "B",
+      "tier": "C",
       "pricing_tier": "S_B",
-      "predicted_quantity": 9200,
+      "predicted_quantity": 6907,
       "strategy": "revenue_tilt",
       "revenue_weight": 0.5,
-      "target_revenue": 2623116,
-      "target_quantity": 9076,
-      "target_avg_price": 289.0,
+      "target_revenue": 1698252,
+      "target_quantity": 7030,
+      "target_avg_price": 241.6,
       "base_prices": {
         "T1": 160,
         "T2": 220,
@@ -39,7 +39,7 @@
         "midseason_restart"
       ],
       "risks": [],
-      "model_version": "V5.4+V8.2"
+      "model_version": "V5.4+V8.2+2026-08-31动态分级重算"
     },
     {
       "date": "2026-07-04",
@@ -47,12 +47,12 @@
       "round": "第17轮",
       "tier": "A",
       "pricing_tier": "S_A",
-      "predicted_quantity": 11673,
+      "predicted_quantity": 13860,
       "strategy": "revenue_priority",
       "revenue_weight": 0.75,
-      "target_revenue": 5061745,
-      "target_quantity": 11560,
-      "target_avg_price": 438.0,
+      "target_revenue": 5872264,
+      "target_quantity": 13696,
+      "target_avg_price": 428.7,
       "base_prices": {
         "T1": 260,
         "T2": 340,
@@ -65,7 +65,7 @@
       "risks": [
         "summer"
       ],
-      "model_version": "V5.4+V8.2"
+      "model_version": "V5.4+V8.2+2026-08-31动态分级重算"
     },
     {
       "date": "2026-07-17",
@@ -73,12 +73,12 @@
       "round": "第19轮",
       "tier": "C",
       "pricing_tier": "S_C",
-      "predicted_quantity": 6440,
+      "predicted_quantity": 7888,
       "strategy": "balanced",
       "revenue_weight": 0.35,
-      "target_revenue": 1450462,
-      "target_quantity": 6799,
-      "target_avg_price": 213.0,
+      "target_revenue": 1729416,
+      "target_quantity": 8166,
+      "target_avg_price": 211.8,
       "base_prices": {
         "T1": 140,
         "T2": 200,
@@ -91,7 +91,7 @@
       "risks": [
         "summer"
       ],
-      "model_version": "V5.4+V8.2"
+      "model_version": "V5.4+V8.2+2026-08-31动态分级重算"
     },
     {
       "date": "2026-08-01",
@@ -99,12 +99,12 @@
       "round": "第21轮",
       "tier": "B",
       "pricing_tier": "S_B",
-      "predicted_quantity": 9451,
+      "predicted_quantity": 10229,
       "strategy": "revenue_tilt",
       "revenue_weight": 0.5,
-      "target_revenue": 2701859,
-      "target_quantity": 9324,
-      "target_avg_price": 290.0,
+      "target_revenue": 2872854,
+      "target_quantity": 10077,
+      "target_avg_price": 285.1,
       "base_prices": {
         "T1": 160,
         "T2": 220,
@@ -117,20 +117,20 @@
       "risks": [
         "summer"
       ],
-      "model_version": "V5.4+V8.2"
+      "model_version": "V5.4+V8.2+2026-08-31动态分级重算"
     },
     {
       "date": "2026-08-07",
       "opponent": "深圳新鹏城",
       "round": "第22轮",
-      "tier": "B",
+      "tier": "C",
       "pricing_tier": "S_B",
-      "predicted_quantity": 9266,
+      "predicted_quantity": 8231,
       "strategy": "revenue_tilt",
       "revenue_weight": 0.5,
-      "target_revenue": 2643666,
-      "target_quantity": 9141,
-      "target_avg_price": 289.0,
+      "target_revenue": 2117838,
+      "target_quantity": 8365,
+      "target_avg_price": 253.2,
       "base_prices": {
         "T1": 160,
         "T2": 220,
@@ -143,7 +143,7 @@
       "risks": [
         "summer"
       ],
-      "model_version": "V5.4+V8.2"
+      "model_version": "V5.4+V8.2+2026-08-31动态分级重算"
     },
     {
       "date": "2026-08-22",
@@ -151,12 +151,12 @@
       "round": "第24轮",
       "tier": "B",
       "pricing_tier": "S_B",
-      "predicted_quantity": 9451,
+      "predicted_quantity": 11145,
       "strategy": "revenue_tilt",
       "revenue_weight": 0.5,
-      "target_revenue": 2701859,
-      "target_quantity": 9324,
-      "target_avg_price": 290.0,
+      "target_revenue": 3250047,
+      "target_quantity": 10985,
+      "target_avg_price": 295.8,
       "base_prices": {
         "T1": 160,
         "T2": 220,
@@ -169,7 +169,7 @@
       "risks": [
         "summer"
       ],
-      "model_version": "V5.4+V8.2"
+      "model_version": "V5.4+V8.2+2026-08-31动态分级重算"
     },
     {
       "date": "2026-10-18",
@@ -177,12 +177,12 @@
       "round": "第28轮",
       "tier": "B",
       "pricing_tier": "S_B",
-      "predicted_quantity": 8200,
+      "predicted_quantity": 8602,
       "strategy": "revenue_tilt",
       "revenue_weight": 0.5,
-      "target_revenue": 2131455,
-      "target_quantity": 8336,
-      "target_avg_price": 256.0,
+      "target_revenue": 2179047,
+      "target_quantity": 8747,
+      "target_avg_price": 249.1,
       "base_prices": {
         "T1": 160,
         "T2": 220,
@@ -195,7 +195,7 @@
       "risks": [
         "late_season"
       ],
-      "model_version": "V5.4+V8.2"
+      "model_version": "V5.4+V8.2+2026-08-31动态分级重算"
     },
     {
       "date": "2026-11-08",
@@ -203,12 +203,12 @@
       "round": "第30轮",
       "tier": "C",
       "pricing_tier": "S_C",
-      "predicted_quantity": 5700,
+      "predicted_quantity": 4970,
       "strategy": "balanced",
       "revenue_weight": 0.2,
-      "target_revenue": 1272176,
-      "target_quantity": 6020,
-      "target_avg_price": 211.0,
+      "target_revenue": 1066495,
+      "target_quantity": 5230,
+      "target_avg_price": 203.9,
       "base_prices": {
         "T1": 140,
         "T2": 200,
@@ -222,7 +222,7 @@
         "升班马B级潜力(C级定价保守)",
         "late_season"
       ],
-      "model_version": "V5.4+V8.2"
+      "model_version": "V5.4+V8.2+2026-08-31动态分级重算"
     }
   ],
   "notes": [
