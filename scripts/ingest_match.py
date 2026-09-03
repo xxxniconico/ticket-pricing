@@ -197,8 +197,9 @@ def ingest_match(excel_path: str, competition: str = "CSL"):
     # 赛后自动校准（2026-08-03）：导入完成后补齐所有已赛未校准场次。
     # 校准不再依赖打开"历史定价"tab（原惰性触发导致浙江8/1等场次漏校准）
     try:
-        from scripts.update_calibration import main as _calib_main
         import sys as _sys
+        _sys.path.insert(0, str(ROOT))  # python scripts/ingest_match.py 时 scripts/ 在 path[0]，需根目录才能 import scripts.*
+        from scripts.update_calibration import main as _calib_main
         _orig_argv = _sys.argv
         _sys.argv = ["update_calibration.py"]
         try:
