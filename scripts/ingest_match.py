@@ -103,8 +103,12 @@ def ingest_match(excel_path: str, competition: str = "CSL"):
         
         seats = [s.strip() for s in seat_info.split("|") if s.strip()] if seat_info else [""]
         
+        n_seats = len(seats)
         for seat in seats:
-            per_pay = payment / qty if qty > 0 else payment
+            # 混合票价订单（如 "199.00*1#688.00*1"）qty 只解析到首个票档：
+            # 座位数多于 qty 时按座位数平摊，否则沿用 qty（保持无座位信息时的旧行为）
+            denom = n_seats if (seat_info and n_seats >= qty) else qty
+            per_pay = payment / denom if denom > 0 else payment
             
             # Parse seat: floor/section/row/seat
             floor = 0; section = 0; row_num = 0; seat_num = 0
