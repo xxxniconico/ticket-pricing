@@ -16,7 +16,8 @@ _APPEAL_PATH = _DATA_DIR / "appeal_scores.parquet"
 _ALL_UNIFIED = _DATA_DIR / "all_unified.parquet"
 
 # 亚冠/杯赛对手：all_unified 中 competition 被错标为 CSL，须剔除出历史票房统计
-# (2025-09-18 河内公安 1866 / 2025-11-06 大埔 1367 / 2025-12-11 麦克阿瑟FC 2158)
+# (2025 三场座位口径：河内公安 1,865 / 大埔 1,367 / 麦克阿瑟FC 2,158；
+#  2026-09-28 由订单行口径重新展开入库，与 2026 ACL 口径统一)
 ACL_OPPONENTS = {"河内公安", "大埔", "麦克阿瑟FC"}
 
 K_DEFAULT, K_EARLY, K_LATE, HOME_ADV = 20, 30, 15, 65.0
