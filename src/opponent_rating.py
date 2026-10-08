@@ -519,7 +519,8 @@ def get_guoan_scorecard(match_date, elo_history=None, standings_by_round=None, m
 def get_effective_tier(opponent, match_date,
                        elo_history=None, standings_by_round=None,
                        matches=None, guoan_home_history=None,
-                       last_h2h=None, topic_tag=None, soft_boundary=True):
+                       last_h2h=None, topic_tag=None, soft_boundary=True,
+                       ap_c_threshold=25.0, soft_band=3.0, soft_prefer="higher"):
     from src.csl_context import _normalize_club_name
     t = _normalize_club_name(opponent)
     if t in FROZEN_TIERS:
@@ -545,19 +546,33 @@ def get_effective_tier(opponent, match_date,
     # AP-protected B: high appeal teams keep B even if ST is weak
     if ap >= 35 and st >= 20: return "B"
     # C: weak ST or very low AP
-    if st < 35 or ap < 25:
+    # ⚠️ ap_c_threshold 可配置（2026-10-08 加入以便阈值敏感性回测）；
+    #    设计文档 docs/plans/dynamic-opponent-tier-20260625.md 标定的是 AP<35，
+    #    现行默认 25 无标定记录，见阈值回测。
+    if st < 35 or ap < ap_c_threshold:
         tier = "C"
     else:
         tier = "B"
+    # ── 软边界（2026-10-08 补实现；设计见 docs/plans/dynamic-opponent-tier-20260625.md L341-344）──
+    # AP 落在 C/B 阈值 ±soft_band 内（且 ST 达标）时视为"边界不确定场次"：
+    #   soft_prefer="lower"  → 取低档 C（原设计原则："有分歧倾向降级"，低价风险<空座风险）
+    #   soft_prefer="higher" → 取高档 B
+    # 2026-10-08 用户拍板：默认 soft_band=3.0 / soft_prefer="higher"。
+    #   回测（2026 CSL 主场 13 场）：硬阈值 MAE 941 → 软边界(±3,取高档) MAE 808（−14%），
+    #   翻档仅 2 队（上海海港 AP22.4→B、青岛西海岸 AP24.8→B），均满足 ST≥35 门槛。
+    #   ⚠️ 证据强度：改善来自海港单场（n=1），方向支持但统计不显著，2027 样本累积后应重验。
+    #   soft_band=0.0 可回退到原硬阈值行为。
+    if soft_band > 0 and st >= 35 and abs(ap - ap_c_threshold) <= soft_band:
+        tier = "B" if soft_prefer == "higher" else "C"
     # Soft boundary: 边界球队有机会升档
     if soft_boundary:
-        alt = _check_soft_boundary(st, ap, tier)
+        alt = _check_soft_boundary(st, ap, tier, ap_c_threshold=ap_c_threshold)
         if alt is not None:
             return alt
     return tier
 
-def _check_soft_boundary(st, ap, current_tier):
-    if current_tier == "C" and st >= 35 and ap >= 25: return "B"
+def _check_soft_boundary(st, ap, current_tier, ap_c_threshold=25.0):
+    if current_tier == "C" and st >= 35 and ap >= ap_c_threshold: return "B"
     if current_tier == "B" and ((st >= 60 and ap >= 30) or (st >= 67 and ap >= 39)): return "A"
     if current_tier == "A" and st >= 77 and ap >= 67: return "S"
     return None
@@ -580,9 +595,16 @@ def get_opponent_scorecard(opponent, match_date,
     tier = get_effective_tier(t, match_date, elo_history, standings_by_round or {},
                               matches, guoan_home_history, topic_tag=topic_tag)
     alt_tier = _check_soft_boundary(st, ap, tier)
+    # 软边界标记（2026-10-08）：对比"关闭软边界"时的判定，若不同 → 该场卡在 C/B 阈值带上，
+    # 分级存在不确定性，决策卡/看板应显式提示。
+    _tier_hard = get_effective_tier(t, match_date, elo_history, standings_by_round or {},
+                                    matches, guoan_home_history, topic_tag=topic_tag,
+                                    soft_band=0.0)
+    ap_band = (_tier_hard != tier)
     return {
         "opponent": t, "elo": round(elo, 1), "ST": round(st, 1), "AP": round(ap, 1),
         "tier": tier, "soft_boundary": alt_tier is not None, "alt_tier": alt_tier,
+        "ap_soft_band": ap_band, "tier_hard": _tier_hard,
         "components": {
             "ELO": elo,
             "ST_sub": {"ELO_norm": _normalize_to_0_100(elo, *_NORM_PARAMS["ELO"]),
