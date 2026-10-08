@@ -38,6 +38,11 @@ MULTIPLIERS = {
     "summer_C": 1.30,   # C级暑假（辽宁7/17验证 ratio=1.33；勿改回1.13）
     "summer_saturday": 1.047,  # 暑期×周六交互（浙江1.049/云南1.046 两样本确认, 2026-08-23落地）
     "winter": 0.85,  # 冬季天冷上座下降（2026-08-31 由 late_season 0.80 改名；历史≤10°C干净样本 0.88/0.77 → 0.85 缓冲）
+    # 足协杯赛事系数（2026-10-08 用户要求"杯赛成绩单独看"→ 落地）
+    # 锚点：2025-08-20 vs 云南玉昆(B级) 6,708 /0.86=7,800 → /8200 = 0.951；
+    #       2026-09-01 vs 兰州陇原(中乙,周二) 4,585 /0.86=5,331 → /5700 = 0.935
+    # 两锚点均值 0.943，取 0.94 保守。联赛(build_pred_args)不传 cup → 恒不受影响。
+    "cup": 0.94,
     "midseason_restart": 1.10,
     "top3_form": 1.08,
 }
@@ -85,7 +90,7 @@ def predict(opponent, derby=False, lost_bottom=False, heavy_home_loss=False,
             saturday=False, season_opener=False,
             short_rest=False, midweek=False, summer=False,
             midseason_restart=False, top3_form=False,
-            late_season=False,
+            late_season=False, cup=False,
             opponent_tier_override=None,
             opponent_st=None,
             ap_pct=None,
@@ -138,6 +143,7 @@ def predict(opponent, derby=False, lost_bottom=False, heavy_home_loss=False,
     elif summer and tier is None: mult *= 1.08 if is_strong else MULTIPLIERS["summer"]  # continuous mode uses ST
     if summer and saturday: mult *= MULTIPLIERS["summer_saturday"]  # 暑期×周六交互（两样本 ≈1.047）
     if late_season: mult *= MULTIPLIERS["winter"]
+    if cup: mult *= MULTIPLIERS["cup"]  # 足协杯赛事口径（仅杯赛传 True）
     if top3_form and tier in ("B","C", None): mult *= MULTIPLIERS["top3_form"]
     if mult < PENALTY_FLOOR: mult = PENALTY_FLOOR
     q = min(base * mult, 20000.0)
