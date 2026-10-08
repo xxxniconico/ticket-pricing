@@ -269,7 +269,7 @@ def resolve_next_matches(guoan_matches: list[dict]) -> tuple[dict | None, dict |
     return next_match, next_home, target
 
 
-def detect_ctx(match: dict, guoan_all: list[dict], standings: dict) -> dict:
+def detect_ctx(match: dict, guoan_all: list[dict], standings: dict, away_window: int = 3) -> dict:
     """检测单场比赛的情境上下文（V5.6 对齐 rule_engine.predict）。
 
     Returns:
@@ -281,8 +281,11 @@ def detect_ctx(match: dict, guoan_all: list[dict], standings: dict) -> dict:
     prev = [m for m in guoan_all if m.get("completed") and pd.Timestamp(m["date"]) < md]
     last3 = prev[-3:] if len(prev) >= 3 else prev
 
-    # away_winless / away_winless_losses: 近3场中≥2客且0胜
-    away3 = [m for m in last3 if not m["is_home"]]
+    # away_winless / away_winless_losses: 近 N 场中≥2客且0胜
+    # ⚠️ away_window 默认 3（V5.5 成都场标定）。独立于 last3，避免影响 heavy_home_loss。
+    #    2026-10-08 用户要求实验：扩大到 5 场（国安 8/15、8/18 两场客胜将进入窗口）。
+    _awin = prev[-away_window:] if len(prev) >= away_window else prev
+    away3 = [m for m in _awin if not m["is_home"]]
     if len(away3) >= 2 and sum(1 for m in away3 if (
         (m["is_home"] and m["hg"] > m["ag"]) or (not m["is_home"] and m["ag"] > m["hg"])
     )) == 0:
