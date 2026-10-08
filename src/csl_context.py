@@ -111,6 +111,9 @@ def load_csl_data(csl_path: str = _CSL_PATH, deductions_path: str = _DEDUCTIONS_
         })
 
     # Build standings（逐轮快照：自算排名，含扣分 deduction）
+    # ⚠️ deductions 是完整 config dict（含 deductions_by_club 层），必须取子键，
+    #    否则扣分全部失效（2026-10-08 修复：泰山扣6/国安扣5/申花扣10 此前并未生效）
+    ded_map = deductions.get("deductions_by_club", deductions) if isinstance(deductions, dict) else {}
     ts = defaultdict(lambda: {"p": 0, "w": 0, "d": 0, "l": 0, "gf": 0, "ga": 0, "pts": 0})
     rounds = {}
     for m in sorted(matches, key=lambda x: x["date"]):
@@ -123,7 +126,7 @@ def load_csl_data(csl_path: str = _CSL_PATH, deductions_path: str = _DEDUCTIONS_
         elif m["hg"] == m["ag"]: ts[h]["d"] += 1; ts[a]["d"] += 1; ts[h]["pts"] += 1; ts[a]["pts"] += 1
         else: ts[a]["w"] += 1; ts[a]["pts"] += 3; ts[h]["l"] += 1
 
-        rank = [(t, s_["p"], s_["pts"], deductions.get(t, 0), s_["pts"] - deductions.get(t, 0),
+        rank = [(t, s_["p"], s_["pts"], ded_map.get(t, 0), s_["pts"] - ded_map.get(t, 0),
                  s_["gf"] - s_["ga"], s_["gf"], s_["w"], s_["d"], s_["l"]) for t, s_ in ts.items()]
         rank.sort(key=lambda x: (-x[4], -x[5], -x[6]))
         rounds[rnd] = {t: i + 1 for i, (t, *_) in enumerate(rank)}
@@ -134,7 +137,14 @@ def load_csl_data(csl_path: str = _CSL_PATH, deductions_path: str = _DEDUCTIONS_
     if official:
         latest_rnd = max(rounds.keys(), key=_rnd_num, default=None)
         if latest_rnd:
-            rounds[latest_rnd] = official
+            if _official_standings_consistent(data, matches):
+                rounds[latest_rnd] = official
+            else:
+                import logging
+                logging.getLogger(__name__).warning(
+                    "CFL 官方 standings 与本地场次不一致（played 对不上），"
+                    "已弃用该覆盖、保留自算榜 —— 2026-10-08 起生效"
+                )
 
     return matches, rounds, deductions
 
@@ -172,6 +182,32 @@ def _official_standings_map(data):
                     out[nm] = i + 1
             return out
     return {}
+
+
+def _official_standings_consistent(data, matches):
+    """校验 CFL 官方 standings 与本地已赛场次是否自洽，返回 True=可信。
+
+    2026-10-08：CFL 官方 standings 把山东泰山写成 `played=28, points=46`（真实为
+    26 场 37 分，46 实为其进球数），使泰山被判第 2、国安被判第 4，导致 top3_form
+    溢价漏触发（本应 ×1.08）。该校验能拦住这一类"官方源场次/积分错位"的情况。
+
+    规则：官方榜中任一队的 played 与本地已赛场次不符 → 整榜不可信。
+    """
+    from collections import Counter
+    local = Counter()
+    for m in matches:
+        if m.get("completed"):
+            local[m["home"]] += 1
+            local[m["away"]] += 1
+    for lg in data.get("leagues", []):
+        if lg.get("league_id") == "CSL" or "中超" in lg.get("name", ""):
+            for row in lg.get("standings", []) or []:
+                nm = _normalize_club_name(row.get("club_name", ""))
+                played = row.get("played")
+                if nm in local and isinstance(played, int) and played != local[nm]:
+                    return False
+            return True
+    return True
 
 
 def get_guoan_matches(matches):

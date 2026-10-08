@@ -331,7 +331,9 @@ def _get_perf(opponent, match_date, standings_by_round, matches):
     except Exception:
         pass
     
-    team_pts = {}
+    team_pts: dict[str, int] = {}
+    team_gf: dict[str, int] = {}
+    team_ga: dict[str, int] = {}
     for m in matches:
         if not m.get("completed") or m["hg"] is None: continue
         md = m["date"]
@@ -339,14 +341,24 @@ def _get_perf(opponent, match_date, standings_by_round, matches):
         if not md.startswith(yr): continue
         for side, gf, ga in [(m["home"], m["hg"], m["ag"]), (m["away"], m["ag"], m["hg"])]:
             t2 = _normalize_club_name(side)
-            if t2 not in team_pts: team_pts[t2] = 0
+            if t2 not in team_pts:
+                team_pts[t2] = 0; team_gf[t2] = 0; team_ga[t2] = 0
+            team_gf[t2] += gf; team_ga[t2] += ga
             if gf > ga: team_pts[t2] += 3
             elif gf == ga: team_pts[t2] += 1
-    
+
     for team_name in team_pts:
         team_pts[team_name] -= ded.get(team_name, 0)
-    
-    ranked = sorted(team_pts.items(), key=lambda x: -x[1])
+
+    # ⚠️ 同分必须按 净胜球 → 进球 做 tiebreak（对齐官方积分榜 / sync_csl_data.rebuild_standings）。
+    #    2026-10-08 修复：原实现 `sorted(key=-pts)` 在积分相同时依赖 dict 插入顺序，
+    #    本轮 38 分三队（国安 GD+16 / 云南 GD+3 / 西海岸 GD-1）顺序错乱——
+    #    国安被排到第5、西海岸被抬到第4，使西海岸 PERF 73.33→80.0、AP 24.81→25.48
+    #    跨过 C 级阈值（AP<25），被误判为 B 级（收入口径差约 70 万）。
+    ranked = sorted(
+        team_pts.items(),
+        key=lambda x: (-x[1], -(team_gf[x[0]] - team_ga[x[0]]), -team_gf[x[0]]),
+    )
     total = len(ranked)
     if total <= 1:
         return 50.0

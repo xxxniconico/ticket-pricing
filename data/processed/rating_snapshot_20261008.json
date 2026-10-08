@@ -155,8 +155,8 @@
       "opponent": "浙江",
       "elo": 1501.0,
       "ST": 47.6,
-      "AP": 24.7,
-      "tier": "C",
+      "AP": 25.4,
+      "tier": "B",
       "soft_boundary": false,
       "alt_tier": null,
       "components": {
@@ -169,7 +169,7 @@
         },
         "AP_sub": {
           "HIST_ATT_pct": 45.0,
-          "PERF": 40.0,
+          "PERF": 46.666666666666664,
           "DERBY_bonus": 0.0,
           "CUR_YEAR_ratio": 0.9989017170716027,
           "TOPIC": 0
@@ -230,7 +230,7 @@
       "opponent": "云南玉昆",
       "elo": 1503.9,
       "ST": 53.8,
-      "AP": 37.3,
+      "AP": 36.7,
       "tier": "B",
       "soft_boundary": false,
       "alt_tier": null,
@@ -244,7 +244,7 @@
         },
         "AP_sub": {
           "HIST_ATT_pct": 65.0,
-          "PERF": 86.66666666666667,
+          "PERF": 80.0,
           "DERBY_bonus": 0.0,
           "CUR_YEAR_ratio": 1.0923392612859097,
           "TOPIC": 0
@@ -355,7 +355,7 @@
       "opponent": "重庆铜梁龙",
       "elo": 1443.7,
       "ST": 27.2,
-      "AP": 12.9,
+      "AP": 11.2,
       "tier": "C",
       "soft_boundary": false,
       "alt_tier": null,
@@ -369,7 +369,7 @@
         },
         "AP_sub": {
           "HIST_ATT_pct": 5.0,
-          "PERF": 46.666666666666664,
+          "PERF": 40.0,
           "DERBY_bonus": 0.0,
           "CUR_YEAR_ratio": null,
           "TOPIC": 5

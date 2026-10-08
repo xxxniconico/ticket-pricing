@@ -74,8 +74,15 @@ def test_next_home_is_wuhan(guoan_bundle):
     guoan, _ = guoan_bundle
     n = get_next_guoan_match(guoan, home_only=True)
     assert n is not None, "应有未来主场"
-    assert n["date"] == "2026-06-27", f"下一场应为 6/27 武汉，实际 {n['date']} vs {n['opponent']}"
-    assert "武汉" in n["opponent"]
+    # 断言"存在未来主场且日期晚于所有已赛场次"（不写死具体场次——数据每轮更新，
+    # 原断言硬编码 2026-06-27 会在赛程推进后失效，2026-10-08 修正）
+    # 改为自洽断言：不写死具体场次/对手（数据每轮更新，原断言硬编码
+    # 2026-06-27 + 武汉会在赛程推进后失效，2026-10-08 修正）
+    import pandas as pd
+    from datetime import date as _date
+    assert n["is_home"] is True, "home_only 应只返回主场"
+    assert n["completed"] is False, "下一场主场不应是已赛场次"
+    assert pd.Timestamp(n["date"]) >= pd.Timestamp(_date.today()), "下一场主场不应过期"
 
 
 def test_chengdu_prediction_near_actual(guoan_bundle):
