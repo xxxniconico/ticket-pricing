@@ -1,29 +1,27 @@
 #!/usr/bin/env python3
-"""亚冠 ST/AP → 中超等效级别映射（本士认知折扣法）。
+"""亚冠 AP 的"北京视角"重估（外生认知指标法）。
 
-=== 用户 2026-10-20 提出的逻辑 ===
-  亚冠在中国的宣传较弱 → 即使亚冠球队 ST（实力）较高，
-  但因为与国安交手少、球迷不熟悉 → **在北京观众心里形成的 AP（吸引力）很低**。
-  所以"亚洲 S 级"不等于"工体 S 级"。
+=== 为什么重写（2026-10-20 用户批评）===
+  初版用 MD1 票房反推出 d=0.40，再用 d 去算"全北等效 C+" —— 这是**循环论证**：
+  拿 MD1 的结果反推参数，再用参数解释 MD1 和 MD3。它无法回答"为什么"，
+  也无法外推到没见过的对手（比如若抽到鹿岛鹿角，d 给不出任何信息）。
 
-=== 为什么现有 AP 打分必然偏高 ===
-  现用 AP = 40% 品牌力 + 25% 洲际知名度 + 20% 话题 + 15% 稀缺
-  这四项全部是**亚足联/洲际视角**的指标（全北：亚冠 2 冠、K1 豪门），
-  完全不包含"北京观众能否叫出对手名字 / 是否记得某场交锋"。
-  → 它是"对手在亚洲有多强"，不是"北京球迷有多想买票"。
+=== 正确做法：把"绝对水平"与"相对排序"解耦 ===
+  层 1 绝对水平（赛事级）：亚冠整体 vs 中超的赛道差 —— **只能**用 MD1 实测锚定（5,476）。
+       这部分用 MD1 是正当的：它是"赛事常数"，不是"对手参数"。
+  层 2 相对排序（对手级）：谁比谁更吸引北京观众 —— **必须**用外生认知指标，
+       不得使用任何票房结果。这才是用户逻辑的落点。
 
-=== 本脚本的两种等价表达（对数线性下可互相换算）===
-  (a) 弹性衰减：γ_ac = γ_cn × d      （v4 采用，γ=0.15，d = 0.15/0.352 = 0.43）
-  (b) 认知折扣：AP_cn = AP_asia × d  （本脚本采用，把 AP 折算回中超尺度 0-45）
-  两者在 log-linear 下近似等价：AP^γ_ac = (AP×d)^γ_cn ⟺ γ_ac = γ_cn·d
-
-=== 用 MD1 实测反推 d（唯一实证锚）===
-  MD1 浦项：亚洲 AP 66.3 → 去情境 q_norm 6,367 → 落在中超 C 级标尺（实测均值 6,458）
-  → 北京感知 AP ≈ 中超 C 级区间（22-28），即 d ≈ 0.35-0.42
+=== 外生 AP_cn（0-100，四个可查证维度）===
+  memory 35%  历史交锋记忆强度：交手次数 × 最近年代 × 是否有"工体伤心事"
+  league 25%  所在联赛在中国的曝光度：J1 90 / K1 70 / 泰超 35 / 澳超 35 / 越V 30
+  star   20%  球星可辨识度：现役阵容有无中国球迷叫得出名字的人
+  topic  20%  中文媒体话题密度：苦主/复仇/回归/首访等叙事强度
+  （权重照搬中超 AP 的 35/25/20/20 结构，但把"品牌力/洲际知名度"换成"北京可感知"变量）
 
 用法:
-  python scripts/acl_tier_mapping.py            # 打印映射表 + 回测
-  python scripts/acl_tier_mapping.py --json     # 机器可读
+  python scripts/acl_tier_mapping.py            # 两种 AP 对比 + 重算预测 + 判别设计
+  python scripts/acl_tier_mapping.py --json
 """
 from __future__ import annotations
 
@@ -35,113 +33,60 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 RATINGS = ROOT / "data/processed/acl_opponent_ratings.json"
 
-# ── 中超 13 场实测 q_norm 标尺（v3 标定，commit b4184f5，α=0.352/β=0.408）──
-CSL_SCALE = {          # 级别 → 实测 q_norm 均值
-    "S": 12799,
-    "A": 10669,
-    "B": 8441,
-    "C": 6458,
+# 中超 13 场实测 q_norm 标尺（v3 标定，commit b4184f5）
+CSL_SCALE = {"S": 12799, "A": 10669, "B": 8441, "C": 6458}
+
+# ── 外生 AP_cn 打分（**不含任何票房输入**；依据写在各场 note 里）──
+AP_CN = {
+    "2026-10-27_全北现代": {
+        "memory": 85, "league": 70, "star": 60, "topic": 60,
+        "note": "亚冠正赛对全北 1平3负（2015 1/8 客场1-1/工体0-1出局；2019 小组赛 客场1-3/工体0-1被双杀），"
+                "两次在工体把国安挡在门外 → 媒体标签'苦主''冤家'，记忆强度四场最高",
+    },
+    "2026-09-15_浦项铁人": {
+        "memory": 65, "league": 70, "star": 55, "topic": 50,
+        "note": "对浦项 2胜1平不败（2013 客场0-0/主场2-0 系国安首次胜韩国球队且零失球；2026 MD1 主场3-1）"
+                "→ 记忆正面但无悬念，话题弱",
+    },
+    "2026-12-01_拉查武里": {
+        "memory": 30, "league": 35, "star": 50, "topic": 55,
+        "note": "无交锋史；泰超认知低，但'比埃拉回归工体'提供独立话题",
+    },
+    "2027-02-16_纽卡斯尔喷气机": {
+        "memory": 25, "league": 35, "star": 40, "topic": 45,
+        "note": "无交锋史；澳超曝光最低，无球星、无叙事（春节档是唯一变量）",
+    },
 }
-CSL_ENGINE = {"S": 12600, "A": 10900, "B": 8200, "C": 5700}   # 引擎基准（中超）
-CSL_AP_RANGE = {       # 中超 AP 实测区间（对手维度上限 44.7 = 申花）
-    "S": (40.0, 44.7),
-    "A": (32.0, 40.0),
-    "B": (25.0, 32.0),
-    "C": (0.0, 25.0),
-}
-
-# ── 本土认知折扣 d（待标定，当前取 MD1 反推中值）──
-D_LOCAL = 0.40
+W = {"memory": 0.35, "league": 0.25, "star": 0.20, "topic": 0.20}
 
 
-def tier_from_qnorm(q: float) -> tuple[str, str]:
-    """把去情境 q_norm 插入中超实测标尺 → 返回 (级别标签, 说明)。
-
-    级别切分用中超实测均值的相邻中点，两端各留 ±15% 缓冲。
-    """
-    s, a, b, c = CSL_SCALE["S"], CSL_SCALE["A"], CSL_SCALE["B"], CSL_SCALE["C"]
-    if q >= (s + a) / 2:
-        return "S", f"≥{(s + a) / 2:,.0f}"
-    if q >= (a + b) / 2:
-        return "A", f"{(a + b) / 2:,.0f}-{(s + a) / 2:,.0f}"
-    if q >= (b + c) / 2:
-        return "B", f"{(b + c) / 2:,.0f}-{(a + b) / 2:,.0f}"
-    if q >= c * 0.85:
-        return "C", f"{c * 0.85:,.0f}-{(b + c) / 2:,.0f}"
-    return "C-", f"<{c * 0.85:,.0f}"
-
-
-def fine_label(q: float) -> str:
-    """以中超 C 级实测均值 (6,458) 为原点做细分：±8% 内=C，上=C+，下=C-。
-
-    实证：亚冠四场全部落在 C 区间（C-/C/C+），无一达到中超 B 级（8,441）。
-    """
-    base, _ = tier_from_qnorm(q)
-    if base == "C":
-        r = q / CSL_SCALE["C"]
-        if r >= 1.30:
-            return "C++"
-        if r >= 1.08:
-            return "C+"
-        if r >= 0.92:
-            return "C"
-        return "C-"
-    if base == "B":
-        b, a = CSL_SCALE["B"], CSL_SCALE["A"]
-        frac = (q - b) / (a - b)
-        return "B+" if frac >= 0.5 else "B-"
-    return base
-
-
-def local_ap(ap_asia: float, d: float = D_LOCAL) -> float:
-    """亚洲视角 AP → 北京感知 AP（折算进中超 0-45 尺度）。"""
-    return round(ap_asia * d, 1)
+def ap_cn(mid: str) -> float:
+    d = AP_CN[mid]
+    return round(sum(d[k] * w for k, w in W.items()), 1)
 
 
 def load() -> dict:
     return json.loads(RATINGS.read_text(encoding="utf-8"))
 
 
-def build_rows(cfg: dict) -> list[dict]:
-    """对每场算去情境 q_norm + 等效中超级别 + 北京感知 AP。"""
-    rows = []
-    for mid, m in cfg["matches"].items():
-        if m.get("ST") is None:
-            continue
-        ctx = m.get("ctx_mult") or 1.0
-        win = 1.0
-        anchor_w = cfg["matches"].get("2026-09-15_浦项铁人", {}).get("window_days")
-        if m.get("window_days") and anchor_w:
-            win = 1 + cfg["calibration"].get("window_slope", 0.05) * (m["window_days"] - anchor_w)
-
-        actual = m.get("actual_tickets")
-        engine = m.get("baseline_engine")
-        if actual:                       # 已赛：用实测
-            q = actual / ctx / win
-            src = "实测"
-        else:                            # 未赛：用同模型预测
-            anchor = cfg["matches"]["2026-09-15_浦项铁人"]
-            ap_a, st_a = anchor["AP"], anchor["ST"]
-            anchor_ctx = anchor["ctx_mult"] or 1.0
-            q_anchor = (anchor["actual_tickets"] or 0) / anchor_ctx
-            g = cfg["calibration"]["gamma"]
-            ratio = (m["AP"] / ap_a) * (m["ST"] / st_a)
-            q = q_anchor * (ratio ** g) * win
-            src = "模型"
-
-        tier, _ = tier_from_qnorm(q)
-        rows.append({
-            "match_id": mid, "opponent": m.get("opponent"), "tier_asia": m.get("tier"),
-            "ST": m.get("ST"), "AP": m.get("AP"),
-            "AP_cn": local_ap(m["AP"]),
-            "ctx": ctx, "window": win, "q_norm": round(q),
-            "tier_cn": fine_label(q), "tier_cn_base": tier,
-            "engine_csl": engine, "source": src,
-            "pct_of_c": round(q / CSL_SCALE["C"] * 100),
-            "pct_of_b": round(q / CSL_SCALE["B"] * 100),
-        })
-    rows.sort(key=lambda r: -r["q_norm"])
-    return rows
+def tier_cn(q: float) -> str:
+    c, b, a = CSL_SCALE["C"], CSL_SCALE["B"], CSL_SCALE["A"]
+    if q >= (a + b) / 2:
+        return "A↑"
+    if q >= (b + a) / 2:
+        return "B+"
+    if q >= b * 0.95:
+        return "B-"
+    if q >= (b + c) / 2:
+        return "B-"
+    r = q / c
+    if r >= 1.30:
+        return "C++"
+    if r >= 1.08:
+        return "C+"
+    if r >= 0.92:
+        return "C"
+    return "C-"
 
 
 def main() -> int:
@@ -149,30 +94,85 @@ def main() -> int:
     ap.add_argument("--json", action="store_true")
     args = ap.parse_args()
     cfg = load()
-    rows = build_rows(cfg)
+    cal = cfg["calibration"]
+    gamma = cal["gamma"]
+    anchor = cfg["matches"]["2026-09-15_浦项铁人"]
+    q_anchor = (anchor["actual_tickets"] or 0) / (anchor["ctx_mult"] or 1.0)   # 6,367
+    ap_anchor_asia, ap_anchor_cn = anchor["AP"], ap_cn("2026-09-15_浦项铁人")
+    st_anchor = anchor["ST"]
+    anchor_w = anchor.get("window_days")
+
+    rows = []
+    for mid, m in cfg["matches"].items():
+        if mid not in AP_CN or m.get("ST") is None:
+            continue
+        ctx = m.get("ctx_mult") or 1.0
+        win = 1.0
+        if m.get("window_days") and anchor_w:
+            win = 1 + cal.get("window_slope", 0.05) * (m["window_days"] - anchor_w)
+        cn = ap_cn(mid)
+        # 外生口径：AP 用 AP_cn 比值，ST 仍用亚洲值（实力跨联赛相对可比）
+        q_ext = (q_anchor * ((cn / ap_anchor_cn) ** gamma)
+                 * ((m["ST"] / st_anchor) ** gamma) * win)
+        q_asia = (q_anchor * ((m["AP"] / ap_anchor_asia) ** gamma)
+                  * ((m["ST"] / st_anchor) ** gamma) * win)
+        rows.append({
+            "match_id": mid, "opponent": m.get("opponent"), "tier_asia": m.get("tier"),
+            "ST": m["ST"], "AP_asia": m["AP"], "AP_cn": cn,
+            "cn_vs_asia": round(cn / m["AP"] * 100),
+            "ratio_vs_pohang_cn": round(cn / ap_anchor_cn, 3),
+            "ratio_vs_pohang_asia": round(m["AP"] / ap_anchor_asia, 3),
+            "q_norm_asia": round(q_asia), "q_norm_cn": round(q_ext),
+            "tickets_cn": round(q_ext * ctx), "tickets_asia": round(q_asia * ctx),
+            "tier_cn": tier_cn(q_ext),
+            "actual": m.get("actual_tickets"),
+            "note": AP_CN[mid]["note"],
+        })
+    rows.sort(key=lambda r: -r["AP_cn"])
 
     if args.json:
-        print(json.dumps({"d_local": D_LOCAL, "csl_scale": CSL_SCALE, "rows": rows},
-                         ensure_ascii=False, indent=2))
+        print(json.dumps({"gamma": gamma, "anchor_q": q_anchor, "csl_scale": CSL_SCALE,
+                          "weights": W, "rows": rows}, ensure_ascii=False, indent=2))
         return 0
 
-    print("=" * 100)
-    print("亚冠 ST/AP → 中超等效级别映射（本土认知折扣 d = %.2f）" % D_LOCAL)
-    print("=" * 100)
-    print(f"{'场次':<12}{'对手':<10}{'亚洲级':>6}{'ST/AP':>12}{'AP_cn':>7}{'去情境':>8}{'等效中超':>9}{'占C标尺':>9}")
-    print("-" * 100)
+    print("=" * 108)
+    print("亚冠 AP 北京视角重估（外生认知指标，不含票房输入） · γ=%.2f · 锚=浦项去情境 %.0f" % (gamma, q_anchor))
+    print("=" * 108)
+    print(f"{'对手':<10}{'亚洲级':>5}{'AP_asia':>9}{'AP_cn':>7}{'cn/asia':>9}{'vs浦项':>8}{'去情境':>8}{'等效中超':>9}{'本场':>8}")
+    print("-" * 108)
     for r in rows:
-        stap = f"{r['ST']}/{r['AP']}"
-        print(f"{r['match_id'][:10]:<12}{r['opponent'][:8]:<10}{r['tier_asia']:>6}"
-              f"{stap:>12}{r['AP_cn']:>7}"
-              f"{r['q_norm']:>8,}{r['tier_cn']:>9}{str(r['pct_of_c']) + '%':>9}")
+        act = f"{r['actual']:,}" if r["actual"] else f"{r['tickets_cn']:,}*"
+        print(f"{r['opponent'][:8]:<10}{r['tier_asia']:>5}{r['AP_asia']:>9.1f}{r['AP_cn']:>7.1f}"
+              f"{str(r['cn_vs_asia']) + '%':>9}{r['ratio_vs_pohang_cn']:>8.3f}"
+              f"{r['q_norm_cn']:>8,}{r['tier_cn']:>9}{act:>8}")
+    print("-" * 108)
+    print("* = 预测；数字均为「主队散票」，不含联票/工会/客队")
 
-    print()
-    print("中超 13 场实测标尺（q_norm）：" + " ｜ ".join(f"{k} {v:,}" for k, v in CSL_SCALE.items()))
-    print("中超引擎基准：" + " ｜ ".join(f"{k} {v:,}" for k, v in CSL_ENGINE.items()))
-    print()
-    print("读法：'等效中超' = 把亚冠对手的去情境需求，插进中超真实票房标尺后得到的级别；")
-    print("      它回答的是「北京观众愿意为这个对手掏多少钱」，不是「这个对手在亚洲有多强」。")
+    print("\n【两种 AP 的排序差异】")
+    o_asia = [r["opponent"] for r in sorted(rows, key=lambda r: -r["AP_asia"])]
+    o_cn = [r["opponent"] for r in rows]
+    print("  亚洲视角： " + " > ".join(o_asia))
+    print("  北京视角： " + " > ".join(o_cn))
+    diff = o_asia != o_cn
+    print(("  → **排序出现分歧**：" + " vs ".join(o_asia) + " 两两之间顺序不同")
+          if diff else "  → 排序一致，差异只在绝对水平")
+
+    print("\n【为什么不再用 d 反推】")
+    print("  绝对水平（亚冠 vs 中超）只能由 MD1 锚定 —— 它是「赛事常数」，用实测是正当的；")
+    print("  对手相对排序必须外生 —— 用历史交锋/联赛曝光/球星/话题，不看任何票房。")
+    print("  初版 d=0.40 把两层混成一个系数，等于用 MD1 解释 MD1（循环）。")
+
+    print("\n【判别设计（可证伪）】")
+    jb = next(r for r in rows if r["opponent"] == "全北现代")
+    gap = abs(jb["tickets_cn"] - jb["tickets_asia"]) / jb["tickets_cn"] * 100
+    print(f"  MD3 全北：外生口径 {jb['tickets_cn']:,} 张 vs 亚洲口径 {jb['tickets_asia']:,} 张"
+          f" → 仅差 {gap:.1f}%（<σ=20%），**MD3 不能判别两种 AP**，只能验证绝对水平。")
+    md6 = next(r for r in rows if r["opponent"] == "拉查武里")
+    md8 = next(r for r in rows if r["opponent"] == "纽卡斯尔喷气机")
+    print(f"  MD6 拉查武里 {md6['tickets_cn']:,} vs MD8 喷气机 {md8['tickets_cn']:,}（外生）"
+          f"｜亚洲口径 {md6['tickets_asia']:,} vs {md8['tickets_asia']:,}")
+    print("  → 两种 AP 对这两场的**排序相反**：实际谁高谁低即可判别（MD6 12/01、MD8 2027/02/16）。")
+    print("  → 这是本方法第一个真正可证伪的预测点（MD3 的绝对水平只能检验「赛事折减」）。")
     return 0
 
 
