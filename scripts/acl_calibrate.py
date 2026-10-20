@@ -81,10 +81,21 @@ def window_mult(tgt: dict, anchor: dict) -> float:
     return 1 + WINDOW_SLOPE * (t - a)
 
 
+def acl_form_mult(tgt: dict) -> float:
+    """亚冠成绩因子（国安自己在亚冠的战绩/排名对需求的拉动）。未标定，见 calibration.acl_form_note。"""
+    return (tgt.get("acl_form") or {}).get("mult", 1.0)
+
+
+def acl_stakes_mult(tgt: dict) -> float:
+    """出线权重因子（本场对出线的决定性 + 中超出线稀缺性）。与 acl_form 分列，避免重复计算。"""
+    v = tgt.get("acl_stakes")
+    return v if isinstance(v, (int, float)) else (v or {}).get("mult", 1.0)
+
+
 def predict(anchor: dict, tgt: dict, gamma: float) -> int:
     ratio = (tgt["AP"] / anchor["AP"]) * (tgt["ST"] / anchor["ST"])
     return round(anchor["q_norm"] * (ratio ** gamma) * tgt["ctx_mult"]
-                 * window_mult(tgt, anchor))
+                 * window_mult(tgt, anchor) * acl_form_mult(tgt) * acl_stakes_mult(tgt))
 
 
 def revenue(tickets: int) -> float:
@@ -165,8 +176,16 @@ def main() -> int:
         tot_rev += rev
         print(f"{r['match_id'][:11]:<12}{r['opp'][:10]:<12}{q:>8,}{f'{lo:,}-{hi:,}':>20}{rev:>10.1f}")
         wm = window_mult(r, anchor)
+        fm = acl_form_mult(r)
         if abs(wm - 1) > 1e-9:
             print(f"{'':<24}↳ 售期 {r.get('window_days')} 天（锚 {anchor.get('window_days')} 天）→ 窗口修正 ×{wm:.2f}")
+        sm = acl_stakes_mult(r)
+        if abs(sm - 1) > 1e-9:
+            print(f"{'':<24}↳ 出线权重（赢则 9 分基本锁定东亚前 8 + 中超上一季全灭）→ ×{sm:.2f}")
+        if abs(fm - 1) > 1e-9:
+            af = r.get("acl_form") or {}
+            print(f"{'':<24}↳ 亚冠成绩 {af.get('guoan_record_before','?')} / 东亚第 {af.get('east_rank_before','?')}"
+                  f" → 成绩因子 ×{fm:.2f}")
     if tot_q:
         print("-" * 96)
         print(f"{'合计':<24}{tot_q:>8,}{'':>20}{tot_rev:>10.1f}")
