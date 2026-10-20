@@ -534,7 +534,8 @@ def get_effective_tier(opponent, match_date,
                        elo_history=None, standings_by_round=None,
                        matches=None, guoan_home_history=None,
                        last_h2h=None, topic_tag=None, soft_boundary=True,
-                       ap_c_threshold=25.0, soft_band=3.0, soft_prefer="lower"):
+                       ap_c_threshold=25.0, ap_a_threshold=35.0,
+                       soft_band=3.0, soft_prefer="lower"):
     from src.csl_context import _normalize_club_name
     t = _normalize_club_name(opponent)
     if t in FROZEN_TIERS:
@@ -554,7 +555,11 @@ def get_effective_tier(opponent, match_date,
     # S: exceptional ST + strong AP (申花 hard-locked)
     if st >= 80 and ap >= 70: return "S"
     # A: strong ST + decent AP, OR 德比级票房
-    if (st >= 55 and ap >= 40) or hist_pct >= 90: return "A"
+    # ap_a_threshold 2026-10-20 由 40 改 35（回到设计文档值）：as-of 修复后历史分位
+    # 普遍下移，山东泰山 AP 37.8 被 40 卡住 → 判 B，而实际执行 S_A 价 ¥260、
+    # 历史场均 11,493、2026 实际 12,956，属明显错配。阈值敏感性：35 只额外让
+    # 山东泰山升 A（申花 AP 39.1 已 frozen S；云南玉昆 34.4 不动）。
+    if (st >= 55 and ap >= ap_a_threshold) or hist_pct >= 90: return "A"
     # B floor: 高票房球队 (≥80%) 不下探
     if hist_pct >= 80: return "B"
     # AP-protected B: high appeal teams keep B even if ST is weak

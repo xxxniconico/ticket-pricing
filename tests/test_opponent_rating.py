@@ -135,11 +135,23 @@ class TestEffectiveTier:
         assert tier == "S"
 
     def test_datadriven_tier_shandong(self):
-        # 泰山已改为数据驱动 (ST>=60 + AP>=40 -> A)
+        # 泰山数据驱动 A：ST 60.6 + AP 37.3 >= ap_a_threshold(35)
+        # （2026-10-20 阈值由 40 改 35；as-of 口径下山东 AP 37.3-37.8）
         tier = get_effective_tier("山东泰山", "2026-06-25",
             elo_history=self.elo_history, standings_by_round=self.standings,
             matches=self.matches)
         assert tier == "A"  # Data-driven A, not hard-locked
+
+    def test_ap_a_threshold_boundary(self):
+        """阈值 35 的切点：34.4（云南玉昆）仍 B，37.3（山东）升 A。"""
+        from src.csl_context import _normalize_club_name  # noqa: F401
+        t_yn = get_effective_tier("云南玉昆", "2026-06-25",
+            elo_history=self.elo_history, standings_by_round=self.standings,
+            matches=self.matches)
+        t_sd = get_effective_tier("山东泰山", "2026-06-25",
+            elo_history=self.elo_history, standings_by_round=self.standings,
+            matches=self.matches)
+        assert t_sd == "A" and t_yn == "B"
 
     def test_tier_distribution(self):
         from src.opponent_rating import get_all_tier_distribution
