@@ -248,10 +248,21 @@ def _load_guoan_home_attendance():
     home["opponent"] = home["opponent"].apply(lambda x: _normalize_club_name(str(x)))
     return home.groupby(["match_date", "opponent", "match_tier"])["数量"].sum().reset_index(name="attendance")
 
-def _attendance_percentile(opponent, guoan_home_history):
+def _attendance_percentile(opponent, guoan_home_history, as_of=None):
+    """历史票房分位（0-100）。
+
+    as_of: 时点截断（YYYY-MM-DD / Timestamp）。只统计 match_date < as_of 的场次——
+      2026-10-20 修：此前用全量历史，导致"本场入库后改写本场赛前分级"
+      （青岛西海岸 10/18：入库后 HIST 40.0→25.0、AP 24.8→19.6、B→C）。
+    """
     from src.csl_context import _normalize_club_name
     t = _normalize_club_name(opponent)
     if guoan_home_history.empty: return 15.0  # 全空: 偏低
+    if as_of is not None and "match_date" in guoan_home_history.columns:
+        guoan_home_history = guoan_home_history[
+            pd.to_datetime(guoan_home_history["match_date"]) < pd.Timestamp(as_of)
+        ]
+        if guoan_home_history.empty: return 15.0
     opp_data = guoan_home_history[guoan_home_history["opponent"] == t]
     if opp_data.empty:
         # 升班马/无历史: 给最低档, 由 brand prior 接管
@@ -378,7 +389,7 @@ def compute_appeal(opponent, match_date,
     t = _normalize_club_name(opponent)
     if guoan_home_history is None or guoan_home_history.empty:
         guoan_home_history = _load_guoan_home_attendance()
-    hist_pct = _attendance_percentile(t, guoan_home_history)
+    hist_pct = _attendance_percentile(t, guoan_home_history, as_of=match_date)
     derby_raw = DERBY_BONUS.get(t, 0.0)
     cur_ratio = _cur_year_att_ratio(t, match_date, guoan_home_history)
     if cur_ratio is not None:
@@ -392,7 +403,10 @@ def compute_appeal(opponent, match_date,
         topic_tag = _detect_topic(t, match_date, standings_by_round or {}, matches or [])
     topic_raw = TOPIC_SCORES.get(topic_tag or "default", 0.0)
     # 有历史数据: HIST主导,PERF微调；无历史: PERF主导
-    n_hist = len(guoan_home_history[guoan_home_history["opponent"] == t])
+    _hist_asof = guoan_home_history
+    if "match_date" in _hist_asof.columns:
+        _hist_asof = _hist_asof[pd.to_datetime(_hist_asof["match_date"]) < pd.Timestamp(match_date)]
+    n_hist = len(_hist_asof[_hist_asof["opponent"] == t])
     if n_hist >= 1:
         w_hist, w_perf = 0.35, 0.10  # 真实票房说了算
     else:
@@ -520,7 +534,7 @@ def get_effective_tier(opponent, match_date,
                        elo_history=None, standings_by_round=None,
                        matches=None, guoan_home_history=None,
                        last_h2h=None, topic_tag=None, soft_boundary=True,
-                       ap_c_threshold=25.0, soft_band=3.0, soft_prefer="higher"):
+                       ap_c_threshold=25.0, soft_band=3.0, soft_prefer="lower"):
     from src.csl_context import _normalize_club_name
     t = _normalize_club_name(opponent)
     if t in FROZEN_TIERS:
@@ -535,8 +549,8 @@ def get_effective_tier(opponent, match_date,
     st = compute_strength(t, match_date, elo_history, standings_by_round or {}, matches)
     ap = compute_appeal(t, match_date, guoan_home_history, topic_tag=topic_tag,
                        standings_by_round=standings_by_round, matches=matches)
-    # 传统德比：历史票房数据量化20年热度
-    hist_pct = _attendance_percentile(t, guoan_home_history)
+    # 传统德比：历史票房数据量化20年热度（as_of 截断，避免未来数据改写历史分级）
+    hist_pct = _attendance_percentile(t, guoan_home_history, as_of=match_date)
     # S: exceptional ST + strong AP (申花 hard-locked)
     if st >= 80 and ap >= 70: return "S"
     # A: strong ST + decent AP, OR 德比级票房
@@ -555,15 +569,19 @@ def get_effective_tier(opponent, match_date,
         tier = "B"
     # ── 软边界（2026-10-08 补实现；设计见 docs/plans/dynamic-opponent-tier-20260625.md L341-344）──
     # AP 落在 C/B 阈值 ±soft_band 内（且 ST 达标）时视为"边界不确定场次"：
-    #   soft_prefer="lower"  → 取低档 C（原设计原则："有分歧倾向降级"，低价风险<空座风险）
-    #   soft_prefer="higher" → 取高档 B
-    # 2026-10-08 用户拍板：默认 soft_band=3.0 / soft_prefer="higher"。
-    #   回测（2026 CSL 主场 13 场）：硬阈值 MAE 941 → 软边界(±3,取高档) MAE 808（−14%），
-    #   翻档仅 2 队（上海海港 AP22.4→B、青岛西海岸 AP24.8→B），均满足 ST≥35 门槛。
-    #   ⚠️ 证据强度：改善来自海港单场（n=1），方向支持但统计不显著，2027 样本累积后应重验。
-    #   soft_band=0.0 可回退到原硬阈值行为。
+    #   soft_prefer="higher" → 取高档 B（2026-10-08 曾为默认）
+    #   soft_prefer="lower"  → 保持硬阈值判定（不因边界上调，也不额外降级）= 等价关闭软边界
+    # 2026-10-20 用户拍板（青岛西海岸第28轮复盘后）：默认回退 soft_prefer="lower"。
+    #   依据：14 场 as-of 回测（HIST_ATT_pct 按 match_date 截断）——
+    #     硬阈值 MAE 879 / bias +157；软边界取高档 MAE 948 / bias +473（更差）。
+    #     边界场仅 2 个：海港 5/10 实际 6,004（C 3,937 → B 5,664，改善 +1,727）；
+    #                 西海岸 10/18 实际 5,751（C 6,156 → B 8,856，恶化 −3,105）。净 −1,378。
+    #   原"MAE 941→808（−14%）"结论来自海港单场 n=1，加第 2 个样本后方向反转。
+    #   "是否落在边界带"的事实由 get_opponent_scorecard 的 ap_boundary_zone 单独标记，
+    #   不再依赖 soft_prefer（否则 lower 下 tier==tier_hard，标记会消失）。
     if soft_band > 0 and st >= 35 and abs(ap - ap_c_threshold) <= soft_band:
-        tier = "B" if soft_prefer == "higher" else "C"
+        if soft_prefer == "higher":
+            tier = "B"
     # Soft boundary: 边界球队有机会升档
     if soft_boundary:
         alt = _check_soft_boundary(st, ap, tier, ap_c_threshold=ap_c_threshold)
@@ -601,17 +619,20 @@ def get_opponent_scorecard(opponent, match_date,
                                     matches, guoan_home_history, topic_tag=topic_tag,
                                     soft_band=0.0)
     ap_band = (_tier_hard != tier)
+    # 边界带事实（2026-10-20 新增）：AP 落在 C/B 阈值 ±soft_band 内且 ST≥35，
+    # 与 soft_prefer 无关——soft_prefer="lower" 时 tier==tier_hard，仅靠 ap_soft_band 会丢失提示。
+    ap_zone = bool(st >= 35 and abs(ap - 25.0) <= 3.0)
     return {
         "opponent": t, "elo": round(elo, 1), "ST": round(st, 1), "AP": round(ap, 1),
         "tier": tier, "soft_boundary": alt_tier is not None, "alt_tier": alt_tier,
-        "ap_soft_band": ap_band, "tier_hard": _tier_hard,
+        "ap_soft_band": ap_band, "ap_boundary_zone": ap_zone, "tier_hard": _tier_hard,
         "components": {
             "ELO": elo,
             "ST_sub": {"ELO_norm": _normalize_to_0_100(elo, *_NORM_PARAMS["ELO"]),
                        "PPG": _compute_ppg(t, match_date, matches),
                        "L5_PPG": _compute_l5_ppg(t, match_date, matches),
                        "GD_per": _compute_gd_per(t, match_date, matches)},
-            "AP_sub": {"HIST_ATT_pct": _attendance_percentile(t, guoan_home_history),
+            "AP_sub": {"HIST_ATT_pct": _attendance_percentile(t, guoan_home_history, as_of=match_date),
                        "PERF": _get_perf(t, match_date, standings_by_round or {}, matches or []),
                        "DERBY_bonus": DERBY_BONUS.get(t, 0.0),
                        "CUR_YEAR_ratio": _cur_year_att_ratio(t, match_date, guoan_home_history),

@@ -51,6 +51,17 @@ def collect_pending_home_matches():
             'summer': pd.Timestamp(m['date']).month in (7, 8),
             'match_year': m['date'][:4],
         })
+        # 动态分级（as-of 比赛日）：与看板/compute_home_predictions 同源。
+        # 2026-10-20 修：此前不传 → rule_update 退回静态 classify_opponent_tier，
+        # 导致 history 的 tier 归属与预测链不一致（青岛西海岸 10/18 被记成 B，实际 C）。
+        try:
+            from src.opponent_rating import get_opponent_scorecard, load_elo_history
+            card = get_opponent_scorecard(m['opponent'], m['date'],
+                                          elo_history=load_elo_history(),
+                                          standings_by_round=rounds, matches=matches)
+            pred_args['opponent_tier_override'] = card['tier']
+        except Exception as e:
+            print(f"  ⚠️ {mid}: 动态分级失败，退回静态 ({e})")
         pending.append((m, pred_args, a))
     return pending
 

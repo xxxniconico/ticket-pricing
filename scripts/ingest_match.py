@@ -203,6 +203,13 @@ def ingest_match(excel_path: str, competition: str = "CSL"):
     try:
         import sys as _sys
         _sys.path.insert(0, str(ROOT))  # python scripts/ingest_match.py 时 scripts/ 在 path[0]，需根目录才能 import scripts.*
+        # 清 streamlit cache_data：data_cache.get_actual 有 @st.cache_data，同进程内会命中
+        # 导入前的旧 parquet → 当次永远漏校准本场（2026-10-18 青岛西海岸实证）。
+        try:
+            import streamlit as _st
+            _st.cache_data.clear()
+        except Exception:
+            pass
         from scripts.update_calibration import main as _calib_main
         _orig_argv = _sys.argv
         _sys.argv = ["update_calibration.py"]
