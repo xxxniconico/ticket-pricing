@@ -122,9 +122,10 @@ def main() -> int:
             "cn_vs_asia": round(cn / m["AP"] * 100),
             "ratio_vs_pohang_cn": round(cn / ap_anchor_cn, 3),
             "ratio_vs_pohang_asia": round(m["AP"] / ap_anchor_asia, 3),
-            "q_norm_asia": round(q_asia), "q_norm_cn": round(q_ext),
+            "q_norm_asia": round(q_asia),
             "tickets_cn": round(q_ext * ctx), "tickets_asia": round(q_asia * ctx),
-            "tier_cn": tier_cn(q_ext),
+            # 对比中超标尺时剔除售期修正（中超标尺各场无此维度）
+            "q_norm_cn": round(q_ext / win), "tier_cn": tier_cn(q_ext / win),
             "actual": m.get("actual_tickets"),
             "note": AP_CN[mid]["note"],
         })
@@ -147,6 +148,7 @@ def main() -> int:
               f"{r['q_norm_cn']:>8,}{r['tier_cn']:>9}{act:>8}")
     print("-" * 108)
     print("* = 预测；数字均为「主队散票」，不含联票/工会/客队")
+    print("  去情境需求已剔除售期修正，与中超 13 场标尺同口径（中超标尺各场无此维度）")
 
     print("\n【两种 AP 的排序差异】")
     o_asia = [r["opponent"] for r in sorted(rows, key=lambda r: -r["AP_asia"])]
