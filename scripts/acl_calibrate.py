@@ -37,6 +37,7 @@ STRUCT = {"L1": (199, 0.509), "T3": (299, 0.330), "T4": (459, 0.062),
           "T5": (539, 0.066), "T6": (688, 0.033)}
 PAID_RATIO = 0.9765      # MD1 实测实付率
 SIGMA = 0.20             # 场次间波动（2026 中超 13 场 CV 21.3% / 2025 ACL2 三场 22.1%）
+WINDOW_SLOPE = 0.05      # 每多 1 天可售窗口的边际量（未标定：MD1 年票优先日仅占 6.4%，再打 8 折）
 
 
 def load_actuals() -> dict[str, dict]:
@@ -72,9 +73,18 @@ def estimate_gamma(rows: list[dict]) -> tuple[float | None, str]:
     return num / den, f"最小二乘（{len(played) - 1} 个对照样本）"
 
 
+def window_mult(tgt: dict, anchor: dict) -> float:
+    """可售窗口天数修正（相对锚）。窗口越长，早鸟需求越能释放；未标定，待 MD3 实测判别。"""
+    a, t = anchor.get("window_days"), tgt.get("window_days")
+    if not a or not t:
+        return 1.0
+    return 1 + WINDOW_SLOPE * (t - a)
+
+
 def predict(anchor: dict, tgt: dict, gamma: float) -> int:
     ratio = (tgt["AP"] / anchor["AP"]) * (tgt["ST"] / anchor["ST"])
-    return round(anchor["q_norm"] * (ratio ** gamma) * tgt["ctx_mult"])
+    return round(anchor["q_norm"] * (ratio ** gamma) * tgt["ctx_mult"]
+                 * window_mult(tgt, anchor))
 
 
 def revenue(tickets: int) -> float:
@@ -97,7 +107,8 @@ def main() -> int:
     rows = []
     for mid, m in cfg["matches"].items():
         a = actuals.get(mid, {})
-        tickets = a.get("tickets", m.get("actual_tickets"))
+        # 锚口径：anchor_tickets = 含未导出渠道的全量（如 MD1 的 9/9 年票优先日 312 张）
+        tickets = m.get("anchor_tickets") or a.get("tickets", m.get("actual_tickets"))
         if args.write and a:
             m["actual_tickets"] = a["tickets"]
             m["actual_revenue_wan"] = round(a["revenue"] / 1e4, 2)
@@ -120,7 +131,8 @@ def main() -> int:
         act = f"{r['tickets']:,}" if r["tickets"] else "未赛"
         qn = f"{r['q_norm']:,.0f}" if r["q_norm"] else "—"
         impl = f"{r['tickets'] / r['baseline']:.3f}" if (r["tickets"] and r.get("baseline")) else "—"
-        print(f"{r['match_id'][:11]:<12}{r['opp'][:10]:<12}{st_ap:<14}{eng:>7}{r['ctx_mult'] or 0:>7.2f}{act:>7}{qn:>8}{impl:>8}")
+        note = " (含优先日)" if r.get("anchor_tickets") else ""
+        print(f"{r['match_id'][:11]:<12}{r['opp'][:10]:<12}{st_ap:<14}{eng:>7}{r['ctx_mult'] or 0:>7.2f}{act:>7}{qn:>8}{impl:>8}{note}")
 
     played = [r for r in rows if r["q_norm"] and r.get("ST") and r.get("AP")]
     print()
@@ -152,6 +164,9 @@ def main() -> int:
         tot_q += q
         tot_rev += rev
         print(f"{r['match_id'][:11]:<12}{r['opp'][:10]:<12}{q:>8,}{f'{lo:,}-{hi:,}':>20}{rev:>10.1f}")
+        wm = window_mult(r, anchor)
+        if abs(wm - 1) > 1e-9:
+            print(f"{'':<24}↳ 售期 {r.get('window_days')} 天（锚 {anchor.get('window_days')} 天）→ 窗口修正 ×{wm:.2f}")
     if tot_q:
         print("-" * 96)
         print(f"{'合计':<24}{tot_q:>8,}{'':>20}{tot_rev:>10.1f}")
