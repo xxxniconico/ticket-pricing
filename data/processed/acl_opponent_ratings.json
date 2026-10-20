@@ -1,5 +1,5 @@
 {
-  "as_of": "2026-09-28",
+  "as_of": "2026-10-20",
   "schema_version": 1,
   "method": {
     "ST": "联赛排名40% + 亚冠战绩30% + 净胜球20% + 历史交锋10%",
@@ -38,17 +38,44 @@
       "md": "MD3",
       "opponent": "全北现代",
       "opponent_league": "K League 1",
-      "ST": 76.3,
-      "AP": 77.3,
+      "ST": 76.1,
+      "AP": 77.2,
       "tier": "S",
       "baseline_engine": 11378,
       "ctx_mult": 0.86,
       "ctx_detail": "midweek 0.86（周二）",
       "actual_tickets": null,
       "actual_revenue_wan": null,
-      "source": "定价决策卡_20260915 §十（9/7 基线）",
+      "source": "acl_rolling_update.py（2026-10-20 滚动更新）",
       "confidence": "medium",
-      "next_update": "开票前 7-10 天（2026-10-17~10-20）"
+      "next_update": "赛后（acl_calibrate.py --write 回写实测）",
+      "rolling_log": [
+        {
+          "date": "2026-10-20",
+          "ST": 76.1,
+          "AP": 77.2,
+          "tier": "S",
+          "ST_prev": 76.3,
+          "AP_prev": 77.3,
+          "tier_prev": "S",
+          "inputs": {
+            "rank": 3,
+            "rank_score": 82.0,
+            "league_coef": 0.95,
+            "acl_score": 82.0,
+            "gd_score": 69.0,
+            "h2h_score": 65.0,
+            "ap": {
+              "brand": 85.0,
+              "intl": 85.0,
+              "topic": 65.0,
+              "scarce": 60.0
+            }
+          },
+          "note": "K1 第32轮(10-18) 第3名 47分 42:32(+10); 亚冠 MD1 主2-1柏太阳神 / MD2 客0-2神户胜利船(东亚第10, 3分); 10-24 R33 客场FC安养"
+        }
+      ],
+      "data_as_of": "2026-10-20"
     },
     "2026-12-01_拉查武里": {
       "season": "2026-27",
