@@ -39,7 +39,9 @@ li { margin: 5px 0; }
 table { width: 100%; border-collapse: collapse; font-size: 14px; margin: 12px 0; }
 th { background: #eaf0f9; color: #12365f; padding: 8px 6px; font-weight: 700;
      border-bottom: 2px solid #0b3d91; text-align: center; }
-td { padding: 6px; text-align: center; border-bottom: 1px solid #e6ecf4; }
+td { padding: 7px 6px; text-align: center; border-bottom: 1px solid #e6ecf4;
+     font-variant-numeric: tabular-nums; }
+td:first-child { font-weight: 500; }
 td:first-child, th:first-child { text-align: left; padding-left: 12px; }
 tr:last-child td { background: #f7f9fc; font-weight: 600; }
 strong { color: #0b3d91; }
