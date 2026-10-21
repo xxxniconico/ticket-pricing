@@ -1,0 +1,126 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<style>
+  @page { size: 1240px 1754px; margin: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    width: 1240px; height: 1754px; padding: 34px 40px 24px;
+    font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+    color: #1b2430; background: #fff; line-height: 1.42;
+  }
+  .hd { border-left: 8px solid #0b3d91; padding-left: 16px; margin-bottom: 14px; }
+  .hd h1 { font-size: 31px; color: #0b3d91; letter-spacing: .3px; }
+  .hd .sub { font-size: 15px; color: #5b6b7f; margin-top: 6px; }
+  .hd .tags { margin-top: 9px; }
+  .tag { display: inline-block; padding: 3px 11px; border-radius: 11px; font-size: 13px;
+         background: #eef3fb; color: #0b3d91; margin-right: 7px; font-weight: 600; }
+  .tag.hot { background: #fdecea; color: #c0392b; }
+
+  .kpi { display: flex; gap: 12px; margin: 16px 0 18px; }
+  .kpi div { flex: 1; background: #f7f9fc; border: 1px solid #dde5f0; border-radius: 8px;
+             padding: 12px 10px; text-align: center; }
+  .kpi .lab { font-size: 13px; color: #6b7c93; }
+  .kpi .val { font-size: 27px; font-weight: 700; color: #0b3d91; margin-top: 4px; }
+  .kpi .val small { font-size: 14px; font-weight: 500; color: #6b7c93; }
+  .kpi .note { font-size: 11.5px; color: #8b9bb0; margin-top: 3px; }
+
+  h2 { font-size: 17px; color: #fff; background: #0b3d91; padding: 6px 12px;
+       border-radius: 5px; margin: 16px 0 9px; display: inline-block; }
+  table { width: 100%; border-collapse: collapse; font-size: 14.5px; }
+  th { background: #eaf0f9; color: #12365f; padding: 7px 6px; font-weight: 700;
+       border-bottom: 2px solid #0b3d91; }
+  td { padding: 6px 6px; text-align: center; border-bottom: 1px solid #e6ecf4; }
+  td:first-child, th:first-child { text-align: left; padding-left: 12px; }
+  tr:last-child td { border-bottom: none; font-weight: 700; background: #f7f9fc; }
+  .hi { color: #c0392b; font-weight: 700; }
+  .ok { color: #1e8449; font-weight: 700; }
+  .dim { color: #8b9bb0; }
+
+  .bars { margin-top: 9px; font-size: 13.5px; color: #3d4f66; }
+  .bars b { color: #c0392b; }
+
+  .acts { margin-top: 4px; }
+  .acts .row { display: flex; gap: 11px; padding: 9px 12px; background: #f7f9fc;
+               border-left: 4px solid #0b3d91; border-radius: 5px; margin-bottom: 8px; }
+  .acts .n { font-size: 19px; font-weight: 800; color: #0b3d91; min-width: 26px; }
+  .acts .txt { font-size: 14.5px; }
+  .acts .txt b { color: #12365f; }
+
+  .foot { margin-top: 16px; padding-top: 10px; border-top: 1px solid #e6ecf4;
+          font-size: 12px; color: #8b9bb0; display: flex; justify-content: space-between; }
+  .judge { font-size: 14px; }
+</style></head>
+<body>
+
+  <div class="hd">
+    <h1>亚冠精英 MD3 · 北京国安 vs 全北现代</h1>
+    <div class="sub">2026-10-27（周二）20:15 · 北京工人体育场 · 联赛阶段第 3 轮（东亚区）</div>
+    <div class="tags">
+      <span class="tag hot">只卖散票</span>
+      <span class="tag">10/21 10:00 全体开售</span>
+      <span class="tag">10/27 12:00 停售</span>
+      <span class="tag">不设年票优先日</span>
+    </div>
+  </div>
+
+  <div class="kpi">
+    <div><div class="lab">散票预测</div><div class="val">6,545<small> 张</small></div>
+      <div class="note">区间 5,236 – 7,854</div></div>
+    <div><div class="lab">散票收入</div><div class="val">183.2<small> 万</small></div>
+      <div class="note">均价 ¥280</div></div>
+    <div><div class="lab">全口径票房</div><div class="val">340.7<small> 万</small></div>
+      <div class="note">含联票摊分 152.0</div></div>
+    <div><div class="lab">库存占用</div><div class="val">30.9<small>%</small></div>
+      <div class="note">可售 21,215 座</div></div>
+  </div>
+
+  <h2>分档预测</h2>
+  <table>
+    <tr><th>档位</th><th>面价</th><th>预测销量</th><th>可售库存</th><th>占用率</th><th>收入</th></tr>
+    <tr><td>L1</td><td>¥199</td><td>3,331</td><td>6,289</td><td class="hi">53.0% ⚠</td><td>¥64.7 万</td></tr>
+    <tr><td>T3</td><td>¥299</td><td>2,160</td><td>7,607</td><td>28.4%</td><td>¥63.1 万</td></tr>
+    <tr><td>T4</td><td>¥459</td><td>406</td><td>2,945</td><td>13.8%</td><td>¥18.2 万</td></tr>
+    <tr><td>T5</td><td>¥539</td><td>432</td><td>3,436</td><td>12.6%</td><td>¥22.7 万</td></tr>
+    <tr><td>T6</td><td>¥688</td><td>216</td><td>938</td><td>23.0%</td><td>¥14.5 万</td></tr>
+    <tr><td>合计</td><td>—</td><td>6,545</td><td>21,215</td><td>30.9%</td><td>¥183.2 万</td></tr>
+  </table>
+
+  <h2>销速预测（双峰）</h2>
+  <table>
+    <tr><th>日期</th><th>节点</th><th>当日</th><th>累计</th><th>占终值</th><th>预警线</th></tr>
+    <tr><td>10/21（三）</td><td><b>开票首日</b></td><td>2,487</td><td>2,487</td><td class="hi">38.0%</td><td>&lt;1,740 偏弱 ／ &gt;2,980 上修</td></tr>
+    <tr><td>10/22-10/25</td><td>中期四天</td><td>327 / 天</td><td>3,795</td><td>58.0%</td><td class="dim">低谷期，不必投放</td></tr>
+    <tr><td>10/24（六）</td><td><b>D-3 判定日</b></td><td>—</td><td>3,468</td><td>53.0%</td><td class="hi">&lt;2,774 下修 ／ ≥4,162 上修</td></tr>
+    <tr><td>10/26（一）</td><td><b>D-1</b></td><td>1,702</td><td>5,497</td><td class="hi">84.0%</td><td class="dim">赛前冲刺</td></tr>
+    <tr><td>10/27（二）</td><td>停售 12:00</td><td>1,047</td><td>6,545</td><td>100%</td><td class="dim">结论值</td></tr>
+  </table>
+  <div class="bars">首日 38% + 赛前一天 26% = <b>64%</b>；中间四天仅 20% → 人力与投放集中在这两天。</div>
+
+  <h2>三条执行动作</h2>
+  <div class="acts">
+    <div class="row"><div class="n">1</div><div class="txt">
+      <b>营销全压 10/21 上午 10:00 + 10/26</b>；10/22–10/25 是低谷，不追加投放。</div></div>
+    <div class="row"><div class="n">2</div><div class="txt">
+      <b>叙事别说"亚洲豪门"</b> → 说「亚冠 2 连胜、东亚第 4，赢下这场基本出线」+「2015/2019 两次在工体被全北淘汰，这次能不能扳回来」。</div></div>
+    <div class="row"><div class="n">3</div><div class="txt">
+      <b>盯 L1（占用 53%）</b>：首日破 2,800 张即报备开后备池 <b>4,473 座</b>（307/327/328/329/331/332）。</div></div>
+  </div>
+
+  <h2>赛后判别（一条命令验三件事）</h2>
+  <table class="judge">
+    <tr><th>MD3 实测</th><th>判定</th></tr>
+    <tr><td>≈ 6,545</td><td class="ok">售期 + 亚冠 2 连胜 + 出线权重　三因子全部成立</td></tr>
+    <tr><td>≈ 6,350</td><td>只有成绩因子成立 → 出线权重回退 1.00</td></tr>
+    <tr><td>≈ 6,050</td><td>两个成绩类因子均无效 → 全回退（纯对手模型）</td></tr>
+    <tr><td>≈ 5,760</td><td class="dim">售期修正也不成立</td></tr>
+  </table>
+
+  <div class="foot">
+    <span>对手：全北现代（K League 1 第 3 · 亚冠东亚第 10）｜ 分级：亚洲 S（ST 76.1 / AP 77.2）· 北京视角等效 C ｜ 票价维持 B 级不动</span>
+    <span>2026-10-20 · 生成</span>
+  </div>
+  <div class="foot" style="border:none; padding-top:4px;">
+    <span>⚠️ 后三因子（售期 1.05 / 成绩 1.05 / 出线 1.03）无亚冠样本标定，合计放大 8.1%；纯模型口径 6,052 张。完整版见《定价决策卡_20261027_亚冠MD3_国安vs全北现代》</span>
+  </div>
+
+</body></html>
